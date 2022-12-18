@@ -44,7 +44,6 @@ public class ParquetAutotuneJoinStream {
 		p_stock_trans = read('/data/stock_trans.parquet').select(formulas=['symbol','price','buys','sells'])
 		autotune = jpy.get_type('io.deephaven.engine.table.impl.select.AutoTuningIncrementalReleaseFilter')
 		relation_filter = autotune(0, 1000000, 1.0, True)
-		stock_trans = p_stock_trans.where(relation_filter)
 			
 		stock_info = p_stock_info.view(formulas=['symbol', 'description', 'exchange'])
 		stock_trans = p_stock_trans.where(relation_filter).view(formulas=['symbol', 'timestamp=now()', 'price', 'buys', 'sells', 'rec_count=1'])

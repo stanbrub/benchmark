@@ -11,17 +11,8 @@ public class AvroKafkaCountStream {
 	
 	@Before
 	public void setup() {
-		long symCnt = 100000;
-		api.table("stock_info").fixed()
-			.add("symbol", "string", "SYM[1-" + symCnt + "]")
-			.add("description", "string", "ABC[1-" + symCnt + "] CORP")
-			.add("exchange", "string", "EXCHANGE[1-10]")
-			.generateAvro();
-		
-		api.awaitCompletion();
-		
 		api.table("stock_trans").random()
-			.add("symbol", "string", "SYM[1-" + symCnt + "]")
+			.add("symbol", "string", "SYM[1-100000]")
 			.add("price", "float", "[100-200]")
 			.add("buys", "int", "[1-100]")
 			.add("sells", "int", "[1-100]")
@@ -29,7 +20,7 @@ public class AvroKafkaCountStream {
 	}
 
 	@Test
-	public void joinFromKafkaStream() {
+	public void countRecordsFromKafka() {
 		var query = 
 		"""
 		from deephaven import agg
@@ -44,25 +35,17 @@ public class AvroKafkaCountStream {
 			key_spec=KeyValueSpec.IGNORE, value_spec=kc.avro_spec('stock_trans_record', schema_version='1'),
 			table_type=TableType.append())
 
-		record_count = kafka_stock_trans.view(formulas=['rec_count=1']).agg_by([agg.sum_('RecordCount=rec_count')])
-		
 		def wait_ticking_table_update(table: Table, row_count: int):
 			with exclusive_lock():
-				recCount = 0
-				recColumn = table.j_table.getColumnSource('RecordCount')
-				while recCount < row_count:
+				while table.j_table.size() < row_count:
 					table.j_table.awaitUpdate()
-					recCount = recColumn.get(0)
 
-		wait_ticking_table_update(record_count, ${scale.row.count})
+		wait_ticking_table_update(kafka_stock_trans, ${scale.row.count})
 		
 		""";
 
 		var tm = Timer.start();
-		api.query(query).fetchAfter("record_count", table->{
-			int recCount = table.getSum("RecordCount").intValue();
-			assertEquals("Wrong record count", scaleRowCount, recCount);
-		}).execute();
+		api.query(query).execute();
 		api.awaitCompletion();
 		api.result().test(tm.duration(), scaleRowCount);
 	}
