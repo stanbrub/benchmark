@@ -28,7 +28,7 @@ api.table("stock_trans").random()
 	.add("buys", "int", "[1-100]")
 	.add("sells", "int", "[1-100]")
 	.generateParquet();
-```
+````
 This generates a parquet file on the server with the path "data/stock_trans.parquet" for use in subsequent queries.
 ### Table Types:
 - random: Will choose random values for each column range inclusive of the boundaries
@@ -52,7 +52,7 @@ from deephaven.parquet import read
 
 p_stock_trans = read('/data/stock_trans.parquet')	
 ````
-Or is can queried from a Kafka topic as in the following:
+Or it can queried from a Kafka topic as in the following:
 ````
 from deephaven import kafka_consumer as kc
 from deephaven.stream.kafka.consumer import TableType, KeyValueSpec
