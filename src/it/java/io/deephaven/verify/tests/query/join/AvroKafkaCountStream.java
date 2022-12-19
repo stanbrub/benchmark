@@ -1,9 +1,7 @@
 package io.deephaven.verify.tests.query.join;
 
-import static org.junit.Assert.*;
 import org.junit.*;
 import io.deephaven.verify.api.Verify;
-import io.deephaven.verify.util.Timer;
 
 public class AvroKafkaCountStream {
 	final Verify api = Verify.create(this);
@@ -44,17 +42,17 @@ public class AvroKafkaCountStream {
 		
 		""";
 
-		var tm = Timer.start();
+		var tm = api.timer();
 		api.query(query).execute();
 		api.awaitCompletion();
-		api.result().test(tm.duration(), scaleRowCount);
+		api.result().test(tm, scaleRowCount);
 	}
 
 	@After
 	public void teardown() {
-		var tm = Timer.start();
+		var tm = api.timer();
 		api.close();
-		api.result().teardown(tm.duration(), scaleRowCount);
+		api.result().teardown(tm, scaleRowCount);
 	}
 
 }

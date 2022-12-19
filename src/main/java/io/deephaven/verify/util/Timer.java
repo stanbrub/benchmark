@@ -14,7 +14,7 @@ public class Timer {
 	
 	final public long beginTime = now();
 	
-	private Timer() {
+	protected Timer() {
 	}
 	
 	public Duration duration() {

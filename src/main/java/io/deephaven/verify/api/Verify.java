@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.deephaven.verify.util.Log;
 import io.deephaven.verify.util.Metrics;
+import io.deephaven.verify.util.Timer;
 
 /**
  * The root accessor class for the API.  Use <code>Verify.create(this)</code> in a typical
@@ -92,6 +93,14 @@ final public class Verify {
 			awaitCompletion(f);
 		}
 		futures.clear();
+	}
+	
+	/**
+	 * Starts and returns a timer
+	 * @return a timer
+	 */
+	public Timer timer() {
+		return Timer.start();
 	}
 	
 	/**

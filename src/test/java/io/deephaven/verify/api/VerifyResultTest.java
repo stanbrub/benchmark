@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.*;
 
+import io.deephaven.verify.util.Timer;
+
 public class VerifyResultTest {
 	final private Path resultFile = getResource("test-result.csv");
 
@@ -16,9 +18,9 @@ public class VerifyResultTest {
 		Files.deleteIfExists(result.file);
 		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
 		
-		result.setup(Duration.ofMillis(20), 1234);
-		result.test(Duration.ofMillis(123), 1234);
-		result.teardown(Duration.ofMillis(11), 1234);
+		result.setup(timer(20), 1234);
+		result.test(timer(123), 1234);
+		result.teardown(timer(11), 1234);
 		Thread.sleep(200);
 		result.commit();
 		
@@ -41,15 +43,15 @@ public class VerifyResultTest {
 		Files.deleteIfExists(result.file);
 		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
 		
-		result.setup(Duration.ofMillis(20), 1234);
-		result.test(Duration.ofMillis(123), 1234);
-		result.teardown(Duration.ofMillis(11), 1234);
+		result.setup(timer(20), 1234);
+		result.test(timer(123), 1234);
+		result.teardown(timer(11), 1234);
 		result.commit();
 		
 		result = new VerifyResult("mytest2", resultFile);
-		result.setup(Duration.ofMillis(30), 2345);
-		result.test(Duration.ofMillis(321), 2345);
-		result.teardown(Duration.ofMillis(12), 2345);
+		result.setup(timer(30), 2345);
+		result.test(timer(321), 2345);
+		result.teardown(timer(12), 2345);
 		result.commit();
 		
 		assertTrue("Missing result file: " + result.file, Files.exists(result.file));
@@ -73,5 +75,21 @@ public class VerifyResultTest {
 	private List<String[]> getResult(VerifyResult result) throws Exception {
 		return Files.lines(result.file).map(v->v.split(",")).toList();
 	}
+	
+	private Timer timer(int millis) {
+		return new DTimer(millis);
+	}
 
+	static class DTimer extends Timer {
+		Duration duration;
+		DTimer(int durationMillis) {
+			this.duration = Duration.ofMillis(durationMillis);
+		}
+		
+		@Override
+		public Duration duration() {
+			return duration;
+		}
+	}
+	
 }

@@ -3,7 +3,6 @@ package io.deephaven.verify.tests.query;
 import static org.junit.Assert.*;
 import org.junit.*;
 import io.deephaven.verify.api.Verify;
-import io.deephaven.verify.util.Timer;
 
 public class KafkaToParquetStream {
 	final Verify api = Verify.create(this);
@@ -11,14 +10,14 @@ public class KafkaToParquetStream {
 	
 	@Test
 	public void makeParquetFile() {
-		var tm = Timer.start();
+		var tm = api.timer();
 		api.table("orders").random()
 			.add("symbol", "string", "SYM[1-1000]")
 			.add("price", "float", "[10-20]")
 			.add("qty", "int", "1")
 			.generateParquet();
 		
-		api.result().test(tm.duration(), scaleRowCount);
+		api.result().test(tm, scaleRowCount);
 		
 		var query = 
 		"""

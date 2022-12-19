@@ -3,7 +3,6 @@ package io.deephaven.verify.tests.query.join;
 import static org.junit.Assert.*;
 import org.junit.*;
 import io.deephaven.verify.api.Verify;
-import io.deephaven.verify.util.Timer;
 
 public class AvroKafkaJoinStream {
 	final Verify api = Verify.create(this);
@@ -81,20 +80,20 @@ public class AvroKafkaJoinStream {
 		
 		""";
 
-		var tm = Timer.start();
+		var tm = api.timer();
 		api.query(query).fetchAfter("record_count", table->{
 			int recCount = table.getSum("RecordCount").intValue();
 			assertEquals("Wrong record count", scaleRowCount, recCount);
 		}).execute();
 		api.awaitCompletion();
-		api.result().test(tm.duration(), scaleRowCount);
+		api.result().test(tm, scaleRowCount);
 	}
 
 	@After
 	public void teardown() {
-		var tm = Timer.start();
+		var tm = api.timer();
 		api.close();
-		api.result().test(tm.duration(), scaleRowCount);
+		api.result().test(tm, scaleRowCount);
 	}
 
 }

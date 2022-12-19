@@ -38,34 +38,34 @@ final public class VerifyResult {
 
 	/**
 	 * Record a setup rate for this result instance
-	 * @param duration the run duration for setup
+	 * @param timer a started timer measuring the test setup
 	 * @param count the processed item count (e.g. rowCount) 
 	 * @return this result instance
 	 */
-	public VerifyResult setup(Duration duration, long count) {
-		rates.put("setup", new Rate(duration, count));
+	public VerifyResult setup(Timer timer, long count) {
+		rates.put("setup", new Rate(timer.duration(), count));
 		return this;
 	}
 	
 	/**
 	 * Record a test rate for this result instance
-	 * @param duration the run duration for test
+	 * @param timer a started timer measuring the test
 	 * @param count the processed item count (e.g. rowCount) 
 	 * @return this result instance
 	 */
-	public VerifyResult test(Duration duration, long count) {
-		rates.put("test", new Rate(duration, count));
+	public VerifyResult test(Timer timer, long count) {
+		rates.put("test", new Rate(timer.duration(), count));
 		return this;
 	}
 	
 	/**
 	 * Record a teardown rate for this result instance
-	 * @param duration the run duration for teardown
+	 * @param duration a started timer measuring the test teardown
 	 * @param count the processed item count (e.g. rowCount) 
 	 * @return this result instance
 	 */
-	public VerifyResult teardown(Duration duration, long count) {
-		rates.put("teardown", new Rate(duration, count));
+	public VerifyResult teardown(Timer timer, long count) {
+		rates.put("teardown", new Rate(timer.duration(), count));
 		return this;
 	}
 	

@@ -3,7 +3,6 @@ package io.deephaven.verify.tests.query.join;
 import static org.junit.Assert.*;
 import org.junit.*;
 import io.deephaven.verify.api.Verify;
-import io.deephaven.verify.util.Timer;
 
 public class ParquetViewJoin {
 	final Verify api = Verify.create(this);
@@ -11,7 +10,7 @@ public class ParquetViewJoin {
 	
 	@Before
 	public void setup() {
-		var tm = Timer.start();
+		var tm = api.timer();
 		long symCnt = 100000;
 		api.table("stock_info").fixed()
 			.add("symbol", "string", "SYM[1-" + symCnt + "]")
@@ -26,7 +25,7 @@ public class ParquetViewJoin {
 			.add("sells", "int", "[1-100]")
 			.generateParquet();
 		
-		api.result().setup(tm.duration(), scaleRowCount);
+		api.result().setup(tm, scaleRowCount);
 	}
 
 	@Test
@@ -60,21 +59,21 @@ public class ParquetViewJoin {
 		record_count = stock_exchange.agg_by([agg.sum_('RecordCount')])
 		""";
 
-		var tm = Timer.start();
+		var tm = api.timer();
 		api.query(query).fetchAfter("record_count", table->{
 			int recCount = table.getSum("RecordCount").intValue();
 			assertEquals("Wrong record count", scaleRowCount, recCount);
 		}).execute();
 		
 		api.awaitCompletion();
-		api.result().test(tm.duration(), scaleRowCount);
+		api.result().test(tm, scaleRowCount);
 	}
 
 	@After
 	public void teardown() {
-		var tm = Timer.start();
+		var tm = api.timer();
 		api.close();
-		api.result().teardown(tm.duration(), scaleRowCount);
+		api.result().teardown(tm, scaleRowCount);
 	}
 
 }
