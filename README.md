@@ -29,7 +29,7 @@ api.table("stock_trans").random()
 	.add("sells", "int", "[1-100]")
 	.generateParquet();
 ````
-This generates a parquet file on the server with the path "data/stock_trans.parquet" for use in subsequent queries.
+This generates a parquet file on the server with the path *data/stock_trans.parquet* for use in subsequent queries.
 ### Table Types:
 - random: Will choose random values for each column range inclusive of the boundaries
 - fixed: Will iterate through the range inclusive of the boundaries.  Table row count will be the longest range.
@@ -115,7 +115,7 @@ The timer is initiated before the query is executed, and the result is recorded 
 - Bencher uses GZIP and Verify uses ZSTD compression for writing parquet files
 - Test sourcees are in *src/it/java*
 
-### Bencher vs Verify for the same queries:
+### Bencher vs Verify for the same queries (rates are records/sec):
 
 |test-description|bencher-rate|verify-rate|
 |----------------|------------|-----------|
@@ -125,7 +125,7 @@ The timer is initiated before the query is executed, and the result is recorded 
 |stock join 100m parquet view|553502.34|693847.00|
 
 
-### Verify producing records to the Kafka broker and consumed by the Deephaven query script:
+### Verify producing records to the Kafka broker and consumed by the Deephaven query script (rates are records/sec):
 
 |test-description|verify-rate|producer-rate|
 |----------------|-----------|-------------|
