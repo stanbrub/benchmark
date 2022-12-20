@@ -19,8 +19,12 @@ final public class Verify {
 	static final Profile profile = new Profile();
 
 	static public Verify create(Object testInst) {
+		return create(testInst.getClass().getSimpleName());
+	}
+	
+	static public Verify create(String testName) {
 		setSessionTimeout();
-		return new Verify(testInst.getClass().getSimpleName());
+		return new Verify(testName);
 	}
 
 	final String name;

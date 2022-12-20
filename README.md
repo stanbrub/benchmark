@@ -6,7 +6,7 @@ For the present, tests are geared towards testing [Deephaven Core Community](htt
 
 The typical workflow of a Verify test is... *Configure table/column generation* --> *Execute Query* --> *Measure Results*.  This is all done inside a Junit test class.
 
-Tests are designed to scale by changing a scale property value call *scaleRowCount*, so the same test can be used in multiple runs at different scales for comparison.  For ease of comparison, collected results are processing rates rather than elapsed time.
+Tests are designed to scale by changing a scale property value call *scale.row.count*, so the same test can be used in multiple runs at different scales for comparison.  For ease of comparison, collected results are processing rates rather than elapsed time.
 
 Results for a test run are output to the console and stored in the current directory in *verify-results.csv*.
 
@@ -117,17 +117,16 @@ The timer is initiated before the query is executed, and the result is recorded 
 
 ### Bencher vs Verify for the same queries (rates are records/sec):
 
-|test-description|bencher-rate|verify-rate|
+|Test Description|Bencher Rate|Verify Rate|
 |----------------|------------|-----------|
 |stock join 10m auto increment|339430.53|363266.50|
 |stock join 10m parquet view|579667.06|569670.70|
 |stock join 100m auto increment|358337.90|398665.25|
 |stock join 100m parquet view|553502.34|693847.00|
 
-
 ### Verify producing records to the Kafka broker and consumed by the Deephaven query script (rates are records/sec):
 
-|test-description|verify-rate|producer-rate|
+|Test Description|Verify Rate|Producer Rate|
 |----------------|-----------|-------------|
 |stock join 10m kafka append|224411.48|415973.38|
 |stock join 100m kafka append|275232.62|384831.48|
