@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import io.deephaven.client.impl.BarrageSession;
@@ -45,6 +44,7 @@ public class BarrageConnector implements AutoCloseable {
 	final private BufferAllocator bufferAllocator = new RootAllocator();
 	final private Map<String,Subscription> subscriptions = new LinkedHashMap<>();
 	final private Map<String,Snapshot> snapshots = new LinkedHashMap<>();
+	final private Set<String> variableNames = new HashSet<>();
 	final private AtomicBoolean isClosed = new AtomicBoolean(false);
 	private Changes changes = null;
 	
@@ -64,19 +64,13 @@ public class BarrageConnector implements AutoCloseable {
 		try {
 			changes = console.executeCode(query);
 		    if(changes.errorMessage().isPresent()) throw new Exception(changes.errorMessage().get());
+		    updateVariableNames();
 		} catch(Exception ex) {
+			close();
 			throw new RuntimeException("Failed to executed query: " + query, ex);
 		}
 	}
-	
-	public Set<String> getTables() {
-		checkClosed();
-		if(changes == null) return Collections.emptySet();
-		var names = new TreeSet<String>(getTableNames(changes.changes().created()));
-		names.addAll(getTableNames(changes.changes().updated()));
-		return names;
-	}
-	
+
 	public Future<Metrics> fetchSnapshotData(String table, Consumer<ResultTable> tableHandler) {
 		checkClosed();
 		Metrics metrics = new Metrics(table, "session");
@@ -132,6 +126,7 @@ public class BarrageConnector implements AutoCloseable {
 			isClosed.set(true);
 			subscriptions.values().forEach(s->{s.handle.close(); s.subscription.close();});
 			subscriptions.clear();
+			cleanupEngineTables();
 			console.close();
 			session.close();
 		} catch(Exception ex) {
@@ -154,8 +149,9 @@ public class BarrageConnector implements AutoCloseable {
 		return found.get();
 	}
 	
-	private List<String> getTableNames(List<FieldInfo> fields) {
-		return fields.stream().filter(c->c.type().get().equals("Table")).map(c->c.name()).collect(Collectors.toList());
+	private void updateVariableNames() {
+		variableNames.addAll(changes.changes().created().stream().map(c->c.name()).toList());
+		variableNames.addAll(changes.changes().removed().stream().map(c->c.name()).toList());
 	}
 	
 	private ManagedChannel getManagedChannel(String host, int port) {
@@ -167,12 +163,21 @@ public class BarrageConnector implements AutoCloseable {
 		return channelBuilder.build();
 	}
 	
-	// TODO: Set the session timeout according to property verify passes in
 	private BarrageSession getSession(ManagedChannel channel) {
         BarrageSessionFactory barrageSessionFactory = DaggerDeephavenBarrageRoot.create().factoryBuilder()
         	.managedChannel(channel).scheduler(scheduler).allocator(bufferAllocator).build();
 
         return barrageSessionFactory.newBarrageSession();
+	}
+	
+	private void cleanupEngineTables() {
+		if(variableNames.isEmpty()) return;
+		String query = String.join("=None; ", variableNames) + "=None";
+		try {
+			changes = console.executeCode(query);
+		} catch(Exception ex) {
+			throw new RuntimeException("Failed to executed cleanup query: " + query, ex);
+		}
 	}
 	
 	private CsvTable toCsvTable(BarrageTable barrageTable) {

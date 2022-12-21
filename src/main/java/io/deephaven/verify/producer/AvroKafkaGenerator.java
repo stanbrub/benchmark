@@ -28,9 +28,9 @@ public class AvroKafkaGenerator implements Generator {
 	final private String topic;
 	final private AtomicBoolean isClosed = new AtomicBoolean(false);
 
-	public AvroKafkaGenerator(String bootstrapServers, String schemaRegistryUrl, String topic, ColumnDefs columnDefs) {
+	public AvroKafkaGenerator(String bootstrapServers, String schemaRegistryUrl, String topic, ColumnDefs columnDefs, String compression) {
 		cleanupTopic(bootstrapServers, schemaRegistryUrl, topic);
-		this.producer = createProducer(bootstrapServers, schemaRegistryUrl);
+		this.producer = createProducer(bootstrapServers, schemaRegistryUrl, compression);
 		this.topic = topic;
 		this.columnDefs = columnDefs;
 		this.schema = publishSchema(topic, schemaRegistryUrl, getSchemaJson(topic, columnDefs));
@@ -102,14 +102,14 @@ public class AvroKafkaGenerator implements Generator {
 		if(isClosed.get()) throw new RuntimeException("Generator is closed");
 	}
 	
-	private Producer<String, GenericRecord> createProducer(String bootstrapServer, String schemaRegistryUrl) {
+	private Producer<String, GenericRecord> createProducer(String bootstrapServer, String schemaRegistryUrl, String compression) {
 		Properties props = new Properties();
 		props.put(BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
 		props.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 		props.put(VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
 		props.put("schema.registry.url", schemaRegistryUrl);
 		props.put(ACKS_CONFIG, "0");
-		props.put(COMPRESSION_TYPE_CONFIG, "zstd");
+		props.put(COMPRESSION_TYPE_CONFIG, compression.toLowerCase());
 		props.put(BATCH_SIZE_CONFIG, 16384 * 4);
 		props.put(BUFFER_MEMORY_CONFIG, 32 * 1024 * 1024L * 4);
 		props.put(LINGER_MS_CONFIG, 200);

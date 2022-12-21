@@ -19,6 +19,7 @@ final public class VerifyTable implements Closeable {
 	private long rowCount = 0;
 	private int durationSecs = -1;
 	private int rowPauseMillis = -1;
+	private String compression = null;
 	private Generator generator = null;
 	
 	VerifyTable(Verify verify, String tableName) {
@@ -74,6 +75,16 @@ final public class VerifyTable implements Closeable {
 	}
 	
 	/**
+	 * Override the default compression codec for record generation and parquet
+	 * @param codec the compression codec (zstd|lz4|gzip|none)
+	 * @return this instance
+	 */
+	public VerifyTable withCompression(String codec) {
+		compression = codec;
+		return this;
+	}
+	
+	/**
 	 * Direct table generation to sequence through column ranges instead of randomizing them.
 	 * For example, the range [1-1000] would produce exact 1000 column values, assuming it was
 	 * the largest column range.  If col1=[1-1000] and col2=[1-10], the row count would be 1000
@@ -118,10 +129,14 @@ final public class VerifyTable implements Closeable {
 		
 		verify.awaitCompletion(generateWithAvro());
 		
-		String q = kafkaToParquetQuery.replace("${table.name}", tableName);
-		q = q.replace("${table.columns}", columns.getQuotedColumns());
-		q = q.replace("${table.rowcount}", Long.toString(getRowCount()));
-		q = q.replace("${table.duration}", Long.toString(getRunDuration()));
+		String codec = getCompression();
+		String compression = codec.equals("NONE")?"":String.format(", compression_codec_name='%s'", codec);
+		
+		String q = kafkaToParquetQuery.replace("${table.name}", tableName)
+			.replace("${compression.codec}", compression)
+			.replace("${table.columns}", columns.getQuotedColumns())
+			.replace("${table.rowcount}", Long.toString(getRowCount()))
+			.replace("${table.duration}", Long.toString(getRunDuration()));
 		verify.query(q).execute();
 	}
 	
@@ -135,7 +150,7 @@ final public class VerifyTable implements Closeable {
 	private Future<Metrics> generateWithAvro() {
 		String bootstrapServer = verify.property("client.redpanda.addr", "localhost:9092");
 		String schemaRegistry = "http://" + verify.property("client.schema.registry.addr", "localhost:8081");
-		generator = new AvroKafkaGenerator(bootstrapServer, schemaRegistry, tableName, columns);
+		generator = new AvroKafkaGenerator(bootstrapServer, schemaRegistry, tableName, columns, getCompression());
 		return generator.produce(getRowPause(), getRowCount(), getRunDuration());
 	}
 	
@@ -156,6 +171,11 @@ final public class VerifyTable implements Closeable {
 	private int getRunDuration() {
 		if(durationSecs >= 0) return durationSecs;
 		return (int)verify.propertyAsDuration("default.completion.timeout", "1 minute").toSeconds();
+	}
+	
+	private String getCompression() {
+		String codec = (compression != null)?compression:verify.property("record.compression", "NONE");
+		return codec.trim().toUpperCase();
 	}
 	
 	final String kafkaToParquetQuery =
@@ -180,8 +200,7 @@ final public class VerifyTable implements Closeable {
 
 		wait_ticking_table_update(${table.name}, ${table.rowcount})
 
-		write(${table.name}, "/data/${table.name}.parquet", compression_codec_name="ZSTD")
-		# write(${table.name}, "/data/${table.name}.parquet")	
+		write(${table.name}, "/data/${table.name}.parquet" ${compression.codec})
 		
 		del ${table.name}
 		
