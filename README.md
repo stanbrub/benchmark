@@ -72,7 +72,7 @@ api.query(query).fetchAfter("record_count", table->{
 	int recCount = table.getSum("RecordCount").intValue();
 	assertEquals("Wrong record count", scaleRowCount, recCount);
 }).execute();
-		api.awaitCompletion();
+api.awaitCompletion();
 ````
 Before execution, every property like "${kafka.consumer.addr}" will be replaced with a corresponding values from one of the following (in order):
 - Profile Properties: Properties loaded from properties passed into the JVM with *-Dverify.profile=my.properties* or, if that is missing, *default.properties* from this project
