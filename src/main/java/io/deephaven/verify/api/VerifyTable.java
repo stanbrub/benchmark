@@ -30,7 +30,7 @@ final public class VerifyTable implements Closeable {
 	/**
 	 * Add a column definition for the table schema
 	 * @param name the name of the column
-	 * @param type the type of the column (string|long|int|double|float)
+	 * @param type the type of the column (<code>string | long | int | double | float</code>)
 	 * @param valuesDef range or combination of range and string
 	 * @return this instance
 	 */
@@ -76,7 +76,7 @@ final public class VerifyTable implements Closeable {
 	
 	/**
 	 * Override the default compression codec for record generation and parquet
-	 * @param codec the compression codec (zstd|lz4|gzip|none)
+	 * @param codec the compression codec <code>(zstd | lz4 | gzip | none)</code>
 	 * @return this instance
 	 */
 	public VerifyTable withCompression(String codec) {
