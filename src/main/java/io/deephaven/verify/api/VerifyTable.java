@@ -7,6 +7,7 @@ import java.util.concurrent.Future;
 import io.deephaven.verify.connect.ColumnDefs;
 import io.deephaven.verify.producer.AvroKafkaGenerator;
 import io.deephaven.verify.producer.Generator;
+import io.deephaven.verify.util.Ids;
 import io.deephaven.verify.util.Metrics;
 
 /**
@@ -30,7 +31,7 @@ final public class VerifyTable implements Closeable {
 	/**
 	 * Add a column definition for the table schema
 	 * @param name the name of the column
-	 * @param type the type of the column (<code>string | long | int | double | float</code>)
+	 * @param type the type of the column ( <code>string | long | int | double | float</code> )
 	 * @param valuesDef range or combination of range and string
 	 * @return this instance
 	 */
@@ -136,7 +137,9 @@ final public class VerifyTable implements Closeable {
 			.replace("${compression.codec}", compression)
 			.replace("${table.columns}", columns.getQuotedColumns())
 			.replace("${table.rowcount}", Long.toString(getRowCount()))
-			.replace("${table.duration}", Long.toString(getRunDuration()));
+			.replace("${table.duration}", Long.toString(getRunDuration()))
+			.replace("${table.definition}", getTableDefinition())
+			.replace("${table.definition.id}", getTableDefinitionId());
 		verify.query(q).execute();
 	}
 	
@@ -178,9 +181,20 @@ final public class VerifyTable implements Closeable {
 		return codec.trim().toUpperCase();
 	}
 	
-	final String kafkaToParquetQuery =
+	private String getTableDefinition() {
+		return "row.count=" + getRowCount() + "\n"
+			+ "compression=" + getCompression() + "\n"
+			+ "isfixed=" + columns.isFixed() + "\n"
+			+ columns.describe();
+	}
+	
+	private String getTableDefinitionId() {
+		return "verify." + Ids.uniqueName();
+	}
+	
+	static final String kafkaToParquetQuery =
 		"""
-		import jpy
+		import jpy, os, glob
 		from deephaven import kafka_consumer as kc
 		from deephaven.stream.kafka.consumer import TableType, KeyValueSpec
 		from deephaven.parquet import write
@@ -199,8 +213,32 @@ final public class VerifyTable implements Closeable {
 					table.j_table.awaitUpdate()
 
 		wait_ticking_table_update(${table.name}, ${table.rowcount})
+		
+		def findMatchingGenParquet(gen_def_text):
+			for path in glob.glob('/data/verify.*.*.*.gen.def'):
+				with open(path) as f:
+					if f.read() == gen_def_text: 
+						return os.path.splitext(os.path.splitext(path)[0])[0]
+			return None
+		
+		table_parquet = '/data/${table.name}.parquet'
+		table_gen_parquet = '/data/${table.definition.id}.gen.parquet'
+		table_gen_def_text = '''${table.definition}'''
+		table_gen_def_file = '/data/${table.definition.id}.gen.def'
+		
+		if os.path.exists(table_parquet):
+			os.remove(table_parquet)
 
-		write(${table.name}, "/data/${table.name}.parquet" ${compression.codec})
+		matching_gen_parquet = findMatchingGenParquet(table_gen_def_text)
+		if matching_gen_parquet is None or not os.path.exists(str(matching_gen_parquet) + '.gen.parquet'):
+			print('Did not find existing generated file')
+			with open(table_gen_def_file, 'w') as f:
+				f.write(table_gen_def_text)
+			write(${table.name}, table_gen_parquet ${compression.codec})
+			os.link(table_gen_parquet, table_parquet)
+		else:
+			print('Found existing generated file')
+			os.link(str(matching_gen_parquet) + '.gen.parquet', table_parquet)
 		
 		del ${table.name}
 		

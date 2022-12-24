@@ -12,7 +12,7 @@ public class AvroKafkaJoinStream {
 	public void setup() {
 		long symCnt = 100000;
 		api.table("stock_info").fixed()
-			.add("symbol", "string", "SYM[1-" + symCnt + "]")
+			.add("symbol", "string", "SYM[1-" + symCnt + "]")   // Could use weighted symbols
 			.add("description", "string", "ABC[1-" + symCnt + "] CORP")
 			.add("exchange", "string", "EXCHANGE[1-10]")
 			.generateAvro();

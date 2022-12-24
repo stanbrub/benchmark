@@ -61,7 +61,7 @@ final public class Verify {
 	/**
 	 * Get an integral property from the profile, System, Environment or return a default value. 
 	 * Values are specified to match the following regular expression:<p/>
-	 * <code>[0-9]+ (nanos|nano|millis|milli|seconds|second|minutes|minute)</code>
+	 * <code>[0-9]+ ( nanos | nano | millis | milli | seconds | second | minutes | minute )</code>
 	 * @param name the property name
 	 * @param defaultValue value to return if the property does not exist
 	 * @return the property value or default

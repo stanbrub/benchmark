@@ -39,12 +39,20 @@ public class ColumnDefs {
 	}
 	
 	public ColumnDefs add(String name, String type, String valueDef) {
-		columns.add(new ColumnDef(name, type, getMaker(type, valueDef)));
+		columns.add(new ColumnDef(name, type, valueDef, getMaker(type, valueDef)));
 		return this;
 	}
 	
 	public Object nextValue(int columnIndex, long seed) {
 		return columns.get(columnIndex).maker().next(seed);
+	}
+	
+	public String describe() {
+		String str = "name,type,values\n";
+		for(ColumnDef c: columns) {
+			str += String.join(",", c.name(), c.type(), c.valueDef()) + "\n";
+		}
+		return str;
 	}
 
 	private Maker getMaker(String type, String valueDef) {
@@ -73,7 +81,7 @@ public class ColumnDefs {
 		return IntStream.range(rangeStart, rangeEnd).mapToObj(v->valueDef.replace(brackets, Integer.toString(v))).toList();
 	}
 	
-	record ColumnDef(String name, String type, Maker maker) {}
+	record ColumnDef(String name, String type, String valueDef, Maker maker) {}
 	
 	class StringMaker extends Maker {
 		StringMaker(List<String> values) {

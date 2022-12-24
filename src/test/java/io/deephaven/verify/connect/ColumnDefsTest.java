@@ -50,4 +50,30 @@ public class ColumnDefsTest {
 		assertEquals("Wrong row count", 10, columnDefs.getMaxValueCount());
 	}
 	
+	@Test
+	public void describe() {
+		ColumnDefs columnDefs = new ColumnDefs()
+			.add("symbol", "string", "ABC[1-10]")
+			.add("price", "float", "[100-105]")
+			.add("priceAgain", "int", "[100-105]");
+		
+		assertEquals("Wrong toString", 
+			"""
+			name,type,values
+			symbol,string,ABC[1-10]
+			price,float,[100-105]
+			priceAgain,int,[100-105]
+			""", columnDefs.describe());
+		
+		columnDefs.setFixed();
+		
+		assertEquals("Wrong toString",
+			"""
+			name,type,values
+			symbol,string,ABC[1-10]
+			price,float,[100-105]
+			priceAgain,int,[100-105]
+			""", columnDefs.describe());
+	}
+	
 }
