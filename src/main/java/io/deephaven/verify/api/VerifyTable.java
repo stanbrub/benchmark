@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import io.deephaven.verify.connect.ColumnDefs;
 import io.deephaven.verify.producer.AvroKafkaGenerator;
 import io.deephaven.verify.producer.Generator;
@@ -123,23 +124,25 @@ final public class VerifyTable implements Closeable {
 	}*/
 	
 	/**
-	 * Generate the table synchronously to a parquet file in the engine's data directory
+	 * Generate the table synchronously to a parquet file in the engine's data directory. If a parquet
+	 * file already exists in the Deephaven data directory that matches this table definition, use it 
+	 * and skip generation.
 	 */
 	public void generateParquet() {
-		if(rowPauseMillis < 0) withRowPause(0, ChronoUnit.MILLIS);
+		String q = replaceTableAndGeneratorFields(useExistingParquetQuery);
 		
+		AtomicBoolean usedExistingParquet = new AtomicBoolean(false);
+		verify.query(q).fetchAfter("result", table->{
+			usedExistingParquet.set(table.getValue(0, "UsedExistingParquet").toString().equalsIgnoreCase("true"));
+		}).execute();
+		
+		if(usedExistingParquet.get()) return;
+		
+		if(rowPauseMillis < 0) withRowPause(0, ChronoUnit.MILLIS);
+				
 		verify.awaitCompletion(generateWithAvro());
 		
-		String codec = getCompression();
-		String compression = codec.equals("NONE")?"":String.format(", compression_codec_name='%s'", codec);
-		
-		String q = kafkaToParquetQuery.replace("${table.name}", tableName)
-			.replace("${compression.codec}", compression)
-			.replace("${table.columns}", columns.getQuotedColumns())
-			.replace("${table.rowcount}", Long.toString(getRowCount()))
-			.replace("${table.duration}", Long.toString(getRunDuration()))
-			.replace("${table.definition}", getTableDefinition())
-			.replace("${table.definition.id}", getTableDefinitionId());
+		q = replaceTableAndGeneratorFields(kafkaToParquetQuery);
 		verify.query(q).execute();
 	}
 	
@@ -192,9 +195,58 @@ final public class VerifyTable implements Closeable {
 		return "verify." + Ids.uniqueName();
 	}
 	
+	private String replaceTableAndGeneratorFields(String query) {
+		query = generatorDefValues + query;
+		
+		String codec = getCompression();
+		String compression = codec.equals("NONE")?"":String.format(", compression_codec_name='%s'", codec);
+		
+		return query.replace("${table.name}", tableName)
+			.replace("${compression.codec}", compression)
+			.replace("${table.columns}", columns.getQuotedColumns())
+			.replace("${table.rowcount}", Long.toString(getRowCount()))
+			.replace("${table.duration}", Long.toString(getRunDuration()))
+			.replace("${table.definition}", getTableDefinition())
+			.replace("${table.definition.id}", getTableDefinitionId());
+	}
+	
+	static final String generatorDefValues = 
+		"""
+		table_parquet = '/data/${table.name}.parquet'
+		table_gen_parquet = '/data/${table.definition.id}.gen.parquet'
+		table_gen_def_text = '''${table.definition}'''
+		table_gen_def_file = '/data/${table.definition.id}.gen.def'
+
+		""";
+	
+	static final String useExistingParquetQuery = 
+		"""
+		import os, glob
+		from deephaven import new_table
+		from deephaven.column import string_col
+		
+		def findMatchingGenParquet(gen_def_text):
+			for path in glob.glob('/data/verify.*.*.*.gen.def'):
+				with open(path) as f:
+					if f.read() == gen_def_text: 
+						return os.path.splitext(os.path.splitext(path)[0])[0]
+			return None
+		
+		if os.path.exists(table_parquet):
+			os.remove(table_parquet)
+
+		usedExisting = False
+		matching_gen_parquet = findMatchingGenParquet(table_gen_def_text)
+		if matching_gen_parquet is not None and os.path.exists(str(matching_gen_parquet) + '.gen.parquet'):
+			os.link(str(matching_gen_parquet) + '.gen.parquet', table_parquet)
+			usedExisting = True
+			
+		result = new_table([string_col("UsedExistingParquet", [str(usedExisting)])])
+		""";
+	
 	static final String kafkaToParquetQuery =
 		"""
-		import jpy, os, glob
+		import jpy, os
 		from deephaven import kafka_consumer as kc
 		from deephaven.stream.kafka.consumer import TableType, KeyValueSpec
 		from deephaven.parquet import write
@@ -214,31 +266,13 @@ final public class VerifyTable implements Closeable {
 
 		wait_ticking_table_update(${table.name}, ${table.rowcount})
 		
-		def findMatchingGenParquet(gen_def_text):
-			for path in glob.glob('/data/verify.*.*.*.gen.def'):
-				with open(path) as f:
-					if f.read() == gen_def_text: 
-						return os.path.splitext(os.path.splitext(path)[0])[0]
-			return None
-		
-		table_parquet = '/data/${table.name}.parquet'
-		table_gen_parquet = '/data/${table.definition.id}.gen.parquet'
-		table_gen_def_text = '''${table.definition}'''
-		table_gen_def_file = '/data/${table.definition.id}.gen.def'
-		
 		if os.path.exists(table_parquet):
 			os.remove(table_parquet)
 
-		matching_gen_parquet = findMatchingGenParquet(table_gen_def_text)
-		if matching_gen_parquet is None or not os.path.exists(str(matching_gen_parquet) + '.gen.parquet'):
-			print('Did not find existing generated file')
-			with open(table_gen_def_file, 'w') as f:
-				f.write(table_gen_def_text)
-			write(${table.name}, table_gen_parquet ${compression.codec})
-			os.link(table_gen_parquet, table_parquet)
-		else:
-			print('Found existing generated file')
-			os.link(str(matching_gen_parquet) + '.gen.parquet', table_parquet)
+		with open(table_gen_def_file, 'w') as f:
+			f.write(table_gen_def_text)
+		write(${table.name}, table_gen_parquet ${compression.codec})
+		os.link(table_gen_parquet, table_parquet)
 		
 		del ${table.name}
 		
