@@ -42,6 +42,7 @@ class Profile {
 	long propertyAsIntegral(String name, String defaultValue) {
 		String value = property(name, defaultValue);
 		try {
+			value = value.replace("_", "").replace(",", "");
 			return Long.parseLong(value);
 		} catch(Exception ex) {
 			throw new RuntimeException("Bad integral value: " + name + "=" + value);

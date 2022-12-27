@@ -172,7 +172,8 @@ public class BarrageConnector implements AutoCloseable {
 	
 	private void cleanupEngineTables() {
 		if(variableNames.isEmpty()) return;
-		String query = String.join("=None; ", variableNames) + "=None";
+		String query = String.join("=None; ", variableNames) + "=None;";
+		query += " System = jpy.get_type('java.lang.System'); System.gc()";
 		try {
 			changes = console.executeCode(query);
 		} catch(Exception ex) {

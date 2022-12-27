@@ -19,17 +19,16 @@ final public class VerifyResult {
 	static final String resultFileName = "verify-results.csv";
 	static final String[] header = {"name", "timestamp", "duration", "setup", "test", "teardown"};
 	static Path resultFile = null;
-	final String name;
 	final Timer timer;
 	final Map<String,Object> rates;
 	final Path file;
+	private String name;
 
-	VerifyResult(String name) {
-		this(name, initializeResultPath(".", resultFileName));
+	VerifyResult() {
+		this(initializeResultPath(".", resultFileName));
 	}
 	
-	VerifyResult(String name, Path resultFile) {
-		this.name = name;
+	VerifyResult(Path resultFile) {
 		this.file = resultFile;
 		this.timer = Timer.start();
 		this.rates = new LinkedHashMap<>();
@@ -83,6 +82,10 @@ final public class VerifyResult {
 		Log.info("Result: %s", m);
 		writeLine(head.stream().map(h->m.get(h)).toList(), file);
 		initializeRates(rates);
+	}
+	
+	void setName(String name) {
+		this.name = name;
 	}
 	
 	private boolean hasHeader() {

@@ -14,7 +14,9 @@ public class VerifyResultTest {
 
 	@Test
 	public void single() throws Exception {
-		VerifyResult result = new VerifyResult("mytest", resultFile);
+		VerifyResult result = new VerifyResult(resultFile);
+		result.setName("mytest");
+		
 		Files.deleteIfExists(result.file);
 		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
 		
@@ -39,7 +41,9 @@ public class VerifyResultTest {
 	
 	@Test
 	public void multi() throws Exception {
-		VerifyResult result = new VerifyResult("mytest", resultFile);
+		VerifyResult result = new VerifyResult(resultFile);
+		result.setName("mytest");
+		
 		Files.deleteIfExists(result.file);
 		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
 		
@@ -48,7 +52,9 @@ public class VerifyResultTest {
 		result.teardown(timer(11), 1234);
 		result.commit();
 		
-		result = new VerifyResult("mytest2", resultFile);
+		result = new VerifyResult(resultFile);
+		result.setName("mytest2");
+		
 		result.setup(timer(30), 2345);
 		result.test(timer(321), 2345);
 		result.teardown(timer(12), 2345);
@@ -61,7 +67,6 @@ public class VerifyResultTest {
 		assertEquals("Wrong header", "[name, timestamp, duration, setup, test, teardown]", Arrays.toString(csv.get(0)));
 		assertEquals("Wrong name", "mytest", csv.get(1)[0]);
 		assertEquals("Wrong name", "mytest2", csv.get(2)[0]);
-		
 	}
 	
 	private Path getResource(String fileName) {

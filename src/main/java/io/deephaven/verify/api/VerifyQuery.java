@@ -83,11 +83,13 @@ final public class VerifyQuery implements Closeable {
 		session = null;
 	}
 	
+	// Add function defs in separate query so if there are errors in the "logic" part, the line numbers match up
 	private void executeBarrageQuery() {
 		if(session == null) {
 			String deephavenServer = verify.property("deephaven.addr", "localhost:10000");
 			session = new BarrageConnector(deephavenServer);	
 		}
+		session.executeQuery(Verify.profile.replaceProperties(Snippets.getFunctions(logic)));
 		session.executeQuery(logic);
 	}
 

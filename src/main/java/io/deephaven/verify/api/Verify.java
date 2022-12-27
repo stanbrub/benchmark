@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
 import io.deephaven.verify.util.Log;
 import io.deephaven.verify.util.Metrics;
 import io.deephaven.verify.util.Timer;
@@ -22,20 +21,25 @@ final public class Verify {
 		return create(testInst.getClass().getSimpleName());
 	}
 	
-	static public Verify create(String testName) {
+	static public Verify create(String name) {
 		setSessionTimeout();
-		return new Verify(testName);
+		Verify v = new Verify();
+		v.setName(name);
+		return v;
 	}
 
-	final String name;
 	final VerifyResult result;
 	final List<Future<Metrics>> futures = new ArrayList<>();
 	final List<Closeable> closeables = new ArrayList<>();
 	final List<Metrics> metrics = new ArrayList<>();
 	
-	Verify(String name) {
-		this.name = name;
-		this.result = new VerifyResult(name);
+	Verify() {
+		this.result = new VerifyResult();
+	}
+	
+	public void setName(String name) {
+		if(name == null || name.isBlank()) throw new RuntimeException("No blank Verify names allowed");
+		this.result.setName(name);
 	}
 	
 	/**
