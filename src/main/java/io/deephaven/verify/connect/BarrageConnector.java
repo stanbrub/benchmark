@@ -87,7 +87,7 @@ public class BarrageConnector implements AutoCloseable {
 	        	future.done();
 				return new Snapshot(handle, snapshot);
 			} catch(Exception ex) {
-				throw new RuntimeException("Failed to fetch ticking table data: " + table, ex);
+				throw new RuntimeException("Failed to fetch snapshot table data: " + table, ex);
 			} finally {
 				
 			}

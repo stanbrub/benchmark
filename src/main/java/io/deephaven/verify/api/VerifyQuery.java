@@ -69,7 +69,7 @@ final public class VerifyQuery implements Closeable {
 				metrics.set("duration.secs", timer.duration().toMillis() / 1000.0);
 				verify.addFuture(f);
 			} catch(Exception ex) {
-				throw new RuntimeException("Failed to get snapshot of table: " + e.getKey());
+				throw new RuntimeException("Failed to get snapshot of table: " + e.getKey(), ex);
 			}
 		});
 	}

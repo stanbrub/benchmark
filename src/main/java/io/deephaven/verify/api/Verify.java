@@ -16,6 +16,7 @@ import io.deephaven.verify.util.Timer;
  */
 final public class Verify {
 	static final Profile profile = new Profile();
+	static final Platform platform = new Platform();
 
 	static public Verify create(Object testInst) {
 		return create(testInst.getClass().getSimpleName());
@@ -133,6 +134,7 @@ final public class Verify {
 		}
 		closeables.clear();
 		result.commit();
+		platform.ensureCommit();
 	}
 	
 	Metrics awaitCompletion(Future<Metrics> future) {

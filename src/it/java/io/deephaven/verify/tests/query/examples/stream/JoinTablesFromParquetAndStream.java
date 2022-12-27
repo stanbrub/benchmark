@@ -15,8 +15,6 @@ public class JoinTablesFromParquetAndStream {
 	
 	@Before
 	public void setup() {
-		var tm = api.timer();
-		
 		api.table("stock_info").fixed()
 			.add("symbol", "string", "SYM[1-10000]")
 			.add("description", "string", "ABC[1-10000] CORP")
@@ -29,8 +27,6 @@ public class JoinTablesFromParquetAndStream {
 			.add("buys", "int", "[1-100]")
 			.add("sells", "int", "[1-100]")
 			.generateParquet();
-		
-		api.result().setup(tm, scaleRowCount + 10000);
 	}
 	
 	/**
@@ -150,9 +146,7 @@ public class JoinTablesFromParquetAndStream {
 
 	@After
 	public void teardown() {
-		var tm = api.timer();
 		api.close();
-		api.result().teardown(tm, scaleRowCount);
 	}
 
 }

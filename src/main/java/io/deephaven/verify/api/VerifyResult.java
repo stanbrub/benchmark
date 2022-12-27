@@ -13,16 +13,16 @@ import io.deephaven.verify.util.Timer;
 /**
  * Represents the results of a query instance. Results are collected for each and
  * appended to a CSV file when the API is closed after each test. The results focus 
- * on rates for steps in a test like setup, test, teardown.
+ * on rates for the test run
  */
 final public class VerifyResult {
-	static final String resultFileName = "verify-results.csv";
-	static final String[] header = {"name", "timestamp", "duration", "setup", "test", "teardown"};
+	static final String resultFileName = "data/verify-results.csv";
+	static final String[] header = {"name", "timestamp", "duration", "test-rate"};
 	static Path resultFile = null;
 	final Timer timer;
 	final Map<String,Object> rates;
 	final Path file;
-	private String name;
+	private String name = null;
 
 	VerifyResult() {
 		this(initializeResultPath(".", resultFileName));
@@ -36,38 +36,16 @@ final public class VerifyResult {
 	}
 
 	/**
-	 * Record a setup rate for this result instance
-	 * @param timer a started timer measuring the test setup
-	 * @param count the processed item count (e.g. rowCount) 
-	 * @return this result instance
-	 */
-	public VerifyResult setup(Timer timer, long count) {
-		rates.put("setup", new Rate(timer.duration(), count));
-		return this;
-	}
-	
-	/**
 	 * Record a test rate for this result instance
 	 * @param timer a started timer measuring the test
 	 * @param count the processed item count (e.g. rowCount) 
 	 * @return this result instance
 	 */
 	public VerifyResult test(Timer timer, long count) {
-		rates.put("test", new Rate(timer.duration(), count));
+		rates.put("test-rate", new Rate(timer.duration(), count));
 		return this;
 	}
-	
-	/**
-	 * Record a teardown rate for this result instance
-	 * @param duration a started timer measuring the test teardown
-	 * @param count the processed item count (e.g. rowCount) 
-	 * @return this result instance
-	 */
-	public VerifyResult teardown(Timer timer, long count) {
-		rates.put("teardown", new Rate(timer.duration(), count));
-		return this;
-	}
-	
+
 	/**
 	 * Save the collected results a csv file
 	 */
@@ -115,7 +93,8 @@ final public class VerifyResult {
 		
 		resultFile = Paths.get(dir, resultFileName).toAbsolutePath();
 		try {
-			Files.deleteIfExists(resultFile); 
+			Files.createDirectories(resultFile.getParent());
+			Files.deleteIfExists(resultFile);
 			writeLine(Arrays.stream(header).toList(), resultFile);
 			return resultFile;
 		} catch(Exception ex) {

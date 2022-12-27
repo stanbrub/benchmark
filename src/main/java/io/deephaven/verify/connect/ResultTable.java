@@ -7,4 +7,5 @@ public interface ResultTable {
 	public int getRowCount();
 	public Object getValue(int rowIndex, String columnName);
 	public Number getSum(String columnName);
+	public ResultTable findRows(String columnName, Object value);
 }

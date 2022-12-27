@@ -20,9 +20,7 @@ public class VerifyResultTest {
 		Files.deleteIfExists(result.file);
 		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
 		
-		result.setup(timer(20), 1234);
 		result.test(timer(123), 1234);
-		result.teardown(timer(11), 1234);
 		Thread.sleep(200);
 		result.commit();
 		
@@ -30,13 +28,11 @@ public class VerifyResultTest {
 		
 		List<String[]> csv = getResult(result);
 		assertEquals("Wrong line count", 2, csv.size());
-		assertEquals("Wrong header", "[name, timestamp, duration, setup, test, teardown]", Arrays.toString(csv.get(0)));
+		assertEquals("Wrong header", "[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)));
 		assertEquals("Wrong name", "mytest", csv.get(1)[0]);
 		assertEquals("Wrong timestamp", result.timer.beginTime, Long.parseLong(csv.get(1)[1]));
 		assertTrue("Wrong duration", Float.parseFloat(csv.get(1)[2]) >= 0.200);
-		assertEquals("Wrong setup rate", 61700.0f, Float.parseFloat(csv.get(1)[3]), 0.0);
-		assertEquals("Wrong test rate", 10032.5205f, Float.parseFloat(csv.get(1)[4]), 0.01);
-		assertEquals("Wrong teardown rate", 112181.82f, Float.parseFloat(csv.get(1)[5]), 0.01);
+		assertEquals("Wrong test rate", 10032.5205f, Float.parseFloat(csv.get(1)[3]), 0.01);
 	}
 	
 	@Test
@@ -47,24 +43,20 @@ public class VerifyResultTest {
 		Files.deleteIfExists(result.file);
 		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
 		
-		result.setup(timer(20), 1234);
 		result.test(timer(123), 1234);
-		result.teardown(timer(11), 1234);
 		result.commit();
 		
 		result = new VerifyResult(resultFile);
 		result.setName("mytest2");
 		
-		result.setup(timer(30), 2345);
 		result.test(timer(321), 2345);
-		result.teardown(timer(12), 2345);
 		result.commit();
 		
 		assertTrue("Missing result file: " + result.file, Files.exists(result.file));
 		
 		List<String[]> csv = getResult(result);
 		assertEquals("Wrong line count", 3, csv.size());
-		assertEquals("Wrong header", "[name, timestamp, duration, setup, test, teardown]", Arrays.toString(csv.get(0)));
+		assertEquals("Wrong header", "[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)));
 		assertEquals("Wrong name", "mytest", csv.get(1)[0]);
 		assertEquals("Wrong name", "mytest2", csv.get(2)[0]);
 	}
