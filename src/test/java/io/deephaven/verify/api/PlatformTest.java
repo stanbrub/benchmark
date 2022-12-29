@@ -1,10 +1,10 @@
 package io.deephaven.verify.api;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 import io.deephaven.verify.connect.CsvTable;
 import io.deephaven.verify.connect.ResultTable;
 
@@ -17,14 +17,14 @@ public class PlatformTest {
 		platform.ensureCommit();
 		
 		var lines = Files.readAllLines(outFile);
-		assertEquals("Wrong row count", 15, lines.size());
-		assertEquals("Wrong header", "node,name,value", lines.get(0));
-		assertTrue("Wrong values: " + lines.get(1), lines.get(1).matches("test-runner,java.version,[0-9.]+"));
-		assertTrue("Wrong values: " + lines.get(3), lines.get(3).matches("test-runner,java.class.version,[0-9.]+"));
-		assertTrue("Wrong values: " + lines.get(7), lines.get(7).matches("test-runner,java.max.memory,[0-9]+[.][0-9]{2}G"));
-		assertEquals("Wrong values", "deephaven-engine,java.version,17.0.5", lines.get(8));
-		assertEquals("Wrong values", "deephaven-engine,java.class.version,61.0", lines.get(10));
-		assertEquals("Wrong values", "deephaven-engine,java.max.memory,42.00G", lines.get(14));
+		assertEquals(15, lines.size(), "Wrong row count");
+		assertEquals("node,name,value", lines.get(0), "Wrong header");
+		assertTrue(lines.get(1).matches("test-runner,java.version,[0-9.]+"), "Wrong values: " + lines.get(1));
+		assertTrue(lines.get(3).matches("test-runner,java.class.version,[0-9.]+"), "Wrong values: " + lines.get(3));
+		assertTrue(lines.get(7).matches("test-runner,java.max.memory,[0-9]+[.][0-9]{2}G"), "Wrong values: " + lines.get(7));
+		assertEquals("deephaven-engine,java.version,17.0.5", lines.get(8), "Wrong values");
+		assertEquals("deephaven-engine,java.class.version,61.0", lines.get(10), "Wrong values");
+		assertEquals("deephaven-engine,java.max.memory,42.00G", lines.get(14), "Wrong values");
 	}
 	
 	

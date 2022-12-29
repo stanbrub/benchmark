@@ -1,9 +1,9 @@
 package io.deephaven.verify.jfr;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
-@Ignore
+@Disabled
 public class TestJfrReader {
 	
 	@Test

@@ -1,7 +1,7 @@
 package io.deephaven.verify.connect;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class CsvTableTest {
 	String csv = 
@@ -17,22 +17,22 @@ public class CsvTableTest {
 	public void fromBarrageCsv() {
 		CsvTable table = new CsvTable(csv, "|");
 		
-		assertEquals("Wrong columns", "[RowPosition, RowKey, symbol, AvgPrice, Total, RecCount]", table.getColumnNames().toString());
-		assertEquals("Wrong row count", 3, table.getRowCount());
-		assertEquals("Wrong row value", "0", table.getValue(0, "RowPosition"));
-		assertEquals("Wrong row value", "MSFT", table.getValue(2, "symbol"));
-		assertEquals("Wrong sum agg", 18.0, table.getSum("AvgPrice"));
+		assertEquals("[RowPosition, RowKey, symbol, AvgPrice, Total, RecCount]", table.getColumnNames().toString(), "Wrong columns");
+		assertEquals(3, table.getRowCount(), "Wrong row count");
+		assertEquals("0", table.getValue(0, "RowPosition"), "Wrong row value");
+		assertEquals("MSFT", table.getValue(2, "symbol"), "Wrong row value");
+		assertEquals(18.0, table.getSum("AvgPrice"), "Wrong sum agg");
 	}
 	
 	@Test
 	public void findRows() {
 		CsvTable table = new CsvTable(csv, "|");
 		ResultTable other = table.findRows("Total", "10.0");
-		assertEquals("Wrong row count", 2, other.getRowCount());
+		assertEquals(2, other.getRowCount(), "Wrong row count");
 		
 		other = table.findRows("Total", "14.0");
-		assertEquals("Wrong row count", 1, other.getRowCount());
-		assertEquals("Wrong row key", "MSFT", other.getValue(0, "symbol"));
+		assertEquals(1, other.getRowCount(), "Wrong row count");
+		assertEquals("MSFT", other.getValue(0, "symbol"), "Wrong row key");
 	}
 
 }

@@ -1,7 +1,8 @@
 package io.deephaven.verify.api;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+
 
 public class ProfileTest {
 	
@@ -9,15 +10,15 @@ public class ProfileTest {
 	public void property() {
 		Profile profile = new Profile("test-profile.properties");
 		
-		assertEquals("Wrong host value", "localhost:8080", profile.property("test.host", "n/a"));
-		assertEquals("Wrong nano str value", "1 nanos", profile.property("test.duration1", "n/a"));
-		assertEquals("Wrong nano value", 1, profile.propertyAsDuration("test.duration1", "n/a").toNanos());
-		assertEquals("Wrong millis value", 2, profile.propertyAsDuration("test.duration2", "n/a").toMillis());
-		assertEquals("Wrong seconds value", 3, profile.propertyAsDuration("test.duration3", "n/a").toSeconds());
-		assertEquals("Wrong minutes value", 4, profile.propertyAsDuration("test.duration4", "n/a").toMinutes());
+		assertEquals("localhost:8080", profile.property("test.host", "n/a"), "Wrong host value");
+		assertEquals("1 nanos", profile.property("test.duration1", "n/a"), "Wrong nano str value");
+		assertEquals(1, profile.propertyAsDuration("test.duration1", "n/a").toNanos(), "Wrong nano value");
+		assertEquals(2, profile.propertyAsDuration("test.duration2", "n/a").toMillis(), "Wrong millis value");
+		assertEquals(3, profile.propertyAsDuration("test.duration3", "n/a").toSeconds(), "Wrong seconds value");
+		assertEquals(4, profile.propertyAsDuration("test.duration4", "n/a").toMinutes(), "Wrong minutes value");
 		
-		assertEquals("Wrong profile name", System.getProperty("user.dir"), profile.property("user.dir", "n/a"));
-		assertEquals("Wrong default value", 11, profile.propertyAsDuration("this.prop.is.not.anywhere", "11 nanos").toNanos());
+		assertEquals(System.getProperty("user.dir"), profile.property("user.dir", "n/a"), "Wrong profile name");
+		assertEquals(11, profile.propertyAsDuration("this.prop.is.not.anywhere", "11 nanos").toNanos(), "Wrong default value");
 	}
 	
 }

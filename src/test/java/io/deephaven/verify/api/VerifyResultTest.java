@@ -1,12 +1,11 @@
 package io.deephaven.verify.api;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.nio.file.*;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.*;
-
+import org.junit.jupiter.api.*;
 import io.deephaven.verify.util.Timer;
 
 public class VerifyResultTest {
@@ -18,21 +17,21 @@ public class VerifyResultTest {
 		result.setName("mytest");
 		
 		Files.deleteIfExists(result.file);
-		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
+		assertFalse(Files.exists(result.file), "Result file exists: " + result.file);
 		
 		result.test(timer(123), 1234);
 		Thread.sleep(200);
 		result.commit();
 		
-		assertTrue("Missing result file: " + result.file, Files.exists(result.file));
+		assertTrue(Files.exists(result.file), "Missing result file: " + result.file);
 		
 		List<String[]> csv = getResult(result);
-		assertEquals("Wrong line count", 2, csv.size());
-		assertEquals("Wrong header", "[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)));
-		assertEquals("Wrong name", "mytest", csv.get(1)[0]);
-		assertEquals("Wrong timestamp", result.timer.beginTime, Long.parseLong(csv.get(1)[1]));
-		assertTrue("Wrong duration", Float.parseFloat(csv.get(1)[2]) >= 0.200);
-		assertEquals("Wrong test rate", 10032.5205f, Float.parseFloat(csv.get(1)[3]), 0.01);
+		assertEquals(2, csv.size(), "Wrong line count");
+		assertEquals("[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)), "Wrong header");
+		assertEquals("mytest", csv.get(1)[0], "Wrong name");
+		assertEquals(result.timer.beginTime, Long.parseLong(csv.get(1)[1]), "Wrong timestamp");
+		assertTrue(Float.parseFloat(csv.get(1)[2]) >= 0.200, "Wrong duration");
+		assertEquals(10032.5205f, Float.parseFloat(csv.get(1)[3]), 0.01, "Wrong test rate");
 	}
 	
 	@Test
@@ -41,7 +40,7 @@ public class VerifyResultTest {
 		result.setName("mytest");
 		
 		Files.deleteIfExists(result.file);
-		assertFalse("Result file exists: " + result.file, Files.exists(result.file));
+		assertFalse(Files.exists(result.file), "Result file exists: " + result.file);
 		
 		result.test(timer(123), 1234);
 		result.commit();
@@ -52,13 +51,13 @@ public class VerifyResultTest {
 		result.test(timer(321), 2345);
 		result.commit();
 		
-		assertTrue("Missing result file: " + result.file, Files.exists(result.file));
+		assertTrue(Files.exists(result.file), "Missing result file: " + result.file);
 		
 		List<String[]> csv = getResult(result);
-		assertEquals("Wrong line count", 3, csv.size());
-		assertEquals("Wrong header", "[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)));
-		assertEquals("Wrong name", "mytest", csv.get(1)[0]);
-		assertEquals("Wrong name", "mytest2", csv.get(2)[0]);
+		assertEquals(3, csv.size(), "Wrong line count");
+		assertEquals("[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)), "Wrong header");
+		assertEquals("mytest", csv.get(1)[0], "Wrong name");
+		assertEquals("mytest2", csv.get(2)[0], "Wrong name");
 	}
 	
 	private Path getResource(String fileName) {

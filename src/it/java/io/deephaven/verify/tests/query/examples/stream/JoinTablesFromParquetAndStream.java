@@ -1,7 +1,7 @@
 package io.deephaven.verify.tests.query.examples.stream;
 
-import static org.junit.Assert.*;
-import org.junit.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 import io.deephaven.verify.api.Verify;
 
 /**
@@ -13,7 +13,7 @@ public class JoinTablesFromParquetAndStream {
 	final Verify api = Verify.create(this);
 	private long scaleRowCount = api.propertyAsIntegral("scale.row.count", "10000");
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 		api.table("stock_info").fixed()
 			.add("symbol", "string", "SYM[1-10000]")
@@ -75,7 +75,7 @@ public class JoinTablesFromParquetAndStream {
 		var tm = api.timer();
 		api.query(query).fetchAfter("record_count", table->{
 			int recCount = table.getSum("RecordCount").intValue();
-			assertEquals("Wrong record count", scaleRowCount, recCount);
+			assertEquals(scaleRowCount, recCount, "Wrong record count");
 		}).execute();
 		
 		api.awaitCompletion();
@@ -137,14 +137,14 @@ public class JoinTablesFromParquetAndStream {
 		var tm = api.timer();
 		api.query(query).fetchAfter("record_count", table->{
 			int recCount = table.getSum("RecordCount").intValue();
-			assertEquals("Wrong record count", scaleRowCount, recCount);
+			assertEquals(scaleRowCount, recCount, "Wrong record count");
 		}).execute();
 		
 		api.awaitCompletion();
 		api.result().test(tm, scaleRowCount);
 	}
 
-	@After
+	@AfterEach
 	public void teardown() {
 		api.close();
 	}

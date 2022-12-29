@@ -1,7 +1,7 @@
 package io.deephaven.verify.tests.query.examples.stream;
 
-import static org.junit.Assert.*;
-import org.junit.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.*;
 import io.deephaven.verify.api.Verify;
 
 /**
@@ -14,7 +14,7 @@ public class JoinTablesFromKafkaStream {
 	final Verify api = Verify.create(this);
 	final long scaleRowCount = api.propertyAsIntegral("scale.row.count", "1000");
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 		api.table("stock_info").fixed()
 			.add("symbol", "string", "SYM[1-10000]")
@@ -45,7 +45,8 @@ public class JoinTablesFromKafkaStream {
 	 * use of <code>verify_api_</code> functions for Kafka consumers and table waiting.<p/>
 	 * Properties (e.g. ${kafka.consumer.addr}) are automatically filled in during query execution.
 	 */
-	@Test public void joinTwoTablesFromKafkaStream_Longhand() {
+	@Test 
+	public void joinTwoTablesFromKafkaStream_Longhand() {
 		api.setName("Join Two Tables Using Kakfa Streams - Longhand Query");
 		
 		var query = 
@@ -99,10 +100,10 @@ public class JoinTablesFromKafkaStream {
 		var tm = api.timer();
 		api.query(query).fetchAfter("record_count", table->{
 			int recCount = table.getSum("RecordCount").intValue();
-			assertEquals("Wrong record count", scaleRowCount, recCount);
+			assertEquals(scaleRowCount, recCount, "Wrong record count");
 		}).execute();
 		api.awaitCompletion();
-		api.result().test(tm, scaleRowCount);	
+		api.result().test(tm, scaleRowCount);
 	}
 
 	/**
@@ -118,7 +119,8 @@ public class JoinTablesFromKafkaStream {
 	 * use of <code>verify_api_</code> functions for Kafka consumers and table waiting.<p/>
 	 * Properties (e.g. ${kafka.consumer.addr}) are automatically filled in during query execution.
 	 */
-	@Test public void joinTwoTablesFromKafkaStream_Shorthand() {
+	@Test 
+	public void joinTwoTablesFromKafkaStream_Shorthand() {
 		api.setName("Join Two Tables Using Kakfa Streams - Shorthand Query");
 		
 		var query = 
@@ -154,7 +156,7 @@ public class JoinTablesFromKafkaStream {
 		var tm = api.timer();
 		api.query(query).fetchAfter("record_count", table->{
 			int recCount = table.getSum("RecordCount").intValue();
-			assertEquals("Wrong record count", scaleRowCount, recCount);
+			assertEquals(scaleRowCount, recCount, "Wrong record count");
 		}).execute();
 		api.awaitCompletion();
 		api.result().test(tm, scaleRowCount);
@@ -171,7 +173,8 @@ public class JoinTablesFromKafkaStream {
 	 * </ol>
 	 * Properties (e.g. ${scale.row.count) are automatically filled in during query execution.
 	 */
-	@Test public void countRecordsFromKafkaStream() {
+	@Test 
+	public void countRecordsFromKafkaStream() {
 		api.setName("Count Records From Kakfa Stream");
 		var query = 
 		"""
@@ -190,7 +193,7 @@ public class JoinTablesFromKafkaStream {
 		api.result().test(tm, scaleRowCount);
 	}
 
-	@After
+	@AfterEach
 	public void teardown() {
 		api.close();
 	}

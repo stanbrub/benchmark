@@ -12,6 +12,7 @@ Results for a test run are output to the console and stored in the current direc
 
 More Resources:
 - [Verify - Bencher Comparison](VerifyVersusBencher.md)
+- [Verify - Command Line](VerifyCommandLine.md)
 
 
 ## Entry into the Verify API

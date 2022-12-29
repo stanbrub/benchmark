@@ -1,7 +1,7 @@
 package io.deephaven.verify.tests.query;
 
-import static org.junit.Assert.*;
-import org.junit.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 import io.deephaven.verify.api.Verify;
 
 public class KafkaToParquetStream {
@@ -29,13 +29,13 @@ public class KafkaToParquetStream {
 		""";
 		
 		api.query(query).fetchAfter("result", table->{
-			assertEquals("Wrong record count", scaleRowCount, table.getSum("RecCount").longValue());
+			assertEquals(scaleRowCount, table.getSum("RecCount").longValue(), "Wrong record count");
 		}).execute();
 		api.awaitCompletion();
 		
 	}
 
-	@After
+	@AfterEach
 	public void teardown() {
 		api.close();
 	}
