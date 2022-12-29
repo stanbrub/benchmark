@@ -1,11 +1,16 @@
 package io.deephaven.verify.api;
 
 import java.io.Closeable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import io.deephaven.verify.util.Filer;
 import io.deephaven.verify.util.Log;
 import io.deephaven.verify.util.Metrics;
 import io.deephaven.verify.util.Timer;
@@ -15,13 +20,14 @@ import io.deephaven.verify.util.Timer;
  * JUnit test to start things off
  */
 final public class Verify {
+	static final Path outputDir = initializeOutputDirectory(Paths.get("data"));
 	static final Profile profile = new Profile();
-	static final Platform platform = new Platform();
+	static final Platform platform = new Platform(outputDir);
 
 	static public Verify create(Object testInst) {
 		return create(testInst.getClass().getSimpleName());
 	}
-	
+
 	static public Verify create(String name) {
 		setSessionTimeout();
 		Verify v = new Verify();
@@ -30,17 +36,20 @@ final public class Verify {
 	}
 
 	final VerifyResult result;
+	final QueryLog queryLog;
 	final List<Future<Metrics>> futures = new ArrayList<>();
 	final List<Closeable> closeables = new ArrayList<>();
 	final List<Metrics> metrics = new ArrayList<>();
 	
 	Verify() {
-		this.result = new VerifyResult();
+		this.result = new VerifyResult(outputDir);
+		this.queryLog = new QueryLog(outputDir);
 	}
 	
 	public void setName(String name) {
 		if(name == null || name.isBlank()) throw new RuntimeException("No blank Verify names allowed");
 		this.result.setName(name);
+		this.queryLog.setName(name);
 	}
 	
 	/**
@@ -90,7 +99,7 @@ final public class Verify {
 	 * @return a query configuration instance
 	 */
 	public VerifyQuery query(String logic) {
-		return addCloseable(new VerifyQuery(this, logic));
+		return addCloseable(new VerifyQuery(this, logic, queryLog));
 	}
 	
 	/**
@@ -157,6 +166,15 @@ final public class Verify {
 	<T extends Future<Metrics>> T addFuture(T future) {
 		futures.add(future);
 		return future;
+	}
+	
+	static private Path initializeOutputDirectory(Path dir) {
+		Filer.deleteAll(dir);
+		try {
+			return Files.createDirectories(dir);
+		} catch(Exception ex) {
+			throw new RuntimeException("Failed to delete verify result directory: " + dir, ex);
+		}
 	}
 	
 	static private void setSessionTimeout() {

@@ -14,6 +14,15 @@ public class Ids {
 	static private long lastTime = System.currentTimeMillis();
 	
 	/**
+	 * Replace any characters in the given name that may not be safe to use as a file name
+	 * @param name prospective file name
+	 * @return a name with file name safe characters
+	 */
+	static public String getFileSafeName(String name) {
+		return name.replaceAll("[^A-Za-z0-9_.-]", "_");
+	}
+	
+	/**
 	 * Return a unique identifier (not a UUID)
 	 * ex. Fd7YDsw.1.bjSAVA
 	 * @return the unique name

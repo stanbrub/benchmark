@@ -3,35 +3,33 @@ package io.deephaven.verify.api;
 import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicReference;
 import io.deephaven.verify.connect.ResultTable;
 
 class Platform {
-	static final String platformFileName = "data/verify-platform.csv";
+	static final String platformFileName = "verify-platform.csv";
 	static final String[] header = {"node", "name", "value"};
 	final Path platformFile;
 	private boolean hasBeenCommitted = false;
 
-	Platform() {
-		this(Paths.get(".", platformFileName));
+	Platform(Path parent) {
+		this(parent, platformFileName);
 	}
 	
-	Platform(Path platformFile) {
-		this.platformFile = platformFile;
+	Platform(Path parent, String platformFileName) {
+		this.platformFile = parent.resolve(platformFileName);
 	}
 	
 	void ensureCommit() {
 		if(hasBeenCommitted) return;
 		hasBeenCommitted = true;
-		Path file = initializePath(platformFile);
-		try(BufferedWriter out = Files.newBufferedWriter(file)) {
+		try(BufferedWriter out = Files.newBufferedWriter(platformFile)) {
 			out.write(String.join(",", header));
 			out.newLine();
 			writeTestProps(out);
 			writeEngineProps(out);
 		} catch(Exception ex) {
-			throw new RuntimeException("Failed to write platform file: " + file, ex);
+			throw new RuntimeException("Failed to write platform file: " + platformFile, ex);
 		}
 	}
 	
@@ -95,16 +93,5 @@ class Platform {
 		var g = (float)(Long.parseLong(num.toString().trim()) / 1024.0 / 1024.0 / 1024.0);
 		return String.format("%.2f", g) + "G";
 	}
-	
-	static Path initializePath(Path platformFile) {
-		Path file = platformFile.toAbsolutePath();
-		try {
-			Files.createDirectories(file.getParent());
-			Files.deleteIfExists(file);
-			return file;
-		} catch(Exception ex) {
-			throw new RuntimeException("Failed to delete platform file: " + file, ex);
-		}
-	}
-	
+
 }

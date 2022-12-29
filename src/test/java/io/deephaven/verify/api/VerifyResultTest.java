@@ -9,11 +9,11 @@ import org.junit.jupiter.api.*;
 import io.deephaven.verify.util.Timer;
 
 public class VerifyResultTest {
-	final private Path resultFile = getResource("test-result.csv");
+	final private Path parent = getResourceParent();
 
 	@Test
 	public void single() throws Exception {
-		VerifyResult result = new VerifyResult(resultFile);
+		VerifyResult result = new VerifyResult(parent, "test-result.csv");
 		result.setName("mytest");
 		
 		Files.deleteIfExists(result.file);
@@ -36,7 +36,7 @@ public class VerifyResultTest {
 	
 	@Test
 	public void multi() throws Exception {
-		VerifyResult result = new VerifyResult(resultFile);
+		VerifyResult result = new VerifyResult(parent, "test-result.csv");
 		result.setName("mytest");
 		
 		Files.deleteIfExists(result.file);
@@ -45,7 +45,7 @@ public class VerifyResultTest {
 		result.test(timer(123), 1234);
 		result.commit();
 		
-		result = new VerifyResult(resultFile);
+		result = new VerifyResult(parent, "test-result.csv");
 		result.setName("mytest2");
 		
 		result.test(timer(321), 2345);
@@ -60,9 +60,9 @@ public class VerifyResultTest {
 		assertEquals("mytest2", csv.get(2)[0], "Wrong name");
 	}
 	
-	private Path getResource(String fileName) {
+	private Path getResourceParent() {
 		try {
-			return Paths.get(getClass().getResource("test-profile.properties").toURI()).resolveSibling(fileName);
+			return Paths.get(getClass().getResource("test-profile.properties").toURI()).getParent();
 		} catch(Exception ex) {
 			throw new RuntimeException("Failed to get resource dir", ex);
 		}

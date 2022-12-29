@@ -88,12 +88,12 @@ public class JoinTablesFromKafkaStream {
 		stock_exchange = stock_volume.agg_by([agg.sum_('Volume'), agg.sum_('RecordCount')], by=['Exchange'])
 		record_count = stock_exchange.agg_by([agg.sum_('RecordCount')])
 		
-		def wait_ticking_table_update(table: Table, row_count: int):
+		def verify_api_await_table_size(table: Table, row_count: int):
 			with exclusive_lock():
 				while table.j_table.size() < row_count:
 					table.j_table.awaitUpdate()
 
-		wait_ticking_table_update(kafka_stock_trans, ${scale.row.count})
+		verify_api_await_table_size(kafka_stock_trans, ${scale.row.count})
 		
 		""";
 
@@ -179,8 +179,6 @@ public class JoinTablesFromKafkaStream {
 		var query = 
 		"""
 		from deephaven import agg
-		from deephaven.table import Table
-		from deephaven.ugp import exclusive_lock
 		
 		kafka_stock_trans = verify_api_kafka_consume('stock_trans', 'append')
 		verify_api_await_table_size(kafka_stock_trans, ${scale.row.count})

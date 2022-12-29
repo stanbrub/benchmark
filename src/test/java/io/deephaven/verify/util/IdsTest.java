@@ -19,4 +19,9 @@ public class IdsTest {
 		}
 	}
 	
+	@Test
+	public void getFileSafeName() {
+		assertEquals("This_is_a_test", Ids.getFileSafeName("This is a test"), "Wrong safe name");
+	}
+	
 }

@@ -12,11 +12,11 @@ public class PlatformTest {
 
 	@Test
 	public void ensureCommit() throws Exception {
-		Path outFile = Paths.get(getClass().getResource("test-profile.properties").toURI()).resolveSibling("platform-test.out");
-		var platform = new LocalPlatform(outFile);
+		Path outParent = Paths.get(getClass().getResource("test-profile.properties").toURI()).getParent();
+		var platform = new LocalPlatform(outParent, "platform-test.out");
 		platform.ensureCommit();
 		
-		var lines = Files.readAllLines(outFile);
+		var lines = Files.readAllLines(outParent.resolve("platform-test.out"));
 		assertEquals(15, lines.size(), "Wrong row count");
 		assertEquals("node,name,value", lines.get(0), "Wrong header");
 		assertTrue(lines.get(1).matches("test-runner,java.version,[0-9.]+"), "Wrong values: " + lines.get(1));
@@ -29,8 +29,8 @@ public class PlatformTest {
 	
 	
 	static class LocalPlatform extends Platform {
-		LocalPlatform(Path file) {
-			super(file);
+		LocalPlatform(Path dir, String fileName) {
+			super(dir, fileName);
 		}
 		
 		@Override

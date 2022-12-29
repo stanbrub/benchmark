@@ -20,13 +20,15 @@ import io.deephaven.verify.util.Timer;
 final public class VerifyQuery implements Closeable {
 	final Verify verify;
 	final String logic;
+	final QueryLog queryLog;
 	final Map<String,Consumer<ResultTable>> snapshotFetchers = new LinkedHashMap<>();
 	final Map<String,Function<ResultTable,Boolean>> tickingFetchers = new LinkedHashMap<>();
 	private BarrageConnector session = null;
 	
-	VerifyQuery(Verify verify, String logic) {
+	VerifyQuery(Verify verify, String logic, QueryLog queryLog) {
 		this.verify = verify;
 		this.logic = Verify.profile.replaceProperties(logic);
+		this.queryLog = queryLog;
 	}
 	
 	/**
@@ -91,6 +93,7 @@ final public class VerifyQuery implements Closeable {
 		}
 		session.executeQuery(Verify.profile.replaceProperties(Snippets.getFunctions(logic)));
 		session.executeQuery(logic);
+		queryLog.logQuery(logic);
 	}
 
 }
