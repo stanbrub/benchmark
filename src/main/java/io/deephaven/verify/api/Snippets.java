@@ -54,7 +54,7 @@ class Snippets {
 	}
 	
 	static String getFunction(String functionName, String functionDef, String query) {
-		return query.contains(functionName)?functionDef:"";
+		return query.contains(functionName)?(functionDef+System.lineSeparator()):"";
 	}
 
 }

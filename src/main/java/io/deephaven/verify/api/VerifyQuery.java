@@ -27,7 +27,7 @@ final public class VerifyQuery implements Closeable {
 	
 	VerifyQuery(Verify verify, String logic, QueryLog queryLog) {
 		this.verify = verify;
-		this.logic = Verify.profile.replaceProperties(logic);
+		this.logic = logic;
 		this.queryLog = queryLog;
 	}
 	
@@ -91,9 +91,14 @@ final public class VerifyQuery implements Closeable {
 			String deephavenServer = verify.property("deephaven.addr", "localhost:10000");
 			session = new BarrageConnector(deephavenServer);	
 		}
-		session.executeQuery(Verify.profile.replaceProperties(Snippets.getFunctions(logic)));
-		session.executeQuery(logic);
-		queryLog.logQuery(logic);
+		String snippetsLogic = Verify.profile.replaceProperties(Snippets.getFunctions(logic));
+		if(!snippetsLogic.isBlank()) {
+			queryLog.logQuery(snippetsLogic);
+			session.executeQuery(snippetsLogic);
+		}
+		String userLogic = Verify.profile.replaceProperties(logic);
+		session.executeQuery(userLogic);
+		queryLog.logQuery(userLogic);
 	}
 
 }

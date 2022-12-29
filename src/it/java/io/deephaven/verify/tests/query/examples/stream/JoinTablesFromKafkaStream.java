@@ -88,12 +88,12 @@ public class JoinTablesFromKafkaStream {
 		stock_exchange = stock_volume.agg_by([agg.sum_('Volume'), agg.sum_('RecordCount')], by=['Exchange'])
 		record_count = stock_exchange.agg_by([agg.sum_('RecordCount')])
 		
-		def verify_api_await_table_size(table: Table, row_count: int):
+		def await_table_size(table: Table, row_count: int):
 			with exclusive_lock():
 				while table.j_table.size() < row_count:
 					table.j_table.awaitUpdate()
 
-		verify_api_await_table_size(kafka_stock_trans, ${scale.row.count})
+		await_table_size(kafka_stock_trans, ${scale.row.count})
 		
 		""";
 

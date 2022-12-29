@@ -40,7 +40,8 @@ public class JoinTablesFromParquetAndStream {
 	 * </ol>
 	 * Properties (e.g. ${kafka.consumer.addr}) are automatically filled in during query execution.
 	 */
-	@Test public void joinTwoTablesFromParquetViews() {
+	@Test 
+	public void joinTwoTablesFromParquetViews() {
 		api.setName("Join Two Tables Using Parquet File Views");
 		
 		var query = 
@@ -93,8 +94,9 @@ public class JoinTablesFromParquetAndStream {
 	 * </ol>
 	 * Properties (e.g. ${kafka.consumer.addr}) are automatically filled in during query execution.
 	 */
-	@Test public void joinTwoTablesFromParquetFileIncRelease() {
-		api.setName("Join Two Tables Using Incremental Release of Paquet File Records");
+	@Test 
+	public void joinTwoTablesFromParquetFileIncRelease() {
+		api.setName("Join Two Tables Using Incremental Release of Parquet File Records");
 		
 		var query = 
 		"""

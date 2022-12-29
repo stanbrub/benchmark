@@ -25,25 +25,24 @@ final public class Verify {
 	static final Platform platform = new Platform(outputDir);
 
 	static public Verify create(Object testInst) {
-		return create(testInst.getClass().getSimpleName());
-	}
-
-	static public Verify create(String name) {
 		setSessionTimeout();
-		Verify v = new Verify();
-		v.setName(name);
+		Verify v = new Verify(testInst);
+		v.setName(testInst.getClass().getSimpleName());
 		return v;
 	}
 
+	final Object testInst;
 	final VerifyResult result;
 	final QueryLog queryLog;
 	final List<Future<Metrics>> futures = new ArrayList<>();
 	final List<Closeable> closeables = new ArrayList<>();
 	final List<Metrics> metrics = new ArrayList<>();
 	
-	Verify() {
+	Verify(Object testInst) {
+		this.testInst = testInst;
 		this.result = new VerifyResult(outputDir);
-		this.queryLog = new QueryLog(outputDir);
+		this.queryLog = new QueryLog(outputDir, testInst);
+		addCloseable(queryLog);
 	}
 	
 	public void setName(String name) {
@@ -138,7 +137,7 @@ final public class Verify {
 			try {
 				c.close();
 			} catch(Exception ex) {
-				throw new RuntimeException("Failed to close: " + c.getClass().getSimpleName(), ex);
+				throw new RuntimeException("Failed to close: " + c.getClass().getName(), ex);
 			}
 		}
 		closeables.clear();

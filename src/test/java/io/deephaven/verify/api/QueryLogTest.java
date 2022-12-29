@@ -9,36 +9,59 @@ public class QueryLogTest {
 	@Test
 	public void logQuery() throws Exception {
 		Path outParent = Paths.get(getClass().getResource("test-profile.properties").toURI()).getParent();
-		var qlog = new QueryLog(outParent);
-		qlog.setName("This is a Test Name");
-		Files.deleteIfExists(qlog.getLogFile());
+		Files.deleteIfExists(QueryLog.getLogFile(outParent, this));
+		
+		var qlog = new QueryLog(outParent, this);
+		qlog.setName(getClass().getSimpleName());
 		qlog.logQuery(
 		"""
-		from deephaven import agg
-		from deephaven.table import Table
-		from deephaven.ugp import exclusive_lock
-		
-		kafka_stock_trans = verify_api_kafka_consume('stock_trans', 'append')
-		verify_api_await_table_size(kafka_stock_trans, 100000)
+		setup test
+		"""
+		);
+		qlog.setName("1st Test");
+		qlog.logQuery(
+		"""
+		query1 
+		query line
 		"""
 		);
 		
 		qlog.logQuery(
 		"""
-		from deephaven import agg
-		
-		kafka_stock_trans = verify_api_kafka_consume('stock_trans', 'append')
-		verify_api_await_table_size(kafka_stock_trans, 20000})
+		query2
+		query line
 		"""
 		);
 		
-		var lines = Files.readAllLines(qlog.getLogFile());
-		assertEquals(20, lines.size(), "Wrong file line count");
-		assertEquals("# This is a Test Name", lines.get(0), "Wrong title");
-		assertEquals("", lines.get(1), "Should be blank");
-		assertEquals("## Query 1", lines.get(2), "Should be a query title with count");
-		assertEquals("````", lines.get(3), "Should be execute quotes");
-		assertEquals("from deephaven import agg", lines.get(4), "Should be import");
-		assertEquals("## Query 2", lines.get(12), "Should be a query title with count");
+		qlog.close();
+		
+		
+		var expected = 
+		"""
+		# Test Class - io.deephaven.verify.api.QueryLogTest
+
+		## Test - 1st Test
+		
+		### Query 1
+		````
+		setup test
+		````
+		
+		### Query 2
+		````
+		query1
+		query line
+		````
+		
+		### Query 3
+		````
+		query2
+		query line
+		````	
+		""".trim().replace("\r", "");
+		var text = new String(Files.readAllBytes(qlog.logFile)).trim().replace("\r", "");
+		assertEquals(expected, text);
+		
 	}
+
 }
