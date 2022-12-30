@@ -103,8 +103,6 @@ public class JoinTablesFromParquetAndStream {
 		from deephaven.time import now
 		from deephaven import agg
 		from deephaven.parquet import read
-		from deephaven.table import Table
-		from deephaven.ugp import exclusive_lock
 
 		p_stock_info = read('/data/stock_info.parquet')
 			

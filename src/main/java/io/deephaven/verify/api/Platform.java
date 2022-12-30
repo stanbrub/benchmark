@@ -8,7 +8,7 @@ import io.deephaven.verify.connect.ResultTable;
 
 class Platform {
 	static final String platformFileName = "verify-platform.csv";
-	static final String[] header = {"node", "name", "value"};
+	static final String[] header = {"application", "name", "value"};
 	final Path platformFile;
 	private boolean hasBeenCommitted = false;
 

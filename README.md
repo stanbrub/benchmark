@@ -13,10 +13,10 @@ Results for a test run are output to the console and stored in the current direc
 More Resources:
 - [Verify - Bencher Comparison](VerifyVersusBencher.md)
 - [Verify - Command Line](VerifyCommandLine.md)
-
+- [Verify - Results](VerifyResults.md)
 
 ## Entry into the Verify API
-A Veriy API instance allows configuration for test data generation, execution of queries against the Deephaven Engine, and state for test metrics.
+A Verify API instance allows configuration for test data generation, execution of queries against the Deephaven Engine, and state for test metrics.
 ````
 public class AvroKafkaJoinStream {
 	Verify api = Verify.create(this);
