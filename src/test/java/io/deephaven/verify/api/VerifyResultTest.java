@@ -27,7 +27,7 @@ public class VerifyResultTest {
 		
 		List<String[]> csv = getResult(result);
 		assertEquals(2, csv.size(), "Wrong line count");
-		assertEquals("[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)), "Wrong header");
+		assertEquals("[name, timestamp, duration, test-rate, test-row-count]", Arrays.toString(csv.get(0)), "Wrong header");
 		assertEquals("mytest", csv.get(1)[0], "Wrong name");
 		assertEquals(result.timer.beginTime, Long.parseLong(csv.get(1)[1]), "Wrong timestamp");
 		assertTrue(Float.parseFloat(csv.get(1)[2]) >= 0.200, "Wrong duration");
@@ -55,7 +55,7 @@ public class VerifyResultTest {
 		
 		List<String[]> csv = getResult(result);
 		assertEquals(3, csv.size(), "Wrong line count");
-		assertEquals("[name, timestamp, duration, test-rate]", Arrays.toString(csv.get(0)), "Wrong header");
+		assertEquals("[name, timestamp, duration, test-rate, test-row-count]", Arrays.toString(csv.get(0)), "Wrong header");
 		assertEquals("mytest", csv.get(1)[0], "Wrong name");
 		assertEquals("mytest2", csv.get(2)[0], "Wrong name");
 	}

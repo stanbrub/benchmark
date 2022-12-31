@@ -3,32 +3,32 @@ package io.deephaven.verify.api;
 import static java.nio.file.StandardOpenOption.*;
 import java.io.BufferedWriter;
 import java.io.Closeable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 class QueryLog implements Closeable {
-	final Object testInst;
+	final Class<?> testClass;
 	final Path parent;
 	final Path logFile;
 	final List<String> queries = new ArrayList<>();
-	final boolean isTest;
 	private String name = null;
+	private boolean isClosed = false;
 	
-	QueryLog(Path parent, Object testInst) {
-		this.testInst = testInst;
+	QueryLog(Path parent, Class<?> testClass) {
+		this.testClass = testClass;
 		this.parent = parent;
-		this.logFile = getLogFile(parent, testInst);
-		this.isTest = isTest(testInst);
+		this.logFile = getLogFile(parent, testClass);
 	}
 	
 	public void close() {
+		if(isClosed) return;
+		isClosed = true;
+		
 		if(queries.isEmpty()) return;
 		if(!Files.exists(logFile)) {
-			write("# Test Class - " + testInst.getClass().getName(), 2);
+			write("# Test Class - " + testClass.getName(), 2);
 		}
 		write("## Test - " + name, 2);
 		for(int i = 0, n = queries.size(); i < n; i++) {
@@ -45,7 +45,8 @@ class QueryLog implements Closeable {
 	
 	void logQuery(String query) {
 		if(name == null) throw new RuntimeException("Set a test name before logging a query");
-		if(isTest) queries.add(query);
+		if(isClosed) throw new RuntimeException("Attempted to log query to close Query Log");
+		queries.add(query);
 	}
 	
 	private void write(String text, int newLineCount) {
@@ -57,8 +58,8 @@ class QueryLog implements Closeable {
 		}
 	}
 	
-	static Path getLogFile(Path parent, Object testInst) {
-		Path logFile = parent.resolve("test-logs/" + testInst.getClass().getName() + ".query.md");
+	static Path getLogFile(Path parent, Class<?> testClass) {
+		Path logFile = parent.resolve("test-logs/" + testClass.getName() + ".query.md");
 		try {
 			Files.createDirectories(logFile.getParent());
 			return logFile;
@@ -66,15 +67,5 @@ class QueryLog implements Closeable {
 			throw new RuntimeException("Failed to create query log directory" + logFile.getParent());
 		}
 	}
-	
-	static boolean isTest(Object inst) {
-		for(Method m: inst.getClass().getMethods()) {
-			for(Annotation a: m.getAnnotations()) {
-				String str = a.toString();
-				if(str.matches(".*[.]Test[(].*")) return true;
-			}
-		}
-		return false;
-	}
-	
+
 }

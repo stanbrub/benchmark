@@ -31,22 +31,31 @@ class Profile {
 		}
 	}
 	
+	boolean isPropertyDefined(String name) {
+		return !property(name, "").isBlank();
+	}
+	
 	String property(String name, String defaultValue) {
 		if(defaultValue == null) throw new RuntimeException("defaultValue is required for property: " + name);
 		String value = props.getProperty(name);
-		if(value == null) value = System.getProperty(name);
-		if(value == null) value = System.getenv(name);
-		return (value == null)?defaultValue.trim():value.trim(); 
+		if(isBlank(value)) value = System.getProperty(name);
+		if(isBlank(value)) value = System.getenv(name);
+		return isBlank(value)?defaultValue.trim():value.trim(); 
 	}
 	
 	long propertyAsIntegral(String name, String defaultValue) {
 		String value = property(name, defaultValue);
 		try {
-			value = value.replace("_", "").replace(",", "");
 			return Long.parseLong(value);
 		} catch(Exception ex) {
 			throw new RuntimeException("Bad integral value: " + name + "=" + value);
 		}
+	}
+	
+	boolean propertyAsBoolean(String name, String defaultValue) {
+		String value = property(name, defaultValue).toLowerCase();
+		if(value.equals("true") || value.equals("false")) return Boolean.valueOf(value);
+		throw new RuntimeException("Bad boolean value: " + name + "=" + value);
 	}
 	
 	Duration propertyAsDuration(String name, String defaultValue) {
@@ -76,6 +85,10 @@ class Profile {
 			str = str.replace("${" + e.getKey() + "}", e.getValue().toString());
 		}
 		return str;
+	}
+	
+	private boolean isBlank(String value) {
+		return value == null || value.isBlank();
 	}
 	
 	private URL findProfileUrl(String uri) {

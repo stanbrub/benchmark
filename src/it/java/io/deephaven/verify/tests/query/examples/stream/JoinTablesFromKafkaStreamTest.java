@@ -10,7 +10,7 @@ import io.deephaven.verify.api.Verify;
  * query the tables.  (Note: The join here is deliberately inefficient to show the difference
  * between generation rate and query processing rate.)
  */
-public class JoinTablesFromKafkaStream {
+public class JoinTablesFromKafkaStreamTest {
 	final Verify api = Verify.create(this);
 	final long scaleRowCount = api.propertyAsIntegral("scale.row.count", "1000");
 	
@@ -178,8 +178,6 @@ public class JoinTablesFromKafkaStream {
 		api.setName("Count Records From Kakfa Stream");
 		var query = 
 		"""
-		from deephaven import agg
-		
 		kafka_stock_trans = verify_api_kafka_consume('stock_trans', 'append')
 		verify_api_await_table_size(kafka_stock_trans, ${scale.row.count})
 		

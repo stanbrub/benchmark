@@ -37,6 +37,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 public class BarrageConnector implements AutoCloseable {
+	static final int maxFetchCount = 1000;
 	final private BarrageSession session;
 	final private ConsoleSession console;
 	final private ManagedChannel channel;
@@ -69,6 +70,10 @@ public class BarrageConnector implements AutoCloseable {
 			close();
 			throw new RuntimeException("Failed to executed query: " + query, ex);
 		}
+	}
+	
+	public Set<String> getUsedVariableNames() {
+		return Collections.unmodifiableSet(variableNames);
 	}
 
 	public Future<Metrics> fetchSnapshotData(String table, Consumer<ResultTable> tableHandler) {
@@ -126,7 +131,7 @@ public class BarrageConnector implements AutoCloseable {
 			isClosed.set(true);
 			subscriptions.values().forEach(s->{s.handle.close(); s.subscription.close();});
 			subscriptions.clear();
-			cleanupEngineTables();
+			variableNames.clear();
 			console.close();
 			session.close();
 		} catch(Exception ex) {
@@ -170,22 +175,11 @@ public class BarrageConnector implements AutoCloseable {
         return barrageSessionFactory.newBarrageSession();
 	}
 	
-	private void cleanupEngineTables() {
-		if(variableNames.isEmpty()) return;
-		String query = String.join("=None; ", variableNames) + "=None;";
-		query += " System = jpy.get_type('java.lang.System'); System.gc()";
-		try {
-			changes = console.executeCode(query);
-		} catch(Exception ex) {
-			throw new RuntimeException("Failed to executed cleanup query: " + query, ex);
-		}
-	}
-	
 	private CsvTable toCsvTable(BarrageTable barrageTable) {
 		String delim = "<'#/.|,\">";  // :)
     	ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
     	PrintStream out = new PrintStream(bytesOut);
-    	TableTools.show(barrageTable, 1000, io.deephaven.time.TimeZone.TZ_DEFAULT, delim, out, true);
+    	TableTools.show(barrageTable, maxFetchCount, io.deephaven.time.TimeZone.TZ_DEFAULT, delim, out, true);
     	return new CsvTable(bytesOut.toString(StandardCharsets.UTF_8), delim);
 	}
 	

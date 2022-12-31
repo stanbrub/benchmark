@@ -16,7 +16,7 @@ import io.deephaven.verify.util.Timer;
  */
 final public class VerifyResult {
 	static final String resultFileName = "verify-results.csv";
-	static final String[] header = {"name", "timestamp", "duration", "test-rate"};
+	static final String[] header = {"name", "timestamp", "duration", "test-rate", "test-row-count"};
 	final Timer timer;
 	final Map<String,Object> rates;
 	final Path file;
@@ -41,6 +41,7 @@ final public class VerifyResult {
 	 */
 	public VerifyResult test(Timer timer, long count) {
 		rates.put("test-rate", new Rate(timer.duration(), count));
+		rates.put("test-row-count", count);
 		return this;
 	}
 
@@ -80,7 +81,7 @@ final public class VerifyResult {
 			throw new RuntimeException("Failed to write result to file: " + file, ex);
 		}
 	}
-	
+
 	// Use toMillis() because toSeconds() loses the fraction
 	static float toSeconds(Duration duration) {
 		return duration.toMillis() / 1000.0f;

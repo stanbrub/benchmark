@@ -34,7 +34,8 @@ class Platform {
 	}
 	
 	protected ResultTable fetchResult(String query) {
-		Verify api = Verify.create("Write Platform Details");
+		Verify api = new Verify(Verify.class);
+		api.setName("Write Platform Details");
 		
 		var tbl = new AtomicReference<ResultTable>();
 		api.query(query).fetchAfter("pil2", table->{

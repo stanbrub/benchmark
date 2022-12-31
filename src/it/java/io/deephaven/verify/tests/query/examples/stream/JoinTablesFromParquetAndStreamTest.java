@@ -7,9 +7,9 @@ import io.deephaven.verify.api.Verify;
 /**
  * Join two tables that are read from parquet files. Demonstrates how to configure the 
  * tables, generate parquet files, read parquet into Deephaven tables, and 
- * query the tables. (These queries are the same as {@link JoinTablesFromKafkaStream})
+ * query the tables. (These queries are the same as {@link JoinTablesFromKafkaStreamTest})
  */
-public class JoinTablesFromParquetAndStream {
+public class JoinTablesFromParquetAndStreamTest {
 	final Verify api = Verify.create(this);
 	private long scaleRowCount = api.propertyAsIntegral("scale.row.count", "10000");
 	

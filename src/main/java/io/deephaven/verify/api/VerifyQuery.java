@@ -61,7 +61,7 @@ final public class VerifyQuery implements Closeable {
 	 */
 	public void execute() {
 		var timer = Timer.start();
-		executeBarrageQuery();
+		executeBarrageQuery(logic);
 		tickingFetchers.entrySet().forEach(e->verify.addFuture(session.fetchTickingData(e.getKey(), e.getValue())));
 		
 		snapshotFetchers.entrySet().forEach(e->{
@@ -77,16 +77,23 @@ final public class VerifyQuery implements Closeable {
 	}
 	
 	/**
-	 * Unsubscribe any fetchers and close the session
+	 * Unsubscribe any fetchers, free used variables, and close the session
 	 */
 	public void close() {
-		if(session == null) return; 
+		if(session == null) return;
+
+		if(!session.getUsedVariableNames().isEmpty()) {
+			String logic = String.join("=None; ", session.getUsedVariableNames()) + "=None\n";
+			logic += "System = jpy.get_type('java.lang.System'); System.gc()\n";
+			executeBarrageQuery(logic);
+		}
+
 		session.close();
 		session = null;
 	}
 	
 	// Add function defs in separate query so if there are errors in the "logic" part, the line numbers match up
-	private void executeBarrageQuery() {
+	private void executeBarrageQuery(String logic) {
 		if(session == null) {
 			String deephavenServer = verify.property("deephaven.addr", "localhost:10000");
 			session = new BarrageConnector(deephavenServer);	

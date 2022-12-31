@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 import io.deephaven.verify.api.Verify;
 
-public class KafkaToParquetStream {
+public class KafkaToParquetStreamTest {
 	final Verify api = Verify.create(this);
 	final long scaleRowCount = api.propertyAsIntegral("scale.row.count", "1000");
 	

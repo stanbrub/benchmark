@@ -18,7 +18,7 @@ public class PlatformTest {
 		
 		var lines = Files.readAllLines(outParent.resolve("platform-test.out"));
 		assertEquals(15, lines.size(), "Wrong row count");
-		assertEquals("node,name,value", lines.get(0), "Wrong header");
+		assertEquals("application,name,value", lines.get(0), "Wrong header");
 		assertTrue(lines.get(1).matches("test-runner,java.version,[0-9.]+"), "Wrong values: " + lines.get(1));
 		assertTrue(lines.get(3).matches("test-runner,java.class.version,[0-9.]+"), "Wrong values: " + lines.get(3));
 		assertTrue(lines.get(7).matches("test-runner,java.max.memory,[0-9]+[.][0-9]{2}G"), "Wrong values: " + lines.get(7));

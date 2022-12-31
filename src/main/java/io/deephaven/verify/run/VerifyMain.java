@@ -1,11 +1,19 @@
 package io.deephaven.verify.run;
 
 import java.util.*;
+import org.junit.platform.console.ConsoleLauncher;
 
 public class VerifyMain {
 	static public void main(String[] args) {
+		setSystemProperties();
 		args = addDefaults(args);
-		org.junit.platform.console.ConsoleLauncher.main(args);
+		int exitCode = ConsoleLauncher.execute(System.out, System.err, args).getExitCode();
+		System.exit(exitCode);
+	}
+	
+	// Set system properties for running from the command line
+	static void setSystemProperties() {
+		System.setProperty("timestamp.test.results", "true");
 	}
 	
 	static String[] addDefaults(String[] args) {

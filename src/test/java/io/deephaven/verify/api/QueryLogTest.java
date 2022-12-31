@@ -9,9 +9,9 @@ public class QueryLogTest {
 	@Test
 	public void logQuery() throws Exception {
 		Path outParent = Paths.get(getClass().getResource("test-profile.properties").toURI()).getParent();
-		Files.deleteIfExists(QueryLog.getLogFile(outParent, this));
+		Files.deleteIfExists(QueryLog.getLogFile(outParent, QueryLogTest.class));
 		
-		var qlog = new QueryLog(outParent, this);
+		var qlog = new QueryLog(outParent, QueryLogTest.class);
 		qlog.setName(getClass().getSimpleName());
 		qlog.logQuery(
 		"""
@@ -34,7 +34,6 @@ public class QueryLogTest {
 		);
 		
 		qlog.close();
-		
 		
 		var expected = 
 		"""
@@ -61,7 +60,6 @@ public class QueryLogTest {
 		""".trim().replace("\r", "");
 		var text = new String(Files.readAllBytes(qlog.logFile)).trim().replace("\r", "");
 		assertEquals(expected, text);
-		
 	}
 
 }

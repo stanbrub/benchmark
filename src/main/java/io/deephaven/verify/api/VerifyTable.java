@@ -115,7 +115,7 @@ final public class VerifyTable implements Closeable {
 		verify.addFuture(future);
 	}
 	
-	/*  Not fully implemented
+	/*  Not implemented
 	public void generateJson() {
 		String bootstrapServer = verify.property("client.redpanda.addr", "localhost:9092");
 		generator = new JsonKafkaGenerator(bootstrapServer, tableName, columns);
@@ -212,6 +212,7 @@ final public class VerifyTable implements Closeable {
 	
 	static final String generatorDefValues = 
 		"""
+		# Define files and generator configuration
 		table_parquet = '/data/${table.name}.parquet'
 		table_gen_parquet = '/data/${table.definition.id}.gen.parquet'
 		table_gen_def_text = '''${table.definition}'''
@@ -221,6 +222,7 @@ final public class VerifyTable implements Closeable {
 	
 	static final String useExistingParquetQuery = 
 		"""
+		# Determine if a Parquet file already exists that fits the table configuration	
 		import os, glob
 		from deephaven import new_table
 		from deephaven.column import string_col
@@ -246,6 +248,7 @@ final public class VerifyTable implements Closeable {
 	
 	static final String kafkaToParquetQuery =
 		"""
+		# Create a Parquet file from a Kafka topic
 		import jpy, os
 		from deephaven import kafka_consumer as kc
 		from deephaven.stream.kafka.consumer import TableType, KeyValueSpec

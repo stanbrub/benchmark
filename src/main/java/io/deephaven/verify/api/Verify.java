@@ -1,6 +1,8 @@
 package io.deephaven.verify.api;
 
 import java.io.Closeable;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
 import io.deephaven.verify.util.Filer;
 import io.deephaven.verify.util.Log;
 import io.deephaven.verify.util.Metrics;
@@ -20,13 +21,13 @@ import io.deephaven.verify.util.Timer;
  * JUnit test to start things off
  */
 final public class Verify {
-	static final Path outputDir = initializeOutputDirectory(Paths.get("data"));
 	static final Profile profile = new Profile();
+	static final Path outputDir = initializeOutputDirectory();
 	static final Platform platform = new Platform(outputDir);
 
 	static public Verify create(Object testInst) {
-		setSessionTimeout();
-		Verify v = new Verify(testInst);
+		if(!isTest(testInst)) throw new RuntimeException("Test instance required for Verify api creation");
+		Verify v = new Verify(testInst.getClass());
 		v.setName(testInst.getClass().getSimpleName());
 		return v;
 	}
@@ -38,13 +39,16 @@ final public class Verify {
 	final List<Closeable> closeables = new ArrayList<>();
 	final List<Metrics> metrics = new ArrayList<>();
 	
-	Verify(Object testInst) {
+	Verify(Class<?> testInst) {
 		this.testInst = testInst;
 		this.result = new VerifyResult(outputDir);
 		this.queryLog = new QueryLog(outputDir, testInst);
-		addCloseable(queryLog);
 	}
 	
+	/**
+	 * Set the name that identifies the currently running test. This name is used in logging and results
+	 * @param name the test name for reporting
+	 */
 	public void setName(String name) {
 		if(name == null || name.isBlank()) throw new RuntimeException("No blank Verify names allowed");
 		this.result.setName(name);
@@ -69,6 +73,16 @@ final public class Verify {
 	 */
 	public long propertyAsIntegral(String name, String defaultValue) {
 		return profile.propertyAsIntegral(name, defaultValue);
+	}
+	
+	/**
+	 * Get a boolean property from the profile, System, Environment or return a default value
+	 * @param name the property name
+	 * @param defaultValue value <code>( true | false )</code> to return if the property does not exist
+	 * @return the property value or default
+	 */
+	public boolean propertyAsBoolean(String name, String defaultValue) {
+		return profile.propertyAsBoolean(name, defaultValue);
 	}
 	
 	/**
@@ -143,6 +157,7 @@ final public class Verify {
 		closeables.clear();
 		result.commit();
 		platform.ensureCommit();
+		queryLog.close();
 	}
 	
 	Metrics awaitCompletion(Future<Metrics> future) {
@@ -167,7 +182,11 @@ final public class Verify {
 		return future;
 	}
 	
-	static private Path initializeOutputDirectory(Path dir) {
+	static private Path initializeOutputDirectory() {
+		setSystemProperties();
+		boolean isTimestamped = profile.propertyAsBoolean("timestamp.test.results", "false");
+		Path dir = Paths.get("data");
+		if(isTimestamped) dir = dir.resolve("" + System.currentTimeMillis());
 		Filer.deleteAll(dir);
 		try {
 			return Files.createDirectories(dir);
@@ -176,9 +195,23 @@ final public class Verify {
 		}
 	}
 	
-	static private void setSessionTimeout() {
+	static private void setSystemProperties() {
 		Duration timeout = profile.propertyAsDuration("default.completion.timeout", "5 minutes");
 		System.setProperty("deephaven.session.executeTimeout", timeout.toString());
+		
+		if(!profile.isPropertyDefined("timestamp.test.results")) {
+			System.setProperty("timestamp.test.results", "false");
+		}
+	}
+	
+	static boolean isTest(Object inst) {
+		for(Method m: inst.getClass().getMethods()) {
+			for(Annotation a: m.getAnnotations()) {
+				String str = a.toString();
+				if(str.matches(".*[.]Test[(].*")) return true;
+			}
+		}
+		return false;
 	}
 
 }
