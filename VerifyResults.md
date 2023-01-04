@@ -1,6 +1,6 @@
 # Verify - Results
 
-Running Verify tests produces results into a directory structure in the current (working) directory.
+Running Verify tests in the IDE produces results into a directory structure in the current (working) directory.
 
 ````
 data/
@@ -32,6 +32,7 @@ Properties defined in the file are:
 - available.processors: The number of CPUs the application is allowed to use
 - java.max.memory: Maximum Gigabytes of memory the application is allowed to use 
 
+### Example verify-platform.csv
 ````
 application			name					value
 test-runner			java.version			17.0.1
@@ -59,14 +60,15 @@ Fields supplied in the file are:
 - timestamp: Millis since epoch at the beginning of the test
 - duration: Seconds elapsed for the entire test run including setup and teardown
 - test-rate: The user-supplied processing rate in seconds for the test (i.e. rows/sec)
+- test-row-count: The number of rows processed
 
-### Example verify-platform.csv
+### Example verify-results.csv
 ````
-name,timestamp,duration,test-rate
-Join Two Tables Using Kakfa Streams - Longhand Query,1672357348025,6.63,44208.664
-Join Two Tables Using Kakfa Streams - Shorthand Query,1672357354657,7.96,25125.629
-Join Two Tables Using Parquet File Views,1672357362620,6.571,523560.22
-Join Two Tables Using Incremental Release of Paquet File Records,1672357369192,6.139,91575.09
+name,timestamp,duration,test-rate,test-row-count
+Join Two Tables Using Kakfa Streams - Longhand Query,1672357348025,6.63,44208.66,100000
+Join Two Tables Using Kakfa Streams - Shorthand Query,1672357354657,7.96,25125.62,100000
+Join Two Tables Using Parquet File Views,1672357362620,6.57,523560.22,100000
+Join Two Tables Using Incremental Release of Paquet File Records,1672357369192,6.13,91575.09,100000
 ````
 
 ## Query Log
@@ -77,13 +79,13 @@ Taking the example of a test run against Deephaven Engine, it is typically possi
 in Markdown format for easier viewing.
 
 ### Example Query Log
-````
+~~~~
 # Test Class - io.deephaven.verify.tests.query.examples.stream.JoinTablesFromKafkaStream
 
 ## Test - Count Records From Kakfa Stream
 
 ### Query 1
-\`\`\`\`
+````
 from deephaven import kafka_consumer as kc
 from deephaven.stream.kafka.consumer import TableType, KeyValueSpec
 
@@ -108,17 +110,17 @@ def verify_api_await_table_size(table: Table, row_count: int):
 		while table.j_table.size() < row_count:
 			table.j_table.awaitUpdate()
 
-\`\`\`\`
+````
 
 ### Query 2
-\`\`\`\`
+````
 from deephaven import agg
 
 kafka_stock_trans = verify_api_kafka_consume('stock_trans', 'append')
 verify_api_await_table_size(kafka_stock_trans, 100000)
 
-\`\`\`\`
 ````
+~~~~
 
 In the above example, the user made a simple test to load a fixed number of records into a table from a kafka consumer (Query2). 
 However, since "verify_api_" functions where used, the definitions of those functions were automatically published to Deephaven Engine ahead of the test run.

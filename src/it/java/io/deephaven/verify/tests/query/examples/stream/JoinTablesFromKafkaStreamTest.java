@@ -180,7 +180,6 @@ public class JoinTablesFromKafkaStreamTest {
 		"""
 		kafka_stock_trans = verify_api_kafka_consume('stock_trans', 'append')
 		verify_api_await_table_size(kafka_stock_trans, ${scale.row.count})
-		
 		""";
 
 		var tm = api.timer();

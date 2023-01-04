@@ -1,6 +1,6 @@
 # Verify #
 
-Verify is a framework designed to work from the command line and through popular Java IDEs using the JUnit framework as a runner.  It is geared towards scale testing interfaces capable of ingesting table data, transforming it, and returning tabular results.  It represents a follow-on (not a replacement) to the [Bencher Project](https://github.com/deephaven/bencher) that benchmarks many of the query features of [Deephaven Core Community](https://deephaven.io/community/).
+Verify is a framework designed to work from the command line and through popular Java IDEs using the JUnit framework as a runner.  It is geared towards scale testing interfaces capable of ingesting table data, transforming it, and returning tabular results.  It represents a follow-on to the [Bencher Project](https://github.com/deephaven/bencher) that benchmarks many of the query features of [Deephaven Core Community](https://deephaven.io/community/).
 
 For the present, tests are geared towards testing [Deephaven Core Community](https://deephaven.io/community/) through the Barrage Java Client.  Tests focus on querying static parquet files, streamed Kafka topics, and replayed data.
 

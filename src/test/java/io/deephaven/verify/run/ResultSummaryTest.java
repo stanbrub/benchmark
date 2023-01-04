@@ -11,9 +11,6 @@ public class ResultSummaryTest {
 	
 	@Test
 	public void summarize() throws Exception {
-		System.out.println(Long.toHexString(1672446259392L));
-		System.out.println(Long.toHexString(1672446334350L));
-		
 		Path rootDir = Paths.get(getClass().getResource("findme.txt").toURI()).resolveSibling("test-data");
 		var summary = new ResultSummary(rootDir);
 		summary.summarize();

@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
 import io.deephaven.verify.run.VerifyMain;
+import io.deephaven.verify.util.Log;
 
 /**
  * Represents properties for a the Verify API .profile file in addition to allowing retrieval of 
@@ -26,6 +27,7 @@ class Profile {
 		this.props = new Properties();
 		try(InputStream in = url.openStream()) {
 			props.load(in);
+			Log.info("Profile: %s" , url);
 		} catch(Exception ex) {
 			throw new RuntimeException("Failed to load profile: " + url);
 		}
@@ -122,7 +124,7 @@ class Profile {
 	private URL findProfileInCurrentDir(String uri) {
 		try {
 			String userDir = System.getProperty("user.dir");
-			Path profile = Paths.get(userDir, "profile", uri);
+			Path profile = Paths.get(userDir, uri);
 			return profile.toFile().exists()?profile.toUri().toURL():null;
 		} catch(Exception ex) {
 			throw new RuntimeException("Failed to find relative profile: " + uri);
