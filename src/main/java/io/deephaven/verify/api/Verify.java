@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import io.deephaven.verify.util.Filer;
+import io.deephaven.verify.util.Ids;
 import io.deephaven.verify.util.Log;
 import io.deephaven.verify.util.Metrics;
 import io.deephaven.verify.util.Timer;
@@ -21,6 +22,8 @@ import io.deephaven.verify.util.Timer;
  * JUnit test to start things off
  */
 final public class Verify {
+	static final public String rootOutputDir = "data";
+	static final public String resultFileName = "verify-results.csv";
 	static final Profile profile = new Profile();
 	static final Path outputDir = initializeOutputDirectory();
 	static final Platform platform = new Platform(outputDir);
@@ -185,8 +188,8 @@ final public class Verify {
 	static private Path initializeOutputDirectory() {
 		setSystemProperties();
 		boolean isTimestamped = profile.propertyAsBoolean("timestamp.test.results", "false");
-		Path dir = Paths.get("data");
-		if(isTimestamped) dir = dir.resolve("" + System.currentTimeMillis());
+		Path dir = Paths.get(rootOutputDir);
+		if(isTimestamped) dir = dir.resolve(Ids.runId());
 		Filer.deleteAll(dir);
 		try {
 			return Files.createDirectories(dir);

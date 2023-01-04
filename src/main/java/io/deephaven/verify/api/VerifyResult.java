@@ -15,7 +15,6 @@ import io.deephaven.verify.util.Timer;
  * on rates for the test run.
  */
 final public class VerifyResult {
-	static final String resultFileName = "verify-results.csv";
 	static final String[] header = {"name", "timestamp", "duration", "test-rate", "test-row-count"};
 	final Timer timer;
 	final Map<String,Object> rates;
@@ -23,7 +22,7 @@ final public class VerifyResult {
 	private String name = null;
 
 	VerifyResult(Path parent) {
-		this(parent, resultFileName);
+		this(parent, Verify.resultFileName);
 	}
 	
 	VerifyResult(Path parent, String resultFileName) {
@@ -46,16 +45,18 @@ final public class VerifyResult {
 	}
 
 	/**
-	 * Save the collected results a csv file
+	 * Save the collected results a csv file. Skip results where name starts with "#"
 	 */
 	public void commit() {
+		if(name.startsWith("#")) return;
+			
 		List<String> head = Arrays.stream(header).toList();
 		if(!hasHeader()) writeLine(head, file);
 		
 		var m = new HashMap<String,Object>(rates);
 		m.put("name", name);
 		m.put("timestamp", timer.beginTime);
-		m.put("duration", toSeconds(timer.duration()));
+		m.put("duration", format(toSeconds(timer.duration())));
 		Log.info("Result: %s", m);
 		writeLine(head.stream().map(h->m.get(h)).toList(), file);
 		initializeRates(rates);
@@ -81,6 +82,10 @@ final public class VerifyResult {
 			throw new RuntimeException("Failed to write result to file: " + file, ex);
 		}
 	}
+	
+	static String format(float v) {
+		return String.format("%.2f", v);
+	}
 
 	// Use toMillis() because toSeconds() loses the fraction
 	static float toSeconds(Duration duration) {
@@ -90,7 +95,7 @@ final public class VerifyResult {
 	static record Rate(Duration duration, long rowCount) {
 		@Override
 		public String toString() {
-			return "" + (rowCount / toSeconds(duration));
+			return format(rowCount / toSeconds(duration));
 		}
 	}
 

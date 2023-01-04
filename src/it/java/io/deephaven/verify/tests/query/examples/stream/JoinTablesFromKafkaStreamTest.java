@@ -171,7 +171,7 @@ public class JoinTablesFromKafkaStreamTest {
 	 * <li>Create one corresponding table in Deephaven Engine with the Kafka consumer
 	 * <li>End the query when all data has been consumed</li>
 	 * </ol>
-	 * Properties (e.g. ${scale.row.count) are automatically filled in during query execution.
+	 * Properties (e.g. ${scale.row.count}) are automatically filled in during query execution.
 	 */
 	@Test 
 	public void countRecordsFromKafkaStream() {

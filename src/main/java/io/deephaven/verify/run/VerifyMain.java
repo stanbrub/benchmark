@@ -1,13 +1,16 @@
 package io.deephaven.verify.run;
 
+import java.nio.file.Paths;
 import java.util.*;
 import org.junit.platform.console.ConsoleLauncher;
+import io.deephaven.verify.api.Verify;
 
 public class VerifyMain {
 	static public void main(String[] args) {
 		setSystemProperties();
 		args = addDefaults(args);
 		int exitCode = ConsoleLauncher.execute(System.out, System.err, args).getExitCode();
+		new ResultSummary(Paths.get(Verify.rootOutputDir)).summarize();
 		System.exit(exitCode);
 	}
 	

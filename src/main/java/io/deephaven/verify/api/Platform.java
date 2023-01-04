@@ -35,7 +35,7 @@ class Platform {
 	
 	protected ResultTable fetchResult(String query) {
 		Verify api = new Verify(Verify.class);
-		api.setName("Write Platform Details");
+		api.setName("# Write Platform Details");  // # means skip adding to results file
 		
 		var tbl = new AtomicReference<ResultTable>();
 		api.query(query).fetchAfter("pil2", table->{

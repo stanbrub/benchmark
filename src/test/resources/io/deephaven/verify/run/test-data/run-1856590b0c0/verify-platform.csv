@@ -1,0 +1,15 @@
+application,name,value
+test-runner,java.version,17.0.1
+test-runner,java.vm.name,OpenJDK 64-Bit Server VM
+test-runner,java.class.version,61.0
+test-runner,os.name,Windows 10
+test-runner,os.version,10.0
+test-runner,available.processors,16
+test-runner,java.max.memory,15.98G
+deephaven-engine,java.version,17.0.5
+deephaven-engine,java.vm.name,OpenJDK 64-Bit Server VM
+deephaven-engine,java.class.version,61.0
+deephaven-engine,os.name,Linux
+deephaven-engine,os.version,5.15.79.1-microsoft-standard-WSL2
+deephaven-engine,available.processors,12
+deephaven-engine,java.max.memory,42.00G

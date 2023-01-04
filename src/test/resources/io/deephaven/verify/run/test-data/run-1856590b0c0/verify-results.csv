@@ -1,0 +1,4 @@
+name,timestamp,duration,test-rate
+Join animals and adjectives - Parquet Views,1672446259396,3.025,1111111.1
+Join animals and adjectives - Incremental Release,1672446262629,1.705,98619.32
+Count Records From Kakfa Stream,1672446264337,3.678,49603.17

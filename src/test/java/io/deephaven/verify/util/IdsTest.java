@@ -24,4 +24,21 @@ public class IdsTest {
 		assertEquals("This_is_a_test", Ids.getFileSafeName("This is a test"), "Wrong safe name");
 	}
 	
+	@Test
+	public void runIds() {
+		String id = Ids.runId();
+		assertTrue(id.matches("run-[a-z0-9]{10,11}"), "Bad run id: " + id);
+	}
+	
+	@Test
+	public void isRunId() {
+		String recent = "run-1619d760fa";
+		String max = "run-7ffffe90a0f44c7f";
+
+		assertFalse(Ids.isRunId("run-abcdefghi"), "Should not be valid id");
+		assertFalse(Ids.isRunId("1619d1a435"), "Should not be valid id");
+		assertTrue(Ids.isRunId(recent), "Should be valid id");
+		assertTrue(Ids.isRunId(max), "Should be valid id");
+	}
+	
 }

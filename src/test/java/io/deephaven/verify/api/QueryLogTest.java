@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.nio.file.*;
 import org.junit.jupiter.api.*;
 
+import io.deephaven.verify.util.Filer;
+
 public class QueryLogTest {
 	
 	@Test
@@ -57,8 +59,9 @@ public class QueryLogTest {
 		query2
 		query line
 		````	
-		""".trim().replace("\r", "");
-		var text = new String(Files.readAllBytes(qlog.logFile)).trim().replace("\r", "");
+		""".replace("\r", "").trim();
+		
+		var text = Filer.getFileText(qlog.logFile);
 		assertEquals(expected, text);
 	}
 

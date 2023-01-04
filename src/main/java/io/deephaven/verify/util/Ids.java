@@ -11,7 +11,7 @@ public class Ids {
 	static final long years50 = 1577847600000L;
 	static final Random random = new Random();
 	static private long count = 0;
-	static private long lastTime = System.currentTimeMillis();
+	static private long lastTime = now50();
 	
 	/**
 	 * Replace any characters in the given name that may not be safe to use as a file name
@@ -22,19 +22,27 @@ public class Ids {
 		return name.replaceAll("[^A-Za-z0-9_.-]", "_");
 	}
 	
+	static public String runId() {
+		return "run-" + Long.toHexString(now50());
+	}
+	
+	static public boolean isRunId(Object id) {
+		return id.toString().matches("run-[a-z0-9]{10,16}");
+	}
+	
 	/**
 	 * Return a unique identifier (not a UUID)
 	 * ex. Fd7YDsw.1.bjSAVA
 	 * @return the unique name
 	 */
 	static public String uniqueName() {
-		long now = System.currentTimeMillis();
+		long now = now50();
 		if(now > lastTime) {
 			lastTime = now;
 			count = 0;
 		}
 		
-		String time = toBase64(now - years50);
+		String time = toBase64(now);
 		String cnt = Long.toHexString(++count);
 		String rand = toBase64(random.nextInt());
 		return time + '.' + cnt + '.' + rand;
@@ -43,6 +51,10 @@ public class Ids {
 	static String toBase64(long num) {
 		String s = Base64.getUrlEncoder().encodeToString(BigInteger.valueOf(num).toByteArray());
 		return s.replace("=", "");
+	}
+	
+	static long now50() {
+		return System.currentTimeMillis() - years50;
 	}
 
 }
