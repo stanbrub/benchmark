@@ -34,21 +34,21 @@ Properties defined in the file are:
 
 ### Example verify-platform.csv
 ````
-application			name					value
-test-runner			java.version			17.0.1
-test-runner			java.vm.name			OpenJDK 64-Bit Server VM
-test-runner			java.class.version		61
-test-runner			os.name	Windows 		10
-test-runner			os.version				10
-test-runner			available.processors	16
-test-runner			java.max.memory			15.98G
-deephaven-engine	java.version			17.0.5
-deephaven-engine	java.vm.name			OpenJDK 64-Bit Server VM
-deephaven-engine	java.class.version		61
-deephaven-engine	os.name					Linux
-deephaven-engine	os.version				5.15.79.1-microsoft-standard-WSL2
-deephaven-engine	available.processors	12
-deephaven-engine	java.max.memory			42.00G
+application,         name,                    value
+test-runner,         java.version,            17.0.1
+test-runner,         java.vm.name,            OpenJDK 64-Bit Server VM
+test-runner,         java.class.version,      61
+test-runner,         os.name,                 Windows 10
+test-runner,         os.version,              10
+test-runner,         available.processors,    16
+test-runner,         java.max.memory,         15.98G
+deephaven-engine,    java.version,            17.0.5
+deephaven-engine,    java.vm.name,            OpenJDK 64-Bit Server VM
+deephaven-engine,    java.class.version,      61
+deephaven-engine,    os.name,                 Linux
+deephaven-engine,    os.version,              5.15.79.1-microsoft-standard-WSL2
+deephaven-engine,    available.processors,    12
+deephaven-engine,    java.max.memory,         42.00G
 ````
 
 ## Verify Results CSV
@@ -73,10 +73,11 @@ Join Two Tables Using Incremental Release of Paquet File Records,1672357369192,6
 
 ## Query Log
 
-Query logs record the actual queries in the order in which they were run during a test. These include supporting queries run by the framework behind the scenes. 
-Any property variables supplied in a query are replaced with the actual values used during the test run.
-Taking the example of a test run against Deephaven Engine, it is typically possible to cut-and-paste a query from the log into the UI and run it.  The log is
-in Markdown format for easier viewing.
+Query logs record queries in the order in which they were run during a test. These include queries run by the framework automatically behind the scenes. 
+Any property variables supplied in a query are replaced with the actual values used during the test run. After a test is run, it is usually possible to 
+copy and paste the query into the Deephaven UI and run it, because parquet and kafka topic data is left intact. However, if Test B is run after Test A, 
+cut and paste of the queries recorded for Test A may not work. 
+The log is in Markdown format for easier viewing.
 
 ### Example Query Log
 ~~~~

@@ -123,8 +123,7 @@ class Profile {
 	
 	private URL findProfileInCurrentDir(String uri) {
 		try {
-			String userDir = System.getProperty("user.dir");
-			Path profile = Paths.get(userDir, uri);
+			Path profile = Paths.get(".", uri);
 			return profile.toFile().exists()?profile.toUri().toURL():null;
 		} catch(Exception ex) {
 			throw new RuntimeException("Failed to find relative profile: " + uri);

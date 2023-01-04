@@ -10,14 +10,11 @@ public class KafkaToParquetStreamTest {
 	
 	@Test
 	public void makeParquetFile() {
-		var tm = api.timer();
 		api.table("orders").random()
 			.add("symbol", "string", "SYM[1-1000]")
 			.add("price", "float", "[10-20]")
 			.add("qty", "int", "1")
 			.generateParquet();
-		
-		api.result().test(tm, scaleRowCount);
 		
 		var query = 
 		"""
@@ -28,10 +25,12 @@ public class KafkaToParquetStreamTest {
 		result = orders.view(formulas=["qty"]).agg_by([agg.sum_("RecCount = qty")], "qty")	
 		""";
 		
+		var tm = api.timer();
 		api.query(query).fetchAfter("result", table->{
 			assertEquals(scaleRowCount, table.getSum("RecCount").longValue(), "Wrong record count");
 		}).execute();
 		api.awaitCompletion();
+		api.result().test(tm, scaleRowCount);
 		
 	}
 
