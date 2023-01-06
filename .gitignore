@@ -1,0 +1,7 @@
+/target/
+/data/
+/*.csv
+/*.properties
+.classpath
+.project
+.settings/
