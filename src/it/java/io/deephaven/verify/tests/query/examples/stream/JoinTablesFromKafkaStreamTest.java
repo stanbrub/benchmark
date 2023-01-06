@@ -98,7 +98,7 @@ public class JoinTablesFromKafkaStreamTest {
 		""";
 
 		var tm = api.timer();
-		api.query(query).fetchAfter("record_count", table->{
+		api.query(query).fetchAfter("record_count", table->{   //  Look at using Barrage tables
 			int recCount = table.getSum("RecordCount").intValue();
 			assertEquals(scaleRowCount, recCount, "Wrong record count");
 		}).execute();

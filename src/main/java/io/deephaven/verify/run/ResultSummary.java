@@ -5,6 +5,8 @@ import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import io.deephaven.verify.api.Verify;
 import io.deephaven.verify.util.Ids;
@@ -60,9 +62,21 @@ public class ResultSummary {
 				Path resultFile = d.resolve(Verify.resultFileName);
 				if(Files.exists(resultFile)) resultFiles.add(resultFile);
 			});
+			Collections.sort(resultFiles, new FileNameComparator());
 			return resultFiles;
 		} catch(Exception ex) {
 			throw new RuntimeException("Failed to get result files from root directory: " + rootDir);
+		}
+	}
+	
+	static class FileNameComparator implements Comparator<Path> {
+		@Override
+		public int compare(Path o1, Path o2) {
+			return getRunId(o1).compareTo(getRunId(o2));
+		}
+		
+		String getRunId(Path p) {
+			return p.getParent().getFileName().toString();
 		}
 	}
 

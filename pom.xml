@@ -58,23 +58,37 @@
 				</executions>
 			</plugin>
 		</plugins>
+		<extensions>
+			<extension>
+				<groupId>kr.motd.maven</groupId>
+				<artifactId>os-maven-plugin</artifactId>
+				<version>1.7.1</version>
+			</extension>
+		</extensions>
 	</build>
 
 	<dependencies>
+		<!-- Added because of conflict with 4.1.68 -->
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>4.1.79.Final</version>
+		</dependency>
+
 		<!-- Added because of conflict with 1.41.0 -->
 		<dependency>
 			<groupId>io.grpc</groupId>
-			<artifactId>grpc-core</artifactId>
+			<artifactId>grpc-all</artifactId>
 			<version>1.50.1</version>
 		</dependency>
-		
+
 		<!-- Added because of conflict with 3.17.3 -->
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
 			<version>3.21.9</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>io.confluent</groupId>
 			<artifactId>kafka-avro-serializer</artifactId>
@@ -86,13 +100,13 @@
 			<artifactId>deephaven-java-client-barrage-dagger</artifactId>
 			<version>0.19.1</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>io.deephaven</groupId>
 			<artifactId>deephaven-log-to-slf4j</artifactId>
 			<version>0.19.1</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-console-standalone</artifactId>
