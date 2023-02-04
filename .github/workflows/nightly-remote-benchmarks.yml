@@ -1,0 +1,15 @@
+# Run benchmarks on a remote system for the nightly (edge) build
+# - Calls the reusable worflow remote-benchmarks.yml
+
+name: Nightly Benchmark Test on Docker Deephaven
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  process-nightly-benchmarks:
+    uses: ./.github/workflows/remote-benchmarks.yml
+    with:
+      run-type: nightly
+    secrets: inherit
