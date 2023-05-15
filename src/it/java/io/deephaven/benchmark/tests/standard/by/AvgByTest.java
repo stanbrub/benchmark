@@ -12,11 +12,13 @@ public class AvgByTest {
 
     @BeforeEach
     public void setup() {
+        runner.setRowFactor(6);
         runner.tables("source");
     }
 
     @Test
     public void avgBy1Group2Cols() {
+        runner.setScaleFactors(10, 10);
         var q = "source.avg_by(by=['str250'])";
         runner.test("AvgBy- 1 Group 250 Unique Vals", 250, q, "str250", "int250");
     }
@@ -29,12 +31,14 @@ public class AvgByTest {
 
     @Test
     public void avgBy2GroupInt() {
+        runner.setScaleFactors(3, 2);
         var q = "source.avg_by(by=['str250', 'str640'])";
         runner.test("AvgBy- 2 Groups 160K Unique Combos Int", 160000, q, "str250", "str640", "int250");
     }
     
     @Test
     public void avgBy2GroupFloat() {
+        runner.setScaleFactors(3, 2);
         var q = "source.avg_by(by=['str250', 'str640'])";
         runner.test("AvgBy- 2 Groups 160K Unique Combos Float", 160000, q, "str250", "str640", "float5");
     }

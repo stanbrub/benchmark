@@ -69,6 +69,7 @@ public class SortedComboTest {
         ]
         """;
         runner.addSetupQuery(aggs);
+        runner.setScaleFactors(10, 1);
 
         var q = "source.agg_by(aggs, by=['str250', 'str640'])";
         runner.test("Sorted-AggBy- 4 Sorts 2 Groups 160K Unique Vals", 160000, q, "str640", "str250", "str1M",

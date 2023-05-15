@@ -9,11 +9,11 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  */
 public class CumComboTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
-    final long rowCount = runner.scaleRowCount;
     String setupStr = null;
 
     @BeforeEach
     public void setup() {
+        runner.setRowFactor(6);
         runner.tables("timed");
         
         setupStr = """
@@ -33,7 +33,7 @@ public class CumComboTest {
     public void cumComboNoGroups6Ops() {
         runner.addSetupQuery(operations("int5"));
         var q = "timed.update_by(ops=[ema_tick_op, ema_time_op, max_op, min_op, sum_op, prod_op])";
-        runner.test("CumCombo- 6 Ops No Groups", runner.scaleRowCount, q, "int5", "timestamp");
+        runner.test("CumCombo- 6 Ops No Groups", q, "int5", "timestamp");
     }
 
     @Test
@@ -42,7 +42,7 @@ public class CumComboTest {
         var q = """
         timed.update_by(ops=[ema_tick_op, ema_time_op, max_op, min_op, sum_op, prod_op], by=['str100','str150'])
         """;
-        runner.test("CumCombo- 6 Ops 2 Groups 15K Unique Combos Int", rowCount, q, "str100", "str150",
+        runner.test("CumCombo- 6 Ops 2 Groups 15K Unique Combos Int", q, "str100", "str150",
                 "int5", "timestamp");
     }
     
@@ -52,7 +52,7 @@ public class CumComboTest {
         var q = """
         timed.update_by(ops=[ema_tick_op, ema_time_op, max_op, min_op, sum_op, prod_op], by=['str100','str150'])
         """;
-        runner.test("CumCombo- 6 Ops 2 Groups 15K Unique Combos Float", rowCount, q, "str100", "str150",
+        runner.test("CumCombo- 6 Ops 2 Groups 15K Unique Combos Float", q, "str100", "str150",
                 "float5", "timestamp");
     }
     

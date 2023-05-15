@@ -13,12 +13,13 @@ public class WhereNotInTest {
 
     @BeforeEach
     public void setup() {
+        runner.setRowFactor(6);
         runner.tables("source");
         var setup = """
         from deephaven.column import string_col
         where_filter = new_table([
-        	string_col("sPrefix", ['s250', 's1', 's249', 's2', 's248']),
-        	string_col("sSuffix", ['250s', '1s', '249s', '2s', '248s'])
+        	string_col("sPrefix", ['250', '1', '249', '2', '248']),
+        	string_col("sSuffix", ['250', '1', '249', '2', '248'])
         ])
         
         """;
@@ -27,14 +28,16 @@ public class WhereNotInTest {
 
     @Test
     public void whereNotIn1Filter() {
+        runner.setScaleFactors(100, 10);
         var q = "source.where_not_in(where_filter, cols=['str250 = sPrefix'])";
-        runner.test("WhereNotIn- 1 Filter Col", runner.scaleRowCount, q, "str250", "int250");
+        runner.test("WhereNotIn- 1 Filter Col", q, "str250", "int250");
     }
 
     @Test
     public void whereNotIn2Filter() {
+        runner.setScaleFactors(50, 5);
         var q = "source.where_not_in(where_filter, cols=['str250 = sPrefix', 'str640 = sSuffix'])";
-        runner.test("WhereNotIn- 2 Filter Cols", runner.scaleRowCount, q, "str250", "str640", "int250");
+        runner.test("WhereNotIn- 2 Filter Cols", q, "str250", "str640", "int250");
     }
 
 }

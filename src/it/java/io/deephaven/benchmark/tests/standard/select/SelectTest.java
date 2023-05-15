@@ -18,14 +18,16 @@ public class SelectTest {
 
     @Test
     public void select1CalcUsing2Cols() {
-        var q = "source.select(formulas=['New1 = (int640 + int250) / 2'])";
-        runner.test("Select- 1 Calc Using 2 Cols", runner.scaleRowCount, q, "str250", "int250", "int640", "int1M");
+        runner.setScaleFactors(200, 40);
+        var q = "source.select(formulas=['New1 = (float)((int640 + int250) / 2)'])";
+        runner.test("Select- 1 Calc Using 2 Cols", q, "int250", "int640");
     }
 
     @Test
     public void select2CalcsUsing2Cols() {
-        var q = "source.select(formulas=['New1 = (int640 + int250) / 2', 'New2 = int1M - int640'])";
-        runner.test("Select- 2 Cals Using 2 Cols", runner.scaleRowCount, q, "str250", "int250", "int640", "int1M");
+        runner.setScaleFactors(100, 20);
+        var q = "source.select(formulas=['New1 = (float)((int640 + int250) / 2)', 'New2 = int640 - int250'])";
+        runner.test("Select- 2 Cals Using 2 Cols", q, "int250", "int640");
     }
 
 }
