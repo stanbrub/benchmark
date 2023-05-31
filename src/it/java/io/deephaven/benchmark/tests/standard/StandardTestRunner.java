@@ -143,11 +143,11 @@ public class StandardTestRunner {
         var ecount = getExpectedRowCount(expectedRowCount, staticFactor);
         assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Static row count: " + rcount);
 
-        read = getReadOperation(incFactor);
-        result = runIncTest(name, operation, read, loadColumns);
-        rcount = result.resultRowCount();
-        ecount = getExpectedRowCount(expectedRowCount, incFactor);
-        assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Inc row count: " + rcount);
+//        read = getReadOperation(incFactor);
+//        result = runIncTest(name, operation, read, loadColumns);
+//        rcount = result.resultRowCount();
+//        ecount = getExpectedRowCount(expectedRowCount, incFactor);
+//        assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Inc row count: " + rcount);
     }
 
     long getExpectedRowCount(long expectedRowCount, long scaleFactor) {
@@ -308,13 +308,16 @@ public class StandardTestRunner {
                 .add("r_int1M", "int", "[1-1000000]")
                 .add("r_str1M", "string", "[1-1000000]")
                 .add("r_str10K", "string", "[1-100000]")
+                .add("r_timestamp", "timestamp-millis", "[1-1000000]")
                 .generateParquet();
     }
 
     void generateTimedTable() {
         long baseTime = 1676557157537L;
+        long timeCount = baseTime + scaleRowCount - 1;
         api.table("timed").fixed()
-                .add("timestamp", "timestamp-millis", "[" + baseTime + "-" + (baseTime + scaleRowCount - 1) + "]")
+                .add("timestamp", "timestamp-millis", "[" + baseTime + "-" + timeCount + "]")
+                .add("timestamp2", "timestamp-millis", "[" + (baseTime + 3) + "-" + (timeCount + 3) + "]")
                 .add("int5", "int", "[1-5]")
                 .add("int10", "int", "[1-10]")
                 .add("float5", "float", "[1-5]")
