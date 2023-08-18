@@ -41,17 +41,23 @@ jobs:
 
     - name: Run Remote Benchmarks
       run: |
-        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} run-benchmarks-remote
+        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} run-benchmarks-remote ${RUN_TYPE}
         
     - name: Fetch Benchmark Results
       run: |
         ${SD}/fetch-results-local.sh ${HOST} ${USER} ${RUN_TYPE}
         
-    - name: Remove Summary Results
+    - name: Manage Summary Results
       run: |
-        # For now remove any summaries before putting in GCloud
+        # For now remove any unwanted summaries before uploading to GCloud
         rm -f ${RUN_TYPE}/*.csv
-        
+        # Rename the svg summary table according to run type. Discard the rest
+        TMP_SVG_DIR=${RUN_TYPE}/tmp-svg
+        mkdir -p ${TMP_SVG_DIR}
+        mv ${RUN_TYPE}/*.svg ${TMP_SVG_DIR}
+        mv ${TMP_SVG_DIR}/${RUN_TYPE}-benchmark-summary.svg ${RUN_TYPE}/benchmark-summary.svg
+        rm -rf ${TMP_SVG_DIR}
+
     - name: Authorize GCloud Credentials
       uses: google-github-actions/auth@v1
       with:
@@ -80,3 +86,4 @@ jobs:
         path: |
           ${{env.RUN_TYPE}}/**/*
           logs/**/*
+
