@@ -1,6 +1,7 @@
 # Copyright (c) 2022-2023 Deephaven Data Labs and Patent Pending 
 #
-# Deephaven query to run against historical benchmark data stored in GCloud bucket
+# Deephaven query to run against historical benchmark data stored in GCloud bucket and produce
+# some useful correlated tables
 # Requirements: Deephaven 0.23.0 or greater
 
 import os, re, glob
@@ -52,12 +53,14 @@ def merge_run_tables(parent_uri, run_ids, category, csv_file_name, schema = None
 # Load standard tables from GCloud or local storage according to category
 # If this script is run from exec(), accept the benchmark_category_arg
 default_storage_uri = 'https://storage.googleapis.com/deephaven-benchmark'
-default_category = 'release'
-default_max_runs = 10
+default_category = 'nightly'
+default_max_runs = 5
+default_history_runs = 5
 
 storage_uri = benchmark_storage_uri_arg if 'benchmark_storage_uri_arg' in globals() else default_storage_uri
 category = benchmark_category_arg if 'benchmark_category_arg' in globals() else default_category
 max_runs = benchmark_max_runs_arg if 'benchmark_max_runs_arg' in globals() else default_max_runs
+history_runs = benchmark_history_runs_arg if 'benchmark_history_runs_arg' in globals() else default_history_runs
 run_ids = get_run_ids(storage_uri, category, max_runs)
 bench_results = merge_run_tables(storage_uri, run_ids, category, 'benchmark-results.csv', s_results)
 bench_metrics = merge_run_tables(storage_uri, run_ids, category, 'benchmark-metrics.csv')
@@ -103,7 +106,7 @@ def rstd(rates):
     return statistics.pstdev(rates) * 100.0 / statistics.mean(rates)
 
 from array import array
-def rchange(rates):
+def rchange(rates) -> float:
     rates = array('l', rates)
     if(len(rates) < 2): return 0.0
     m = statistics.mean(rates[:-1])
@@ -111,16 +114,20 @@ def rchange(rates):
 
 def format_rates(rates):
     return ' '.join("{:,}".format(r) for r in rates)
+    
+def gain(start:float, end:float) -> float:
+    return (end - start) / start * 100.0
 
 from deephaven.updateby import rolling_group_tick
-op_group = rolling_group_tick(cols=["op_group_rates = op_rate"], rev_ticks=5, fwd_ticks=0)
+op_group = rolling_group_tick(cols=["op_group_rates = op_rate"], rev_ticks=history_runs, fwd_ticks=0)
+op_version = rolling_group_tick(cols=["op_group_versions = deephaven_version"], rev_ticks=history_runs, fwd_ticks=0)
+
 bench_results_change = bench_results_diff.sort(['benchmark_name', 'origin', 'deephaven_version', 'timestamp'])
-bench_results_change = bench_results_change.update_by(ops=[op_group], by=['benchmark_name', 'origin'])
+bench_results_change = bench_results_change.update_by(ops=[op_group, op_version], by=['benchmark_name', 'origin'])
 bench_results_change = bench_results_change.update(
-    ['op_rate_variability=(double)rstd(op_group_rates)', 'op_rate_change=(double)rchange(op_group_rates)']
+    ['op_rate_variability=(float)rstd(op_group_rates)', 'op_rate_change=(float)rchange(op_group_rates)']
 )
 bench_results_change = bench_results_change.view(
     ['benchmark_name', 'origin', 'timestamp', 'deephaven_version', 'op_duration', 'op_rate', 
-    'op_rate_variability', 'op_rate_change', 'op_rate_change', 'op_group_rates=format_rates(op_group_rates)']
+    'op_rate_variability', 'op_rate_change', 'op_rate_change', 'op_group_rates', 'op_group_versions']
 )
-
