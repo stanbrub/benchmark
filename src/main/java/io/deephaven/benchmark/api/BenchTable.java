@@ -136,6 +136,14 @@ final public class BenchTable implements Closeable {
     }
 
     /**
+     * Generate the table asynchronously through Kafka using Avro serialization
+     */
+    public void generateProtobuf() {
+        var future = generateWithProtobuf();
+        bench.addFuture(future);
+    }
+
+    /**
      * Generate the table synchronously to a parquet file in the engine's data directory. If a parquet file already
      * exists in the Deephaven data directory that matches this table definition, use it and skip generation.
      */
@@ -186,6 +194,13 @@ final public class BenchTable implements Closeable {
         String bootstrapServer = bench.property("client.redpanda.addr", "localhost:9092");
         String schemaRegistry = "http://" + bench.property("client.schema.registry.addr", "localhost:8081");
         generator = new JsonKafkaGenerator(bootstrapServer, schemaRegistry, tableName, columns, getCompression());
+        return generator.produce(getRowPause(), getRowCount(), getRunDuration());
+    }
+
+    private Future<Metrics> generateWithProtobuf() {
+        String bootstrapServer = bench.property("client.redpanda.addr", "localhost:9092");
+        String schemaRegistry = "http://" + bench.property("client.schema.registry.addr", "localhost:8081");
+        generator = new ProtobufKafkaGenerator(bootstrapServer, schemaRegistry, tableName, columns, getCompression());
         return generator.produce(getRowPause(), getRowCount(), getRunDuration());
     }
 

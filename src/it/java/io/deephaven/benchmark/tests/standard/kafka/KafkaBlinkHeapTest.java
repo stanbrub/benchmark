@@ -30,6 +30,14 @@ public class KafkaBlinkHeapTest {
     }
 
     @Test
+    public void CountBy1gHeapFromKafkaProtobufBlink() {
+        runner.api.setName("CountBy- 20 Cols 1g Heap Protobuf Blink");
+        runner.restartWithHeap(1);
+        runner.table(rowCount / 5, colCount, "long", "protobuf");
+        runner.runTest("consumer_tbl.count_by('count')", "blink");
+    }
+
+    @Test
     void CountBy10gHeapFromKafkaAvroBlink() {
         runner.api.setName("CountBy- 20 Cols 10g Heap Avro Blink");
         runner.restartWithHeap(10);
@@ -42,6 +50,14 @@ public class KafkaBlinkHeapTest {
         runner.api.setName("CountBy- 20 Cols 10g Heap JSON Blink");
         runner.restartWithHeap(10);
         runner.table(rowCount / 4, colCount, "long", "json");
+        runner.runTest("consumer_tbl.count_by('count')", "blink");
+    }
+
+    @Test
+    public void CountBy10gHeapFromKafkaProtobufBlink() {
+        runner.api.setName("CountBy- 20 Cols 10g Heap Protobuf Blink");
+        runner.restartWithHeap(10);
+        runner.table(rowCount / 5, colCount, "long", "protobuf");
         runner.runTest("consumer_tbl.count_by('count')", "blink");
     }
 

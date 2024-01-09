@@ -14,8 +14,8 @@ import io.deephaven.benchmark.util.Timer;
 
 /**
  * Used exclusively as a Bench API wrapper to run the Kafka tests. Provides generation of test data through Kafka,
- * running tests for Kafka consumer according to column data types, JSON/Avro, wide/narrow tables, and append/blink
- * table types. Results are checked to ensure the correct number of rows has been processed.
+ * running tests for Kafka consumer according to column data types, JSON/Avro/Protobuf, wide/narrow tables, and
+ * append/blink table types. Results are checked to ensure the correct number of rows has been processed.
  */
 class KafkaTestRunner {
     final Object testInst;
@@ -63,7 +63,7 @@ class KafkaTestRunner {
      * @param rowCount the number of rows to generate
      * @param colCount the number of columns to generate for each row
      * @param colType the type of column to generate and consume
-     * @param generatorType the format in which to generate the rows (e.g. avro | json)
+     * @param generatorType the format in which to generate the rows (e.g. avro | json | protobuf)
      */
     void table(long rowCount, int colCount, String colType, String generatorType) {
         this.rowCount = rowCount;
@@ -76,12 +76,11 @@ class KafkaTestRunner {
         for (int i = 1; i < colCount; i++) {
             table.add("col" + (i + 1), colType, "[1-1000]");
         }
-        if (generatorType.equals("json")) {
-            table.withRowCount(rowCount).generateJson();
-        } else if (generatorType.equals("avro")) {
-            table.withRowCount(rowCount).generateAvro();
-        } else {
-            throw new RuntimeException("Bad generator type: " + generatorType);
+        switch (generatorType) {
+            case "json" -> table.withRowCount(rowCount).generateJson();
+            case "avro" -> table.withRowCount(rowCount).generateAvro();
+            case "protobuf" -> table.withRowCount(rowCount).generateProtobuf();
+            default -> throw new RuntimeException("Bad generator type: " + generatorType);
         }
         api.awaitCompletion();
     }
@@ -138,29 +137,34 @@ class KafkaTestRunner {
         query = query.replace("${kafkaConsumerSpec}", getKafkaConsumerSpec(colCount, getDHType(colType)));
         query = query.replace("${schemaRegistryURL}", getSchemaRegistry());
 
-        api.query(query).fetchAfter("stats", table -> {
-            long elapsedNanos = table.getSum("elapsed_nanos").longValue();
-            long procRowCount = table.getSum("processed_row_count").longValue();
-            long resultRowCount = table.getSum("result_row_count").longValue();
-            assertEquals(rowCount, procRowCount, "Wrong processed row count");
-            assertEquals(1, resultRowCount, "Wrong counter table row count");
-            api.result().test("deephaven-engine", Duration.ofNanos(elapsedNanos), rowCount);
-        }).fetchAfter("standard_metrics", table -> {
-            api.metrics().add(table);
-        }).execute();
-        addDockerLog(api);
+        try {
+            api.query(query).fetchAfter("stats", table -> {
+                long elapsedNanos = table.getSum("elapsed_nanos").longValue();
+                long procRowCount = table.getSum("processed_row_count").longValue();
+                long resultRowCount = table.getSum("result_row_count").longValue();
+                assertEquals(rowCount, procRowCount, "Wrong processed row count");
+                assertEquals(1, resultRowCount, "Wrong counter table row count");
+                api.result().test("deephaven-engine", Duration.ofNanos(elapsedNanos), rowCount);
+            }).fetchAfter("standard_metrics", table -> {
+                api.metrics().add(table);
+            }).execute();
+        } finally {
+            addDockerLog(api);
+        }
     }
 
     private String getSchemaRegistry() {
-        if (!generatorType.equals("avro")) {
-            return "";
-        }
-        return ", 'schema.registry.url' : 'http://${schema.registry.addr}'";
+        if (generatorType.equals("avro") || generatorType.equals("protobuf"))
+            return ", 'schema.registry.url' : 'http://${schema.registry.addr}'";
+        return "";
     }
 
     private String getKafkaConsumerSpec(int colCount, String colType) {
         if (generatorType.equals("avro")) {
             return "kc.avro_spec('consumer_tbl_record', schema_version='1')";
+        }
+        if (generatorType.equals("protobuf")) {
+            return "kc.protobuf_spec('consumer_tbl_record', schema_version=1)";
         }
         var spec = """
         [('count', dht.long)]
