@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2023 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.tests.standard.by;
 
 import org.junit.jupiter.api.*;
@@ -11,44 +11,30 @@ public class CountByTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         runner.setRowFactor(6);
         runner.tables("source");
     }
 
     @Test
-    public void countBy1IntGroup1Col() {
-        runner.setScaleFactors(20, 20);
-        var q = "source.count_by('count', by=['int250'])";
-        runner.test("CountBy- 1 Int Group 250 Unique Vals", 250, q, "int250");
+    void countBy1Group() {
+        runner.setScaleFactors(15, 14);
+        var q = "source.count_by('count', by=['key1'])";
+        runner.test("CountBy- 1 Group 100 Unique Vals", 100, q, "key1");
     }
 
     @Test
-    public void countBy1IntGroup1ColLarge() {
-        runner.setScaleFactors(3, 2);
-        var q = "source.count_by('count', by=['int1M'])";
-        runner.test("CountBy- 1 Int Group 1M Unique Vals", 1000000, q, "int1M");
+    void countBy2Groups() {
+        runner.setScaleFactors(4, 3);
+        var q = "source.count_by('count', by=['key1','key2'])";
+        runner.test("CountBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2");
     }
 
     @Test
-    public void countBy1StringGroup1Col() {
-        runner.setScaleFactors(15, 15);
-        var q = "source.count_by('count', by=['str250'])";
-        runner.test("CountBy- 1 String Group 250 Unique Vals", 250, q, "str250");
-    }
-
-    @Test
-    public void countBy2IntGroups2Cols() {
-        runner.setScaleFactors(5, 5);
-        var q = "source.count_by('count', by=['int250', 'int640'])";
-        runner.test("CountBy- 2 Int Groups 160K Unique Combos", 160000, q, "int250", "int640");
-    }
-
-    @Test
-    public void countBy2StringGroups2Cols() {
-        runner.setScaleFactors(5, 5);
-        var q = "source.count_by('count', by=['str250', 'str640'])";
-        runner.test("CountBy- 2 String Groups 160K Unique Combos", 160000, q, "str250", "str640");
+    void countBy3Groups() {
+        runner.setScaleFactors(2, 2);
+        var q = "source.count_by('count', by=['key1','key2','key3'])";
+        runner.test("CountBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3");
     }
 
 }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2023 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.tests.standard.by;
 
 import org.junit.jupiter.api.*;
@@ -11,44 +11,37 @@ public class MaxByTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
     @BeforeEach
-    public void setup() {
-        runner.setRowFactor(5);
+    void setup() {
+        runner.setRowFactor(4);
         runner.tables("source");
     }
 
     @Test
-    public void maxBy0Groups3Cols() {
-        runner.setScaleFactors(35, 1);
+    void maxBy0Groups() {
+        runner.setScaleFactors(20, 1);
         var q = "source.max_by()";
-        runner.test("MaxBy- No Groups 3 Cols", 1, q, "str250", "str640", "int250");
+        runner.test("MaxBy- No Groups", 1, q, "key1", "key2", "num1");
     }
 
     @Test
-    public void maxBy1Group2Cols() {
-        runner.setScaleFactors(15, 4);
-        var q = "source.max_by(by=['str250'])";
-        runner.test("MaxBy- 1 Group 250 Unique Vals", 250, q, "str250", "int250");
+    void maxBy1Group() {
+        runner.setScaleFactors(18, 8);
+        var q = "source.max_by(by=['key1'])";
+        runner.test("MaxBy- 1 Group 100 Unique Vals", 100, q, "key1", "num1");
     }
 
     @Test
-    public void maxBy1Group2ColsLarge() {
-        runner.setScaleFactors(2, 1);
-        var q = "source.max_by(by=['str1M'])";
-        runner.test("MaxBy- 1 Group 1M Unique Vals", 1000000, q, "str1M", "int1M");
+    void maxBy2Groups() {
+        runner.setScaleFactors(4, 2);
+        var q = "source.max_by(by=['key1', 'key2'])";
+        runner.test("MaxBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1");
     }
 
     @Test
-    public void maxBy2GroupsInt() {
-        runner.setScaleFactors(4, 1);
-        var q = "source.max_by(by=['str250', 'str640'])";
-        runner.test("MaxBy- 2 Group 160K Unique Combos Int", 160000, q, "str250", "str640", "int250");
-    }
-    
-    @Test
-    public void maxBy2GroupsFloat() {
-        runner.setScaleFactors(4, 1);
-        var q = "source.max_by(by=['str250', 'str640'])";
-        runner.test("MaxBy- 2 Group 160K Unique Combos Float", 160000, q, "str250", "str640", "float5");
+    void maxBy3Groups() {
+        runner.setScaleFactors(3, 1);
+        var q = "source.max_by(by=['key1', 'key2', 'key3'])";
+        runner.test("MaxBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
     }
 
 }

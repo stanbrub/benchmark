@@ -6,59 +6,45 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 
 /**
  * Standard tests for the updateBy table operation. Defines a tick-based rolling product. The result table contains
- * additional columns with windowed rolling product for each specified column in the source table.
+ * additional columns with windowed rolling product for each specified column in the source table. *
+ * <p/>
+ * Note: This test must contain benchmarks and <code>rev_ticks/fwd_ticks</code> that are comparable to
+ * <code>RollingProdTimeTest</code>
  */
 public class RollingProdTickTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
+    final Setup setup = new Setup(runner);
 
-    @BeforeEach
-    public void setup() {
-        runner.setRowFactor(4);
-        runner.tables("timed");
-
-        var setup = """
-        from deephaven.updateby import rolling_prod_tick
-        contains_row = rolling_prod_tick(cols=["Contains = int5"], rev_ticks=1, fwd_ticks=1)
-        before_row = rolling_prod_tick(cols=["Before = int5"], rev_ticks=3, fwd_ticks=-1)
-        after_row = rolling_prod_tick(cols=["After = int5"], rev_ticks=-1, fwd_ticks=3)
-        """;
-        runner.addSetupQuery(setup);
+    @Test
+    void rollingProdTick0Group3Ops() {
+        setup.factors(5, 8, 7);
+        setup.rollTick0Groups("rolling_prod_tick");
+        var q = "timed.update_by(ops=[contains_row])";
+        runner.test("RollingProdTick- No Groups 1 Col", q, "num1");
     }
 
     @Test
-    public void rollingProdTick0Group3Ops() {
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row])";
-        runner.test("RollingProdTick- 3 Ops No Groups", q, "int5");
+    void rollingProdTick1Group3Ops() {
+        setup.factors(5, 4, 1);
+        setup.rollTick1Group("rolling_prod_tick");
+        var q = "timed.update_by(ops=[contains_row], by=['key1'])";
+        runner.test("RollingProdTick- 1 Group 100 Unique Vals", q, "key1", "num1");
     }
 
     @Test
-    public void rollingProdTick1Group3Ops() {
-        runner.setScaleFactors(3, 1);
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row], by=['str100'])";
-        runner.test("RollingProdTick- 3 Ops 1 Group 100 Unique Vals", q, "str100", "int5");
+    void rollingProdTick2Groups3Ops() {
+        setup.factors(2, 3, 1);
+        setup.rollTick2Groups("rolling_prod_tick");
+        var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
+        runner.test("RollingProdTick- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1");
     }
 
     @Test
-    public void rollingProdTick2Groups3OpsInt() {
-        runner.setScaleFactors(1, 1);
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row], by=['str100','str150'])";
-        runner.test("RollingProdTick- 3 Ops 2 Groups 15K Unique Combos Int", q, "str100", "str150",
-                "int5");
-    }
-
-    @Test
-    public void rollingProdTick2Groups3OpsFloat() {
-        runner.setScaleFactors(1, 1);
-        var setup = """
-        contains_row = rolling_prod_tick(cols=["Contains = float5"], rev_ticks=1, fwd_ticks=1)
-        before_row = rolling_prod_tick(cols=["Before = float5"], rev_ticks=3, fwd_ticks=-1)
-        after_row = rolling_prod_tick(cols=["After = float5"], rev_ticks=-1, fwd_ticks=3)
-        """;
-        runner.addSetupQuery(setup);
-        
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row], by=['str100','str150'])";
-        runner.test("RollingProdTick- 3 Ops 2 Groups 15K Unique Combos Float", q, "str100", "str150",
-                "float5");
+    void rollingProdTick3Groups3Ops() {
+        setup.factors(1, 3, 1);
+        setup.rollTick3Groups("rolling_prod_tick");
+        var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
+        runner.test("RollingProdTick- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1");
     }
 
 }

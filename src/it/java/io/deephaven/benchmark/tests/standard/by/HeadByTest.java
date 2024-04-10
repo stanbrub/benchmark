@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2023 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.tests.standard.by;
 
 import org.junit.jupiter.api.*;
@@ -11,28 +11,29 @@ public class HeadByTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
     @BeforeEach
-    public void setup() {
-        runner.setRowFactor(5);
+    void setup() {
+        runner.setRowFactor(4);
         runner.tables("source");
     }
 
     @Test
-    public void headBy1Group2Cols() {
-        runner.setScaleFactors(8, 2);
-        var q = "source.head_by(2, by=['str250'])";
-        runner.test("HeadBy- 1 Group 250 Unique Vals 2 Rows Per", 250 * 2, q, "str250", "int250");
+    void headBy1Group() {
+        runner.setScaleFactors(10, 2);
+        var q = "source.head_by(2, by=['key1'])";
+        runner.test("HeadBy- 1 Group 100 Unique Vals", 100 * 2, q, "key1", "num1");
     }
 
     @Test
-    public void headBy1Group2ColsLarge() {
-        var q = "source.head_by(2, by=['str1M'])";
-        runner.test("HeadBy- 1 Group 1M Unique Vals 2 Rows Per", 1000000 * 2, q, "str1M", "int1M");
+    void headBy2Groups() {
+        runner.setScaleFactors(2, 2);
+        var q = "source.head_by(2, by=['key1', 'key2'])";
+        runner.test("HeadBy- 2 Groups 10K Unique Combos", 10100 * 2, q, "key1", "key2", "num1");
     }
 
     @Test
-    public void headBy2Group3Cols() {
-        var q = "source.head_by(2, by=['str250', 'str640'])";
-        runner.test("LastBy- 2 Group 160K Unique Combos 2 Rows Per", 160000 * 2, q, "str250", "str640", "int250");
+    void headBy3Groups() {
+        var q = "source.head_by(2, by=['key1', 'key2', 'key3'])";
+        runner.test("HeadBy- 3 Groups 100K Unique Combos", 90900 * 2, q, "key1", "key2", "key3", "num1");
     }
 
 }

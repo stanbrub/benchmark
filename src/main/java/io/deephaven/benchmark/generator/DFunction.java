@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2023 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.generator;
 
 import java.util.Random;
@@ -10,31 +10,30 @@ import io.deephaven.benchmark.util.Ids;
  * For example, a function returning a random value need only ensure that the value is found within the given
  * destination range. On the other hand, a scaling function would used source range and destination range to translate a
  * source value to a value within the destination range.
+ * <p/>
+ * Note: In a practical sense, and from the perspective of usage in the <code>columnDefs</code> class, the distribution
+ * functions do not return data values but indexes to data values. Put another way, the function return data positions.
  */
 abstract class DFunction {
 
     /**
      * A factory method do get the distribution function and assign it an id
      * 
-     * @param distribution a distribution {@code linearconv | incremental | random}
+     * @param distribution a distribution {@code runlength | ascending | random}
      * @param id an id for the function to differentiate it from others of the same type
      * @return a function matching the give distribution
      */
     static DFunction get(String distribution, String id) {
-        DFunction df;
-        switch (distribution.toLowerCase()) {
-            case "linearconv":
-                df = new LinearConvDFunction();
-                break;
-            case "incremental":
-                df = new IncrementalDFunction();
-                break;
-            case "random":
-                df = new RandomDFunction();
-                break;
-            default:
-                throw new RuntimeException("Undefined distribution function name: " + distribution);
-        }
+        var df = switch (distribution.toLowerCase()) {
+            case "runlength" -> new RunLengthDFunction();
+            case "linearconv" -> new LinearConvDFunction();
+            case "ascending" -> new AscendingDFunction();
+            case "random" -> new RandomDFunction();
+            // case "random-even-neg" -> new RandomDFunction();
+            // case "random-odd-neg" -> new RandomDFunction();
+            // case "random-shift" -> new RandomDFunction();
+            default -> throw new RuntimeException("Undefined distribution function name: " + distribution);
+        };
         df.name = distribution;
         df.id = id;
         df.init(id);
@@ -102,11 +101,26 @@ abstract class DFunction {
     }
 
     /**
+     * Produce repeating values according to the size of the given range. For example, if the destination range is 1-10,
+     * the result of iterating {@code srcVal} from 1-100 would be 1,1,2,2,3,3... and so on.
+     */
+    static class RunLengthDFunction extends DFunction {
+        final AscendingDFunction func = new AscendingDFunction();
+
+        @Override
+        long apply(long srcMin, long srcMax, long srcVal, long dstMin, long dstMax) {
+            long dstSize = dstMax - dstMin;
+            long v = func.apply(srcMin, srcMax, srcVal, dstMin, dstSize * dstSize);
+            return v / dstSize;
+        }
+    }
+
+    /**
      * Produce values that are in sequential order without going outside the destination range. For example, if the
      * destination range is 1-4, the result of iterating
      * {@code srvVal) from 1-100 would be 1,2,3,4,1,2,3,4... and so on.
      */
-    static class IncrementalDFunction extends DFunction {
+    static class AscendingDFunction extends DFunction {
         @Override
         long apply(long srcMin, long srcMax, long srcVal, long dstMin, long dstMax) {
             check(srcMin, srcMax, dstMin, dstMax);

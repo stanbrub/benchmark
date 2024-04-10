@@ -6,60 +6,45 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 
 /**
  * Standard tests for the updateBy table operation. Defines a tick-based rolling sum. The result table contains
- * additional columns with windowed rolling sums for each specified column in the source table.
+ * additional columns with windowed rolling sums for each specified column in the source table. *
+ * <p/>
+ * Note: This test must contain benchmarks and <code>rev_ticks/fwd_ticks</code> that are comparable to
+ * <code>RollingSumTimeTest</code>
  */
 public class RollingSumTickTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
+    final Setup setup = new Setup(runner);
 
-    @BeforeEach
-    public void setup() {
-        runner.setRowFactor(4);
-        runner.tables("timed");
-
-        var setup = """
-        from deephaven.updateby import rolling_sum_tick
-        contains_row = rolling_sum_tick(cols=["Contains = int5"], rev_ticks=1, fwd_ticks=1)
-        before_row = rolling_sum_tick(cols=["Before = int5"], rev_ticks=3, fwd_ticks=-1)
-        after_row = rolling_sum_tick(cols=["After = int5"], rev_ticks=-1, fwd_ticks=3)
-        """;
-        runner.addSetupQuery(setup);
+    @Test
+    void rollingSumTick0Group3Ops() {
+        setup.factors(4, 2, 2);
+        setup.rollTick0Groups("rolling_sum_tick");
+        var q = "timed.update_by(ops=[contains_row])";
+        runner.test("RollingSumTick- No Groups 1 Col", q, "num1");
     }
 
     @Test
-    public void rollingSumTick0Group3Ops() {
-        runner.setScaleFactors(4, 4);
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row])";
-        runner.test("RollingSumTick- 3 Ops No Groups", q, "int5");
+    void rollingSumTick1Group3Ops() {
+        setup.factors(4, 6, 2);
+        setup.rollTick1Group("rolling_sum_tick");
+        var q = "timed.update_by(ops=[contains_row], by=['key1'])";
+        runner.test("RollingSumTick- 1 Group 100 Unique Vals", q, "key1", "num1");
     }
 
     @Test
-    public void rollingSumTick1Group3Ops() {
-        runner.setScaleFactors(4, 1);
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row], by=['str100'])";
-        runner.test("RollingSumTick- 3 Ops 1 Group 100 Unique Vals", q, "str100", "int5");
+    void rollingSumTick2Groups3Ops() {
+        setup.factors(2, 3, 1);
+        setup.rollTick2Groups("rolling_sum_tick");
+        var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
+        runner.test("RollingSumTick- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1");
     }
 
     @Test
-    public void rollingSumTick2Groups3OpsInt() {
-        runner.setScaleFactors(1, 1);
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row], by=['str100','str150'])";
-        runner.test("RollingSumTick- 3 Ops 2 Groups 15K Unique Combos Int", q, "str100", "str150",
-                "int5");
-    }
-
-    @Test
-    public void rollingSumTick2Groups3OpsFloat() {
-        runner.setScaleFactors(1, 1);
-        var setup = """
-        contains_row = rolling_sum_tick(cols=["Contains = float5"], rev_ticks=1, fwd_ticks=1)
-        before_row = rolling_sum_tick(cols=["Before = float5"], rev_ticks=3, fwd_ticks=-1)
-        after_row = rolling_sum_tick(cols=["After = float5"], rev_ticks=-1, fwd_ticks=3)
-        """;
-        runner.addSetupQuery(setup);
-
-        var q = "timed.update_by(ops=[contains_row, before_row, after_row], by=['str100','str150'])";
-        runner.test("RollingSumTick- 3 Ops 2 Groups 15K Unique Combos Float", q, "str100", "str150",
-                "float5");
+    void rollingSumTick3Groups3Ops() {
+        setup.factors(1, 3, 1);
+        setup.rollTick3Groups("rolling_sum_tick");
+        var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
+        runner.test("RollingSumTick- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1");
     }
 
 }

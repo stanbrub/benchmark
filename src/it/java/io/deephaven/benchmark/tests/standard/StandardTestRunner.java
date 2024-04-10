@@ -47,9 +47,13 @@ final public class StandardTestRunner {
     }
 
     /**
-     * Identify a pre-defined table for use by this runner
+     * Generate the given pre-defined tables according to the default data distribution defined by the
+     * <code>default.data.distribution</code> property. The first table name provided will be the main
+     * <code>source</code> table.
+     * <p/>
+     * This method should only be called once per test.
      * 
-     * @param type
+     * @param names the table names
      */
     public void tables(String... names) {
         if (names.length > 0)
@@ -61,10 +65,13 @@ final public class StandardTestRunner {
     }
 
     /**
-     * name
+     * Generate a pre-defined table and set an explicit distribution for that table's data. This will override the
+     * <code>default.data.distribution</code> property.
+     * <p/>
+     * This method should only be called once per test.
      * 
-     * @param name
-     * @param distribution
+     * @param name the table name to generate
+     * @param distribution the name of the distribution
      */
     public void table(String name, String distribution) {
         mainTable = name;
@@ -136,21 +143,21 @@ final public class StandardTestRunner {
      * @param operation the operation to run and measure for the benchmark
      * @param loadColumns columns to load from the generated parquet file
      */
-    public void test(String name, long expectedRowCount, String operation, String... loadColumns) {
+    public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
         var read = getReadOperation(staticFactor, loadColumns);
         var result = runStaticTest(name, operation, read, loadColumns);
         var rcount = result.resultRowCount();
-        var ecount = getExpectedRowCount(expectedRowCount, staticFactor);
+        var ecount = getMaxExpectedRowCount(maxExpectedRowCount, staticFactor);
         assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Static row count: " + rcount);
 
         read = getReadOperation(incFactor, loadColumns);
         result = runIncTest(name, operation, read, loadColumns);
         rcount = result.resultRowCount();
-        ecount = getExpectedRowCount(expectedRowCount, incFactor);
+        ecount = getMaxExpectedRowCount(maxExpectedRowCount, incFactor);
         assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Inc row count: " + rcount);
     }
 
-    long getExpectedRowCount(long expectedRowCount, long scaleFactor) {
+    long getMaxExpectedRowCount(long expectedRowCount, long scaleFactor) {
         return (expectedRowCount < 1) ? Long.MAX_VALUE : expectedRowCount;
     }
 
@@ -346,39 +353,45 @@ final public class StandardTestRunner {
 
     void generateSourceTable(String distribution) {
         api.table("source")
-                .add("int250", "int", "[1-250]", distribution)
-                .add("int640", "int", "[1-640]", distribution)
-                .add("int1M", "int", "[1-1000000]", distribution)
-                .add("float5", "float", "[1-5]", distribution)
-                .add("str250", "string", "[1-250]", distribution)
-                .add("str640", "string", "[1-640]", distribution)
-                .add("str1M", "string", "[1-1000000]", distribution)
+                .add("num1", "double", "[0-4]", distribution)
+                .add("num2", "double", "[1-10]", distribution)
+                .add("key1", "string", "[1-100]", distribution)
+                .add("key2", "string", "[1-101]", distribution)
+                .add("key3", "int", "[0-8]", distribution)
+                .add("key4", "int", "[0-98]", distribution)
+                .add("key5", "string", "[1-1000000]", distribution)
                 .withRowCount(scaleRowCount)
                 .generateParquet();
     }
 
     void generateRightTable(String distribution) {
+        if (distribution == null && api().property("default.data.distribution", "").equals("descending")) {
+            distribution = "descending";
+        } else {
+            distribution = "ascending";
+        }
         supportTables.add("right");
-        api.table("right").fixed()
-                .add("r_str250", "string", "[1-250]", distribution)
-                .add("r_str640", "string", "[1-640]", distribution)
-                .add("r_int1M", "int", "[1-1000000]", distribution)
-                .add("r_str1M", "string", "[1-1000000]", distribution)
-                .add("r_str10K", "string", "[1-100000]", distribution)
+        api.table("right")
+                .add("r_key1", "string", "[1-100]", distribution)
+                .add("r_key2", "string", "[1-101]", distribution)
+                .add("r_wild", "string", "[1-10000]", distribution)
+                .add("r_key5", "string", "[1-1010000]", distribution)
+                .withRowCount(1010000)
                 .generateParquet();
     }
 
     void generateTimedTable(String distribution) {
-        long baseTime = 1676557157537L;
-        if (distribution == null)
-            distribution = "random";
-        api.table("timed").fixed()
-                .add("timestamp", "timestamp-millis", "[" + baseTime + "-" + (baseTime + scaleRowCount - 1) + "]")
-                .add("int5", "int", "[1-5]", distribution)
-                .add("int10", "int", "[1-10]", distribution)
-                .add("float5", "float", "[1-5]", distribution)
-                .add("str100", "string", "[1-100]", distribution)
-                .add("str150", "string", "[1-150]", distribution)
+        long minTime = 1676557157537L;
+        long maxTime = minTime + scaleRowCount - 1;
+        api.table("timed")
+                .add("timestamp", "timestamp-millis", "[" + minTime + "-" + maxTime + "]", "ascending")
+                .add("num1", "double", "[0-4]", distribution)
+                .add("num2", "double", "[1-10]", distribution)
+                .add("key1", "string", "[1-100]", distribution)
+                .add("key2", "string", "[1-101]", distribution)
+                .add("key3", "int", "[0-8]", distribution)
+                .add("key4", "int", "[0-98]", distribution)
+                .withFixedRowCount(true)
                 .generateParquet();
     }
 

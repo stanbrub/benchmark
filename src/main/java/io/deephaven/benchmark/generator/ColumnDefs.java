@@ -2,6 +2,7 @@
 package io.deephaven.benchmark.generator;
 
 import java.util.*;
+import io.deephaven.benchmark.util.Numbers;
 
 /**
  * Contains column definitions used to generate data and schemas. Columns are described by name, type, and data range
@@ -85,11 +86,19 @@ public class ColumnDefs {
      */
     public ColumnDefs add(String name, String type, String valueDef, String distribution) {
         var maker = getMaker(type, valueDef);
-        maker.setDistribution(distribution, name + ':' + type + ':' + valueDef);
+        maker.setDistribution(distribution, type + ':' + valueDef); // Same type and def get same random seed
         columns.add(new ColumnDef(name, type, valueDef, maker));
         return this;
     }
 
+    /**
+     * Add a new column definition.
+     * 
+     * @param name the column name
+     * @param type the column type
+     * @param valueDef the range data (ex. "[1-10]", "str[1-100]ing")
+     * @return this
+     */
     public ColumnDefs add(String name, String type, String valueDef) {
         return add(name, type, valueDef, null);
     }
@@ -125,22 +134,15 @@ public class ColumnDefs {
 
     private Maker getMaker(String type, String valueDef) {
         ValueDef def = parseValueDef(valueDef);
-        switch (type.toLowerCase()) {
-            case "string":
-                return new StringMaker(def);
-            case "long":
-                return new LongMaker(def);
-            case "int":
-                return new IntMaker(def);
-            case "double":
-                return new DoubleMaker(def);
-            case "float":
-                return new FloatMaker(def);
-            case "timestamp-millis":
-                return new TimestampMaker(def);
-            default:
-                throw new RuntimeException("Invalid field type: " + type);
-        }
+        return switch (type.toLowerCase()) {
+            case "string" -> new StringMaker(def);
+            case "long" -> new LongMaker(def);
+            case "int" -> new IntMaker(def);
+            case "double" -> new DoubleMaker(def);
+            case "float" -> new FloatMaker(def);
+            case "timestamp-millis" -> new TimestampMaker(def);
+            default -> throw new RuntimeException("Invalid field type: " + type);
+        };
     }
 
     // "[1-10]"
@@ -156,6 +158,27 @@ public class ColumnDefs {
         long rangeEnd = Long.parseLong(range[1]) + 1; // End is inclusive
 
         return new ValueDef(rangeStart, rangeEnd - rangeStart, brackets, valueDef, false);
+    }
+
+    private Object adjustValueSymmetry(Object value, String distrib, ValueDef def) {
+        if (def.isLiteral)
+            return value;
+
+        if (value instanceof String) {
+            long defSize = def.size() - 1; // Adjust for the fact that range bounds are inclusive
+            return distrib.equals("descending") ? Numbers.offsetInString(value, def.rangeStart, defSize) : value;
+        }
+        return switch (distrib) {
+            case "ascending" -> value; // All positives
+            case "descending" -> Numbers.negate(value); // All negatives
+            // case "random-even-neg" -> Numbers.isEven(value) ? Numbers.negate(value) : value; // Negate evens
+            case "random" -> !Numbers.isEven(value) ? Numbers.negate(value) : value; // Negate odds
+            // case "random-shift" -> (int) ((Number) value).intValue() - (int) (def.size() / 2);
+            // case "random" -> value;
+            case "runlength" -> Numbers.isEven(value) ? Numbers.negate(value) : value; // Negate evens
+            case "linearconv" -> Numbers.isEven(value) ? Numbers.negate(value) : value; // Negate evens;
+            default -> throw new RuntimeException("Undefined distribution function name: " + distrib);
+        };
     }
 
     record ColumnDef(String name, String type, String valueDef, Maker maker) {
@@ -228,18 +251,17 @@ public class ColumnDefs {
     }
 
     abstract class Maker {
-        final List<Object> cache = new ArrayList<>();
+        final Object[] cache;
         final ValueDef def;
+        final int maxCacheSize;
         private String distributionName = null;
         private String distributionId = null;
         private DFunction distribution = null;
 
         Maker(ValueDef def) {
             this.def = def;
-            int cacheSize = (int) Math.min(def.size(), valueCacheSize);
-            for (int i = 0; i < cacheSize; i++) {
-                cache.add(value(i));
-            }
+            this.maxCacheSize = (int) Math.min(def.size(), valueCacheSize);
+            this.cache = new Object[maxCacheSize];
         }
 
         abstract Object value(long index);
@@ -247,11 +269,18 @@ public class ColumnDefs {
         final Object next(long seed, long max) {
             ensureDistributionFunc();
             long index = (long) distribution.apply(0, max, seed, 0, def.size());
-            return (index < cache.size()) ? cache.get((int) index) : value(index);
+            return (index < cache.length && cache[(int) index] != null) ? cache[(int) index] : getValue(index);
+        }
+
+        private Object getValue(long index) {
+            Object v = adjustValueSymmetry(value(index), distributionName, def);
+
+            if (index < cache.length)
+                cache[(int) index] = v;
+            return v;
         }
 
         private long getDefSize() {
-            ensureDistributionFunc();
             return def.size();
         }
 
@@ -261,15 +290,16 @@ public class ColumnDefs {
         }
 
         private void setDistribution(String distribution, String id) {
-            this.distributionName = distribution;
+            this.distributionName = (distribution == null) ? null : distribution.toLowerCase();
             this.distributionId = id;
         }
 
         private void ensureDistributionFunc() {
-            if (distributionName == null)
-                distributionName = defaultDistribution;
-            if (distribution == null)
-                distribution = DFunction.get(distributionName, distributionId);
+            if (distribution == null) {
+                distributionName = (distributionName == null) ? defaultDistribution : distributionName;
+                var dname = distributionName.equals("descending") ? "ascending" : distributionName;
+                distribution = DFunction.get(dname, distributionId);
+            }
         }
     }
 

@@ -1,7 +1,8 @@
-/* Copyright (c) 2022-2023 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.util;
 
 import java.text.DecimalFormat;
+import java.util.regex.Pattern;
 
 /**
  * Provide help with commonly used number parsing
@@ -9,6 +10,7 @@ import java.text.DecimalFormat;
 public class Numbers {
     static final DecimalFormat decimalFormat = new DecimalFormat("#,##0.000");
     static final DecimalFormat integralFormat = new DecimalFormat("#,##0");
+    static final Pattern numberPattern = Pattern.compile("([^0-9]*)([0-9]+)([^0-9]*)");
 
     /**
      * Get a <code>Number</code> for the given value. If it is already a number, return it, otherwise attempt to parse
@@ -76,6 +78,60 @@ public class Numbers {
             return null;
         long bytes = parseNumber(val).longValue();
         return "" + (bytes / 1024 / 1024 / 1024) + "g";
+    }
+
+    /**
+     * Return the negative of the given number instance. If <code>val</code> is null or zero, return.
+     * 
+     * @param val a number
+     * @return the negated number or null if <code>val</code> was null
+     */
+    static public Number negate(Object val) {
+        if (val instanceof Number && ((Number) val).doubleValue() == 0.0)
+            return (Number) val;
+        return switch (val) {
+            case Integer v -> -v.intValue();
+            case Float v -> -v.floatValue();
+            case Long v -> -v.longValue();
+            case Double v -> -v.doubleValue();
+            case Short v -> (short) (-v.shortValue());
+            case Byte v -> (byte) (-v.byteValue());
+            case null -> null;
+            default -> throw new RuntimeException("Unsupported Type: " + val.getClass().getSimpleName());
+        };
+    }
+
+    /**
+     * Determine whether the given number is even or odd.
+     * <p/>
+     * Note: While this method accepts any Number, even or odd for a decimal will be determined by the integral portion.
+     * 
+     * @param val a number
+     * @return true if an even number, otherwise false
+     */
+    static public boolean isEven(Object val) {
+        return switch (val) {
+            case Number v -> v.longValue() % 2 == 0;
+            case null -> false;
+            default -> throw new RuntimeException("Unsupported Type: " + val.getClass().getSimpleName());
+        };
+    }
+
+    /**
+     * Subtract the number in the given string from the given max offset and replace it in the string.
+     * 
+     * @param value the string containing a number
+     * @param maxOffset the uppermost possible number the string may contain
+     * @return a string with the number replaced by a number offset from the maximum
+     */
+    static public Object offsetInString(Object value, long offset, long size) {
+        var str = numberPattern.matcher(value.toString()).replaceAll("$1'$2'$3");
+        var split = str.split("\\'", -1);
+        if (split.length != 3)
+            return value;
+        var num = parseNumber(split[1]).longValue();
+        num = offset + size - num + offset;
+        return split[0] + num + split[2];
     }
 
 }

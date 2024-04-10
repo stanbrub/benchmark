@@ -8,47 +8,43 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  * Standard tests for the updateBy table operation. Calculates a time-based exponential moving minimum for specified
  * columns and places the result into a new column for each row.
  * <p/>
- * Note: When there are no Group Keys, EmMinTime has a much slower rate than EmMaxTime. This is likely because of branch
- * prediction on x86 systems. This disparity does not happen on Mac M1.
+ * Note: This test must contain benchmarks and <code>decay_ticks</code> that are comparable to
+ * <code>EmMinTimeTest</code>
  */
 public class EmMinTimeTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
+    final Setup setup = new Setup(runner);
 
-    @BeforeEach
-    public void setup() {
-        runner.setRowFactor(6);
-        runner.tables("timed");
-        runner.addSetupQuery("from deephaven.updateby import emmin_time");
+    @Test
+    void emMinTime0Group1Col() {
+        setup.factors(5, 10, 8);
+        setup.emTime0Groups("emmin_time");
+        var q = "timed.update_by(ops=[dk])";
+        runner.test("EmMinTime- No Groups 1 Col", q, "num1", "timestamp");
     }
 
     @Test
-    public void emMinTime0Group1Col() {
-        runner.setScaleFactors(3, 3);
-        var q = "timed.update_by(ops=emmin_time(ts_col='timestamp', decay_time='PT2S', cols=['X=int5']))";
-        runner.test("EmMinTime- No Groups 1 Col", q, "int5", "timestamp");
+    void emMinTime1Group1Col() {
+        setup.factors(5, 5, 1);
+        setup.emTime1Group("emmin_time");
+        var q = "timed.update_by(ops=[dk], by=['key1'])";
+        runner.test("EmMinTime- 1 Group 100 Unique Vals", q, "key1", "num1", "timestamp");
     }
 
     @Test
-    public void emMinTime1Group1Col() {
-        runner.setScaleFactors(4, 1);
-        var q = "timed.update_by(ops=emmin_time(ts_col='timestamp', decay_time='PT2S', cols=['X=int5']), by=['str100'])";
-        runner.test("EmMinTime- 1 Group 100 Unique Vals 1 Col", q, "str100", "int5", "timestamp");
+    void emMinTime2Groups1Col() {
+        setup.factors(2, 3, 1);
+        setup.emTime2Groups("emmin_time");
+        var q = "timed.update_by(ops=[dk], by=['key1','key2'])";
+        runner.test("EmMinTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "timestamp");
     }
 
     @Test
-    public void emMinTime2GroupsInt() {
-        runner.setScaleFactors(1, 1);
-        var q = "timed.update_by(ops=emmin_time(ts_col='timestamp', decay_time='PT2S', cols=['X=int5']), by=['str100','str150'])";
-        runner.test("EmMinTime- 2 Groups 15K Unique Combos 1 Col Int", q, "str100", "str150",
-                "int5", "timestamp");
-    }
-
-    @Test
-    public void emMinTime2GroupsFloat() {
-        runner.setScaleFactors(1, 1);
-        var q = "timed.update_by(ops=emmin_time(ts_col='timestamp', decay_time='PT2S', cols=['X=float5']), by=['str100','str150'])";
-        runner.test("EmMinTime- 2 Groups 15K Unique Combos 1 Col Float", q, "str100", "str150",
-                "float5", "timestamp");
+    void emMinTime3Groups1Col() {
+        setup.factors(1, 3, 1);
+        setup.emTime3Groups("emmin_time");
+        var q = "timed.update_by(ops=[dk], by=['key1','key2','key3'])";
+        runner.test("EmMinTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1", "timestamp");
     }
 
 }

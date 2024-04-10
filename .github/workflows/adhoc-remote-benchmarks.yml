@@ -34,6 +34,16 @@ on:
        required: true
        default: '1000000'
        type: string
+     distribution:
+       description: 'Benchmark Data Distribution'
+       required: true
+       default: 'random'
+       type: choice
+       options: 
+       - random
+       - ascending
+       - descending
+       - runlength
 
 jobs:
   process-release-benchmarks:
@@ -45,6 +55,8 @@ jobs:
       run_label: ${{ inputs.run_label }}
       test_package: ${{ inputs.test_package }}
       test_class_regex: ${{ inputs.test_class_regex }}
-      scale_row_count: ${{ inputs.scale_row_count }} 
+      scale_row_count: ${{ inputs.scale_row_count }}
+      distribution: ${{ inputs.distribution }}
     secrets: inherit
+
 
