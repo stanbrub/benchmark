@@ -29,15 +29,27 @@ public class DataIndexTest {
     }
 
     @Test
+    void dataIndexCost() {
+        runner.setScaleFactors(1, 1);
+
+        var op = """
+        source_idx = data_index(source, ['key1','key2','key4'])
+        result = source.count_by('count', by=['key1','key2','key4'])
+        QueryTable.setMemoizeResults(True)
+        """;
+        runner.test("DataIndex- Index Cost 1M Unique Combos", 999900, op, "num1", "key1", "key2", "key4");
+    }
+
+    @Test
     void dataIndexBenefit() {
         runner.setScaleFactors(1, 1);
-        
+
         var setup = """
         source_idx = data_index(source, ['key1','key2','key4'])
         right_idx = data_index(right, ['r_wild','r_key2','r_key4'])
         """;
         runner.addSetupQuery(setup);
-        
+
         var op = """
         source.count_by('count', by=['key1','key2','key4'])
         right.count_by('r_count', by=['r_wild','r_key2','r_key4'])
@@ -53,11 +65,11 @@ public class DataIndexTest {
         """;
         runner.test("DataIndex- Indexed 1M Unique Combos", Long.MAX_VALUE, op, "num1", "key1", "key2", "key4");
     }
-    
+
     @Test
     void dataIndexNoIndex() {
         runner.setScaleFactors(1, 1);
-        
+
         var op = """
         source.count_by('count', by=['key1','key2','key4'])
         right.count_by('r_count', by=['r_wild','r_key2','r_key4'])
