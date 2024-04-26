@@ -144,17 +144,21 @@ final public class StandardTestRunner {
      * @param loadColumns columns to load from the generated parquet file
      */
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
-        var read = getReadOperation(staticFactor, loadColumns);
-        var result = runStaticTest(name, operation, read, loadColumns);
-        var rcount = result.resultRowCount();
-        var ecount = getMaxExpectedRowCount(maxExpectedRowCount, staticFactor);
-        assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Static row count: " + rcount);
+        if (staticFactor > 0) {
+            var read = getReadOperation(staticFactor, loadColumns);
+            var result = runStaticTest(name, operation, read, loadColumns);
+            var rcount = result.resultRowCount();
+            var ecount = getMaxExpectedRowCount(maxExpectedRowCount, staticFactor);
+            assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Static row count: " + rcount);
+        }
 
-        read = getReadOperation(incFactor, loadColumns);
-        result = runIncTest(name, operation, read, loadColumns);
-        rcount = result.resultRowCount();
-        ecount = getMaxExpectedRowCount(maxExpectedRowCount, incFactor);
-        assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Inc row count: " + rcount);
+        if (incFactor > 0) {
+            var read = getReadOperation(incFactor, loadColumns);
+            var result = runIncTest(name, operation, read, loadColumns);
+            var rcount = result.resultRowCount();
+            var ecount = getMaxExpectedRowCount(maxExpectedRowCount, incFactor);
+            assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Inc row count: " + rcount);
+        }
     }
 
     long getMaxExpectedRowCount(long expectedRowCount, long scaleFactor) {
@@ -375,6 +379,7 @@ final public class StandardTestRunner {
                 .add("r_key1", "string", "[1-100]", distribution)
                 .add("r_key2", "string", "[1-101]", distribution)
                 .add("r_wild", "string", "[1-10000]", distribution)
+                .add("r_key4", "int", "[0-98]", distribution)
                 .add("r_key5", "string", "[1-1010000]", distribution)
                 .withRowCount(1010000)
                 .generateParquet();
