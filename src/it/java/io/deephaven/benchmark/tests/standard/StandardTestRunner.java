@@ -22,8 +22,9 @@ import io.deephaven.benchmark.util.Timer;
  */
 final public class StandardTestRunner {
     final Object testInst;
-    final List<String> setupQueries = new ArrayList<>();
     final List<String> supportTables = new ArrayList<>();
+    final List<String> setupQueries = new ArrayList<>();
+    final List<String> preOpQueries = new ArrayList<>();
     private String mainTable = "source";
     private Bench api;
     private Controller controller;
@@ -79,13 +80,24 @@ final public class StandardTestRunner {
     }
 
     /**
-     * Add a query to be run outside the benchmark measurement but before the benchmark query. This query can transform
-     * the main table or supporting table, set up aggregations or updateby operations, etc.
+     * Add a query to be run directly after the main table is loaded. It is not measured. This query can transform the
+     * main table or supporting table, set up aggregations or updateby operations, etc.
      * 
      * @param query the query to run before benchmark
      */
     public void addSetupQuery(String query) {
         setupQueries.add(query);
+    }
+
+    /**
+     * Add a query to be run directly before the measured operation is run. This query allows changes to tables or
+     * config that must occur after other setup queries happen but before the operation is run. When in doubt, use
+     * <code>addSetupQuery</code>.
+     * 
+     * @param query the query to run just before the measured operation
+     */
+    public void addPreOpQuery(String query) {
+        preOpQueries.add(query);
     }
 
     /**
@@ -196,8 +208,10 @@ final public class StandardTestRunner {
 
         garbage_collect()
 
+        ${preOpQueries}
         bench_api_metrics_snapshot()
         print('${logOperationBegin}')
+        
         begin_time = time.perf_counter_ns()
         result = ${operation}
         end_time = time.perf_counter_ns()
@@ -226,6 +240,7 @@ final public class StandardTestRunner {
         
         garbage_collect()
         
+        ${preOpQueries}
         bench_api_metrics_snapshot()
         print('${logOperationBegin}')
         begin_time = time.perf_counter_ns()
@@ -258,6 +273,7 @@ final public class StandardTestRunner {
         query = query.replace("${loadSupportTables}", loadSupportTables());
         query = query.replace("${loadColumns}", listStr(loadColumns));
         query = query.replace("${setupQueries}", String.join("\n", setupQueries));
+        query = query.replace("${preOpQueries}", String.join("\n", preOpQueries));
         query = query.replace("${operation}", operation);
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
