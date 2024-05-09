@@ -23,84 +23,84 @@ public class InlineFormulaTest {
 
     @Test
     void select1Calc1ColFormula() {
-        setup(3, 43, 18);
+        setup(6, 22, 8);
         var q = "source.select(['num2',${calcs}]).sum_by()".replace("${calcs}", calc1col1);
         runner.test("Select-Sum- 1 Calc Using 1 Col", 1, q, "num2");
     }
 
     @Test
     void select1Calc2ColsFormula() {
-        setup(3, 30, 12);
+        setup(6, 14, 7);
         var q = "source.select(['num1','num2',${calcs}]).sum_by()".replace("${calcs}", calc1cols2);
         runner.test("Select-Sum- 1 Calc Using 2 Cols", 1, q, "num1", "num2");
     }
 
     @Test
     void select2Calcs2ColsFormula() {
-        setup(2, 35, 17);
+        setup(6, 12, 6);
         var q = "source.select(['num1','num2',${calcs}]).sum_by()".replace("${calcs}", calc2cols2);
         runner.test("Select-Sum- 2 Calcs Using 2 Cols", 1, q, "num1", "num2");
     }
 
     @Test
     void update1Calc1ColsFormula() {
-        setup(3, 55, 40);
+        setup(6, 32, 20);
         var q = "source.update([${calcs}]).sum_by()".replace("${calcs}", calc1col1);
         runner.test("Update-Sum- 1 Calc Using 1 Col", 1, q, "num2");
     }
 
     @Test
     void update1Calc2ColsFormula() {
-        setup(3, 45, 30);
+        setup(6, 22, 16);
         var q = "source.update([${calcs}]).sum_by()".replace("${calcs}", calc1cols2);
         runner.test("Update-Sum- 1 Calc Using 2 Cols", 1, q, "num1", "num2");
     }
 
     @Test
     void update2Calcs2ColsFormula() {
-        setup(2, 32, 22);
+        setup(4, 16, 0);
         var q = "source.update([${calcs}]).sum_by()".replace("${calcs}", calc2cols2);
         runner.test("Update-Sum- 2 Calcs Using 2 Cols", 1, q, "num1", "num2");
     }
 
     @Test
     void view1Calc1ColFormula() {
-        setup(3, 55, 50);
+        setup(6, 32, 32);
         var q = "source.view(['num2',${calcs}]).sum_by()".replace("${calcs}", calc1col1);
         runner.test("View-Sum- 1 Calc Using 1 Col", 1, q, "num2");
     }
 
     @Test
     void view1Calc2ColsFormula() {
-        setup(3, 40, 40);
+        setup(6, 23, 22);
         var q = "source.view(['num1','num2',${calcs}]).sum_by()".replace("${calcs}", calc1cols2);
         runner.test("View-Sum- 1 Calc Using 2 Cols", 1, q, "num1", "num2");
     }
 
     @Test
     void view2Calcs2ColsFormula() {
-        setup(2, 35, 30);
+        setup(6, 17, 15);
         var q = "source.view(['num1','num2',${calcs}]).sum_by()".replace("${calcs}", calc2cols2);
         runner.test("View-Sum- 2 Calcs Using 2 Cols", 1, q, "num1", "num2");
     }
 
     @Test
     void updateView1Calc1ColFormula() {
-        setup(3, 60, 55);
+        setup(6, 37, 35);
         var q = "source.update_view([${calcs}]).sum_by()".replace("${calcs}", calc1col1);
         runner.test("UpdateView-Sum- 1 Calc Using 1 Col", 1, q, "num2");
     }
 
     @Test
     void updateView1Calc2ColsFormula() {
-        setup(3, 40, 38);
+        setup(6, 22, 20);
         var q = "source.update_view([${calcs}]).sum_by()".replace("${calcs}", calc1cols2);
         runner.test("UpdateView-Sum- 1 Calc Using 2 Cols", 1, q, "num1", "num2");
     }
 
     @Test
     void updateView2Calcs2ColsFormula() {
-        setup(2, 35, 35);
+        setup(6, 17, 17);
         var q = "source.update_view([${calcs}]).sum_by()".replace("${calcs}", calc2cols2);
         runner.test("UpdateView-Sum- 2 Calcs Using 2 Cols", 1, q, "num1", "num2");
     }
