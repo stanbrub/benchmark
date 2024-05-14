@@ -28,7 +28,6 @@ final public class StandardTestRunner {
     private String mainTable = "source";
     private Bench api;
     private Controller controller;
-    private long scaleRowCount;
     private int staticFactor = 1;
     private int incFactor = 1;
     private int rowCountFactor = 1;
@@ -109,7 +108,6 @@ final public class StandardTestRunner {
      */
     public void setRowFactor(int rowCountFactor) {
         this.rowCountFactor = rowCountFactor;
-        this.scaleRowCount = (long) (api.propertyAsIntegral("scale.row.count", "100000") * rowCountFactor);
     }
 
     /**
@@ -173,6 +171,10 @@ final public class StandardTestRunner {
         }
     }
 
+    long getGeneratedRowCount() {
+        return (long) (api.propertyAsIntegral("scale.row.count", "100000") * rowCountFactor);
+    }
+
     long getMaxExpectedRowCount(long expectedRowCount, long scaleFactor) {
         return (expectedRowCount < 1) ? Long.MAX_VALUE : expectedRowCount;
     }
@@ -186,11 +188,11 @@ final public class StandardTestRunner {
                 'timestamp=timestamp.plusMillis((long)(ii / ${rows}) * ${rows})'
             ]).select()
             """;
-            return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + scaleRowCount);
+            return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + getGeneratedRowCount());
         }
 
         var read = "read('/data/${mainTable}.parquet').select(formulas=[${loadColumns}])";
-        read = (loadColumns.length == 0) ? ("empty_table(" + scaleRowCount + ")") : read;
+        read = (loadColumns.length == 0) ? ("empty_table(" + getGeneratedRowCount() + ")") : read;
 
         if (scaleFactor > 1) {
             read = "merge([${readTable}] * ${scaleFactor})".replace("${readTable}", read);
@@ -330,7 +332,6 @@ final public class StandardTestRunner {
         this.api = Bench.create(testInst);
         this.controller = new DeephavenDockerController(api.property("docker.compose.file", ""),
                 api.property("deephaven.addr", ""));
-        this.scaleRowCount = api.propertyAsIntegral("scale.row.count", "100000");
         restartDocker();
         api.query(query).execute();
     }
@@ -387,7 +388,7 @@ final public class StandardTestRunner {
                 .add("key3", "int", "[0-8]", distribution)
                 .add("key4", "int", "[0-98]", distribution)
                 .add("key5", "string", "[1-1000000]", distribution)
-                .withRowCount(scaleRowCount)
+                .withRowCount(getGeneratedRowCount())
                 .generateParquet();
     }
 
@@ -410,7 +411,7 @@ final public class StandardTestRunner {
 
     boolean generateTimedTable(String distribution) {
         long minTime = 1676557157537L;
-        long maxTime = minTime + scaleRowCount - 1;
+        long maxTime = minTime + getGeneratedRowCount() - 1;
         return api.table("timed")
                 .add("timestamp", "timestamp-millis", "[" + minTime + "-" + maxTime + "]", "ascending")
                 .add("num1", "double", "[0-4]", distribution)
