@@ -33,7 +33,7 @@ public class DataIndexBenefitTest {
     @Test
     @Order(1)
     void dataIndexWhereInNoIndex() {
-        setup(1, 270, 250);
+        setup(1, 250, 225);
 
         var op = """
         source.where_in(where_filter, cols=['key1 = set1', 'key2 = set2', 'key4 = set3'])
@@ -45,7 +45,7 @@ public class DataIndexBenefitTest {
     @Test
     @Order(2)
     void dataIndexWhereInIndexedStatic() {
-        setup(1, 60, 0, "key1", "key2", "key4");
+        setup(1, 48, 0, "key1", "key2", "key4");
 
         var preOp = """
         source_idx = data_index(source, ['key1','key2','key4'])
@@ -81,7 +81,7 @@ public class DataIndexBenefitTest {
     @Test
     @Order(4)
     void dataIndexAvgByNoIndex() {
-        setup(1, 7, 0);
+        setup(1, 6, 0);
 
         var op = """
         source.avg_by(by=['key1','key2','key4'])
@@ -93,7 +93,7 @@ public class DataIndexBenefitTest {
     @Test
     @Order(5)
     void dataIndexAvgByIndexed() {
-        setup(1, 50, 0, "key1", "key2", "key4");
+        setup(1, 40, 0, "key1", "key2", "key4");
 
         var preOp = """
         source_idx = data_index(source, ['key1','key2','key4'])
@@ -124,7 +124,7 @@ public class DataIndexBenefitTest {
     @Test
     @Order(7)
     void dataIndexSortIndexed() {
-        setup(1, 60, 0, "key1", "key2", "key4");
+        setup(1, 45, 0, "key1", "key2", "key4");
 
         var setup = """
         source_idx = data_index(source, ['key1','key2','key4'])
@@ -154,7 +154,7 @@ public class DataIndexBenefitTest {
     @Test
     @Order(9)
     void dataIndexAsOfJoinIndexed() {
-        setup(1, 25, 0, "key1", "key2", "key4");
+        setup(1, 20, 0, "key1", "key2", "key4");
 
         var setup = """
         source_idx = data_index(source, ['key1','key2','key4'])

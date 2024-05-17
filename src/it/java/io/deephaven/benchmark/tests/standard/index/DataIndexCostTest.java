@@ -59,7 +59,7 @@ public class DataIndexCostTest {
     @Test
     @Order(3)
     void dataIndexGroupedCostStatic() {
-        setup(1, 22, 0, "key1", "key2", "key4");
+        setup(1, 17, 0, "key1", "key2", "key4");
 
         var op = """
         source_idx = data_index(source, ['key1','key2','key4'])
@@ -72,7 +72,7 @@ public class DataIndexCostTest {
     @Test
     @Order(4)
     void dataIndexGroupedCostInc() {
-        setup(1, 0, 16, "key1", "key2", "key4");
+        setup(1, 0, 12, "key1", "key2", "key4");
 
         var setup = """
         source_idx = data_index(source, ['key1','key2','key4'])
