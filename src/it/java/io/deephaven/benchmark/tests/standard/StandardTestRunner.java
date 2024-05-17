@@ -60,22 +60,34 @@ final public class StandardTestRunner {
             mainTable = names[0];
 
         for (String name : names) {
-            generateTable(name, null);
+            generateTable(name, null, null);
         }
     }
 
     /**
-     * Generate a pre-defined table and set an explicit distribution for that table's data. This will override the
-     * <code>default.data.distribution</code> property.
-     * <p/>
-     * This method should only be called once per test.
+     * Generate a pre-defined table and sets an explicit distribution for that table's data. This will override the
+     * <code>default.data.distribution</code> property. The given table name will be used as the main table used by
+     * subsequent queries.
      * 
      * @param name the table name to generate
-     * @param distribution the name of the distribution
+     * @param distribution the name of the distribution (random | runlength | ascending | descending)
      */
     public void table(String name, String distribution) {
         mainTable = name;
-        generateTable(name, distribution);
+        generateTable(name, distribution, null);
+    }
+
+    /**
+     * Generate a pre-defined table and set a column grouping for the resulting table. The given table name will be used
+     * as the main table used by subsequent queries.
+     * <p/>
+     * 
+     * @param name the table name to generate
+     * @param groups
+     */
+    public void groupedTable(String name, String... groups) {
+        mainTable = name;
+        generateTable(name, null, groups);
     }
 
     /**
@@ -356,8 +368,8 @@ final public class StandardTestRunner {
         api.metrics().add(metrics);
     }
 
-    void generateTable(String name, String distribution) {
-        var isNew = generateNamedTable(name, distribution);
+    void generateTable(String name, String distribution, String[] groups) {
+        var isNew = generateNamedTable(name, distribution, groups);
         if (isNew) {
             if (!api.isClosed()) {
                 api.setName("# Data Table Generation " + name);
@@ -366,20 +378,20 @@ final public class StandardTestRunner {
             }
             initialize(testInst);
             // This should not necessary. Why does DH need it?
-            generateNamedTable(name, distribution);
+            generateNamedTable(name, distribution, groups);
         }
     }
 
-    boolean generateNamedTable(String name, String distribution) {
+    boolean generateNamedTable(String name, String distribution, String[] groups) {
         return switch (name) {
-            case "source" -> generateSourceTable(distribution);
-            case "right" -> generateRightTable(distribution);
-            case "timed" -> generateTimedTable(distribution);
+            case "source" -> generateSourceTable(distribution, groups);
+            case "right" -> generateRightTable(distribution, groups);
+            case "timed" -> generateTimedTable(distribution, groups);
             default -> throw new RuntimeException("Undefined table name: " + name);
         };
     }
 
-    boolean generateSourceTable(String distribution) {
+    boolean generateSourceTable(String distribution, String[] groups) {
         return api.table("source")
                 .add("num1", "double", "[0-4]", distribution)
                 .add("num2", "double", "[1-10]", distribution)
@@ -389,10 +401,11 @@ final public class StandardTestRunner {
                 .add("key4", "int", "[0-98]", distribution)
                 .add("key5", "string", "[1-1000000]", distribution)
                 .withRowCount(getGeneratedRowCount())
+                .withColumnGrouping(groups)
                 .generateParquet();
     }
 
-    boolean generateRightTable(String distribution) {
+    boolean generateRightTable(String distribution, String[] groups) {
         if (distribution == null && api().property("default.data.distribution", "").equals("descending")) {
             distribution = "descending";
         } else {
@@ -406,10 +419,11 @@ final public class StandardTestRunner {
                 .add("r_key4", "int", "[0-98]", distribution)
                 .add("r_key5", "string", "[1-1010000]", distribution)
                 .withRowCount(1010000)
+                .withColumnGrouping(groups)
                 .generateParquet();
     }
 
-    boolean generateTimedTable(String distribution) {
+    boolean generateTimedTable(String distribution, String[] groups) {
         long minTime = 1676557157537L;
         long maxTime = minTime + getGeneratedRowCount() - 1;
         return api.table("timed")
@@ -421,6 +435,7 @@ final public class StandardTestRunner {
                 .add("key3", "int", "[0-8]", distribution)
                 .add("key4", "int", "[0-98]", distribution)
                 .withFixedRowCount(true)
+                .withColumnGrouping(groups)
                 .generateParquet();
     }
 

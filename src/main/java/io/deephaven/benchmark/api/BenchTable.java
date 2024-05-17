@@ -10,6 +10,7 @@ import io.deephaven.benchmark.generator.*;
 import io.deephaven.benchmark.metric.Metrics;
 import io.deephaven.benchmark.util.Ids;
 import io.deephaven.benchmark.util.Log;
+import io.deephaven.benchmark.util.Timer;
 
 /**
  * Represents the configuration of table name and columns.
@@ -25,6 +26,7 @@ final public class BenchTable implements Closeable {
     private Generator generator = null;
     private boolean isFixed = false;
     private String defaultDistro = null;
+    private String[] columnGrouping = null;
 
     BenchTable(Bench bench, String tableName) {
         this.tableName = tableName;
@@ -66,6 +68,17 @@ final public class BenchTable implements Closeable {
      */
     public BenchTable withRowCount(long generatedRowCount) {
         rowCount = generatedRowCount;
+        return this;
+    }
+
+    /**
+     * Set column names to be used for grouping where applicable (ex. parquet generation)
+     * 
+     * @param columns the grouping column names
+     * @return this instance
+     */
+    public BenchTable withColumnGrouping(String... columnNames) {
+        columnGrouping = columnNames;
         return this;
     }
 
@@ -177,19 +190,19 @@ final public class BenchTable implements Closeable {
             return false;
         }
         Log.info("Generating table '%s' with %s rows", tableName, getRowCount());
-        long beginTime = System.currentTimeMillis();
+        var timer = Timer.start();
 
         if (rowPauseMillis < 0)
             withRowPause(0, ChronoUnit.MILLIS);
 
         bench.awaitCompletion(generateWithAvro());
-        Log.info("Produce Data Duration: " + (System.currentTimeMillis() - beginTime));
-        beginTime = System.currentTimeMillis();
+        Log.info("Produce Data Duration: " + timer.duration().toMillis());
+        timer = Timer.start();
 
         q = replaceTableAndGeneratorFields(kafkaToParquetQuery);
         bench.query(q).execute();
 
-        Log.info("DH Write Table Duration: " + (System.currentTimeMillis() - beginTime));
+        Log.info("DH Write Table Duration: " + timer.duration().toMillis());
         return true;
     }
 
@@ -256,9 +269,15 @@ final public class BenchTable implements Closeable {
         return codec.trim().toUpperCase();
     }
 
+    private String getColumnGrouping() {
+        var cg = columnGrouping;
+        return (cg == null || cg.length == 0) ? "None" : ("'" + String.join("','", columnGrouping) + "'");
+    }
+
     private String getTableDefinition() {
         return "row.count=" + getRowCount() + "\n"
                 + "compression=" + getCompression() + "\n"
+                + "column.grouping=" + getColumnGrouping() + "\n"
                 + columns.describe();
     }
 
@@ -283,7 +302,8 @@ final public class BenchTable implements Closeable {
                 .replace("${table.rowcount}", Long.toString(getRowCount()))
                 .replace("${table.duration}", Long.toString(getRunDuration()))
                 .replace("${table.definition}", getTableDefinition())
-                .replace("${table.definition.id}", getTableDefinitionId());
+                .replace("${table.definition.id}", getTableDefinitionId())
+                .replace("${column.grouping}", getColumnGrouping());
     }
 
     static final String generatorDefValues = """
@@ -344,10 +364,10 @@ final public class BenchTable implements Closeable {
         if os.path.exists(table_parquet):
             os.remove(table_parquet)
 
-        mymeta = ${table.name}.meta_table
-
         with open(table_gen_def_file, 'w') as f:
             f.write(table_gen_def_text)
+        column_grouping=${column.grouping}
+        if column_grouping: ${table.name} = ${table.name}.sort([${column.grouping}])
         write(${table.name}, table_gen_parquet ${compression.codec} ${max.dict.keys} ${max.dict.bytes} ${target.page.bytes})
         os.link(table_gen_parquet, table_parquet)
 
