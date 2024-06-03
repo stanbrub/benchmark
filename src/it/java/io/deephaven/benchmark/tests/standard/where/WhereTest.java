@@ -27,7 +27,7 @@ public class WhereTest {
 
     @Test
     void where2Filters() {
-        runner.setScaleFactors(310, 300);
+        runner.setScaleFactors(310, 0);
         var q = """
         source.where(filters=["key1 = '50'", "key2 = '51'"])
         """;

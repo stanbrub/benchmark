@@ -4,10 +4,12 @@ package io.deephaven.benchmark.controller;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import io.deephaven.benchmark.util.Exec;
+import io.deephaven.benchmark.util.Filer;
 import io.deephaven.benchmark.util.Threads;
 
 /**
@@ -88,6 +90,33 @@ public class DeephavenDockerController implements Controller {
         if (composePath != null)
             return exec("sudo", "docker", "compose", "-f", composePath, "logs");
         return "";
+    }
+
+    /**
+     * Copy a file from the Deephaven working directory (e.g. where docker-compose was run from) to a local file. If the
+     * local file exists, overwrite it.
+     * 
+     * @param srcFile the source file relative to <code>composePath</code> parent dir
+     * @param dstFile the destination file
+     * @return true if the source file was copied, otherwise false
+     */
+    @Override
+    public boolean copyFrom(String srcFile, String dstFile) {
+        var source = workDir.resolve(srcFile);
+        if (!Files.exists(workDir))
+            return false;
+        Filer.copy(source, Paths.get(dstFile));
+        return true;
+    }
+
+    /**
+     * Delete a file from the Deephaven working directory. (e.g. where docker-compose was run from)
+     * 
+     * @param file the path of the file to delete
+     */
+    @Override
+    public void delete(String file) {
+        Filer.delete(workDir.resolve(file));
     }
 
     void waitForEngineReady() {

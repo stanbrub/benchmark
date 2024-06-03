@@ -10,6 +10,7 @@ import io.deephaven.benchmark.api.Bench;
 import io.deephaven.benchmark.controller.Controller;
 import io.deephaven.benchmark.controller.DeephavenDockerController;
 import io.deephaven.benchmark.metric.Metrics;
+import io.deephaven.benchmark.util.Ids;
 import io.deephaven.benchmark.util.Timer;
 
 /**
@@ -25,6 +26,7 @@ final public class StandardTestRunner {
     final List<String> supportTables = new ArrayList<>();
     final List<String> setupQueries = new ArrayList<>();
     final List<String> preOpQueries = new ArrayList<>();
+    final String dhJfrFile = "data/benchmark-api.jfr";
     private String mainTable = "source";
     private Bench api;
     private Controller controller;
@@ -220,18 +222,21 @@ final public class StandardTestRunner {
         loaded_tbl_size = ${mainTable}.size
         ${setupQueries}
 
+        #garbage_collect()
         garbage_collect()
+        #time.sleep(1)
 
         ${preOpQueries}
-        bench_api_metrics_snapshot()
+        #bench_api_metrics_snapshot()
         print('${logOperationBegin}')
         
         begin_time = time.perf_counter_ns()
         result = ${operation}
         end_time = time.perf_counter_ns()
         print('${logOperationEnd}')
-        bench_api_metrics_snapshot()
-        standard_metrics = bench_api_metrics_collect()
+        #bench_api_metrics_snapshot()
+        #standard_metrics = bench_api_metrics_collect()
+        standard_metrics = new_table([])
         
         stats = new_table([
             double_col("elapsed_nanos", [end_time - begin_time]),
@@ -301,18 +306,22 @@ final public class StandardTestRunner {
                 var r = new Result(loadedRowCount, Duration.ofNanos(elapsedNanos), resultRowCount);
                 result.set(r);
             }).fetchAfter("standard_metrics", table -> {
-                api.metrics().add(table);
-                var metrics = new Metrics(Timer.now(), "test-runner", "setup", "test");
-                metrics.set("static_scale_factor", staticFactor);
-                metrics.set("inc_scale_factor", incFactor);
-                metrics.set("row_count_factor", rowCountFactor);
-                api.metrics().add(metrics);
+                if(table.getRowCount() > 0) {
+                    api.metrics().add(table);
+                    var metrics = new Metrics(Timer.now(), "test-runner", "setup", "test");
+                    metrics.set("static_scale_factor", staticFactor);
+                    metrics.set("inc_scale_factor", incFactor);
+                    metrics.set("row_count_factor", rowCountFactor);
+                    api.metrics().add(metrics);
+                }
             }).execute();
             api.result().test("deephaven-engine", result.get().elapsedTime(), result.get().loadedRowCount());
             return result.get();
         } finally {
             addDockerLog(api);
             api.close();
+            if(controller.stopService())
+                copyDockerFiles(name);
         }
     }
 
@@ -361,11 +370,20 @@ final public class StandardTestRunner {
 
     void restartDocker() {
         var timer = api.timer();
+        cleanDockerFiles();
         if (!controller.restartService())
             return;
         var metrics = new Metrics(Timer.now(), "test-runner", "setup", "docker");
         metrics.set("restart", timer.duration().toMillis(), "standard");
         api.metrics().add(metrics);
+    }
+    
+    void cleanDockerFiles() {
+        controller.delete(dhJfrFile);    
+    }
+    
+    void copyDockerFiles(String testName) {
+        controller.copyFrom(dhJfrFile, Bench.outputDir.resolve(Ids.getFileSafeName(testName)).toString());
     }
 
     void generateTable(String name, String distribution, String[] groups) {
@@ -395,11 +413,11 @@ final public class StandardTestRunner {
         return api.table("source")
                 .add("num1", "double", "[0-4]", distribution)
                 .add("num2", "double", "[1-10]", distribution)
-                .add("key1", "string", "[1-100]", distribution)
-                .add("key2", "string", "[1-101]", distribution)
-                .add("key3", "int", "[0-8]", distribution)
-                .add("key4", "int", "[0-98]", distribution)
-                .add("key5", "string", "[1-1000000]", distribution)
+//                .add("key1", "string", "[1-100]", distribution)
+//                .add("key2", "string", "[1-101]", distribution)
+//                .add("key3", "int", "[0-8]", distribution)
+//                .add("key4", "int", "[0-98]", distribution)
+//                .add("key5", "string", "[1-1000000]", distribution)
                 .withRowCount(getGeneratedRowCount())
                 .withColumnGrouping(groups)
                 .generateParquet();

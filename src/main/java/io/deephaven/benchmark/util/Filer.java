@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,20 @@ public class Filer {
             }
         } catch (Exception ex) {
             throw new RuntimeException("Failed to delete path: " + path);
+        }
+    }
+
+    /**
+     * Copy the source file to the destination file. Overwrite if the destination file exists.
+     * 
+     * @param srcFile the source file to copy
+     * @param dstFile the destination file path
+     */
+    static public void copy(Path srcFile, Path dstFile) {
+        try {
+            Files.copy(dstFile, dstFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to copy file: " + srcFile, ex);
         }
     }
 

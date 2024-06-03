@@ -58,7 +58,7 @@ public class InlineFormulaTest {
 
     @Test
     void update2Calcs2ColsFormula() {
-        setup(6, 16, 10);
+        setup(12, 64, 0);
         var q = "source.update([${calcs}]).sum_by()".replace("${calcs}", calc2cols2);
         runner.test("Update-Sum- 2 Calcs Using 2 Cols", 1, q, "num1", "num2");
     }

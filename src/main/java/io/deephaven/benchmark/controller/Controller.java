@@ -47,4 +47,20 @@ public interface Controller {
      */
     public String getLog();
 
+    /**
+     * Copy a file from a path relative to the service to a local file.
+     * 
+     * @param serviceFile the source file relative to the service. (Support for absolute paths is not required.)
+     * @param targetFile the destination file relative to the current working directory
+     * @return true if a file was copied, otherwise false
+     */
+    public boolean copyFrom(String serviceFile, String targetFile);
+
+    /**
+     * Delete the given file if it exists.
+     * 
+     * @param file the path of the file to delete
+     */
+    public void delete(String file);
+
 }
