@@ -370,7 +370,7 @@ final public class StandardTestRunner {
 
     void restartDocker() {
         var timer = api.timer();
-        cleanDockerFiles();
+//        cleanDockerFiles();
         if (!controller.restartService())
             return;
         var metrics = new Metrics(Timer.now(), "test-runner", "setup", "docker");
@@ -383,7 +383,8 @@ final public class StandardTestRunner {
     }
     
     void copyDockerFiles(String testName) {
-        controller.copyFrom(dhJfrFile, Bench.outputDir.resolve(Ids.getFileSafeName(testName)).toString());
+        testName = Ids.getFileSafeName(testName) + ".jfr";
+        controller.copyFrom(dhJfrFile, Bench.outputDir.resolve("test-logs/jfr/" + testName).toString());
     }
 
     void generateTable(String name, String distribution, String[] groups) {

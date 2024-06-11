@@ -36,14 +36,16 @@ public class Filer {
     }
 
     /**
-     * Copy the source file to the destination file. Overwrite if the destination file exists.
+     * Copy the source file to the destination file. Overwrite if the destination file exists. Ensures the destination
+     * file's parent directories exist.
      * 
      * @param srcFile the source file to copy
      * @param dstFile the destination file path
      */
     static public void copy(Path srcFile, Path dstFile) {
         try {
-            Files.copy(dstFile, dstFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.createDirectories(dstFile.getParent());
+            Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception ex) {
             throw new RuntimeException("Failed to copy file: " + srcFile, ex);
         }

@@ -61,7 +61,7 @@ public class DeephavenDockerController implements Controller {
     public boolean stopService() {
         if (composePropPath.isBlank())
             return false;
-        exec("sudo", "docker", "compose", "-f", composePropPath, "down", "--timeout", "0");
+        exec("sudo", "docker", "compose", "-f", composePropPath, "down", "--timeout", "20");
         return true;
     }
 
