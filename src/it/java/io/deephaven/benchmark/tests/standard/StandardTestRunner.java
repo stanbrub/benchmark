@@ -22,8 +22,9 @@ import io.deephaven.benchmark.util.Timer;
  */
 final public class StandardTestRunner {
     final Object testInst;
-    final List<String> setupQueries = new ArrayList<>();
     final List<String> supportTables = new ArrayList<>();
+    final List<String> setupQueries = new ArrayList<>();
+    final List<String> preOpQueries = new ArrayList<>();
     private String mainTable = "source";
     private Bench api;
     private Controller controller;
@@ -59,32 +60,55 @@ final public class StandardTestRunner {
             mainTable = names[0];
 
         for (String name : names) {
-            generateTable(name, null);
+            generateTable(name, null, null);
         }
     }
 
     /**
-     * Generate a pre-defined table and set an explicit distribution for that table's data. This will override the
-     * <code>default.data.distribution</code> property.
-     * <p/>
-     * This method should only be called once per test.
+     * Generate a pre-defined table and sets an explicit distribution for that table's data. This will override the
+     * <code>default.data.distribution</code> property. The given table name will be used as the main table used by
+     * subsequent queries.
      * 
      * @param name the table name to generate
-     * @param distribution the name of the distribution
+     * @param distribution the name of the distribution (random | runlength | ascending | descending)
      */
     public void table(String name, String distribution) {
         mainTable = name;
-        generateTable(name, distribution);
+        generateTable(name, distribution, null);
     }
 
     /**
-     * Add a query to be run outside the benchmark measurement but before the benchmark query. This query can transform
-     * the main table or supporting table, set up aggregations or updateby operations, etc.
+     * Generate a pre-defined table and set a column grouping for the resulting table. The given table name will be used
+     * as the main table used by subsequent queries.
+     * <p/>
+     * 
+     * @param name the table name to generate
+     * @param groups
+     */
+    public void groupedTable(String name, String... groups) {
+        mainTable = name;
+        generateTable(name, null, groups);
+    }
+
+    /**
+     * Add a query to be run directly after the main table is loaded. It is not measured. This query can transform the
+     * main table or supporting table, set up aggregations or updateby operations, etc.
      * 
      * @param query the query to run before benchmark
      */
     public void addSetupQuery(String query) {
         setupQueries.add(query);
+    }
+
+    /**
+     * Add a query to be run directly before the measured operation is run. This query allows changes to tables or
+     * config that must occur after other setup queries happen but before the operation is run. When in doubt, use
+     * <code>addSetupQuery</code>.
+     * 
+     * @param query the query to run just before the measured operation
+     */
+    public void addPreOpQuery(String query) {
+        preOpQueries.add(query);
     }
 
     /**
@@ -198,8 +222,10 @@ final public class StandardTestRunner {
 
         garbage_collect()
 
+        ${preOpQueries}
         bench_api_metrics_snapshot()
         print('${logOperationBegin}')
+        
         begin_time = time.perf_counter_ns()
         result = ${operation}
         end_time = time.perf_counter_ns()
@@ -228,6 +254,7 @@ final public class StandardTestRunner {
         
         garbage_collect()
         
+        ${preOpQueries}
         bench_api_metrics_snapshot()
         print('${logOperationBegin}')
         begin_time = time.perf_counter_ns()
@@ -260,6 +287,7 @@ final public class StandardTestRunner {
         query = query.replace("${loadSupportTables}", loadSupportTables());
         query = query.replace("${loadColumns}", listStr(loadColumns));
         query = query.replace("${setupQueries}", String.join("\n", setupQueries));
+        query = query.replace("${preOpQueries}", String.join("\n", preOpQueries));
         query = query.replace("${operation}", operation);
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
@@ -340,8 +368,8 @@ final public class StandardTestRunner {
         api.metrics().add(metrics);
     }
 
-    void generateTable(String name, String distribution) {
-        var isNew = generateNamedTable(name, distribution);
+    void generateTable(String name, String distribution, String[] groups) {
+        var isNew = generateNamedTable(name, distribution, groups);
         if (isNew) {
             if (!api.isClosed()) {
                 api.setName("# Data Table Generation " + name);
@@ -350,20 +378,20 @@ final public class StandardTestRunner {
             }
             initialize(testInst);
             // This should not necessary. Why does DH need it?
-            generateNamedTable(name, distribution);
+            generateNamedTable(name, distribution, groups);
         }
     }
 
-    boolean generateNamedTable(String name, String distribution) {
+    boolean generateNamedTable(String name, String distribution, String[] groups) {
         return switch (name) {
-            case "source" -> generateSourceTable(distribution);
-            case "right" -> generateRightTable(distribution);
-            case "timed" -> generateTimedTable(distribution);
+            case "source" -> generateSourceTable(distribution, groups);
+            case "right" -> generateRightTable(distribution, groups);
+            case "timed" -> generateTimedTable(distribution, groups);
             default -> throw new RuntimeException("Undefined table name: " + name);
         };
     }
 
-    boolean generateSourceTable(String distribution) {
+    boolean generateSourceTable(String distribution, String[] groups) {
         return api.table("source")
                 .add("num1", "double", "[0-4]", distribution)
                 .add("num2", "double", "[1-10]", distribution)
@@ -373,10 +401,11 @@ final public class StandardTestRunner {
                 .add("key4", "int", "[0-98]", distribution)
                 .add("key5", "string", "[1-1000000]", distribution)
                 .withRowCount(getGeneratedRowCount())
+                .withColumnGrouping(groups)
                 .generateParquet();
     }
 
-    boolean generateRightTable(String distribution) {
+    boolean generateRightTable(String distribution, String[] groups) {
         if (distribution == null && api().property("default.data.distribution", "").equals("descending")) {
             distribution = "descending";
         } else {
@@ -387,12 +416,14 @@ final public class StandardTestRunner {
                 .add("r_key1", "string", "[1-100]", distribution)
                 .add("r_key2", "string", "[1-101]", distribution)
                 .add("r_wild", "string", "[1-10000]", distribution)
+                .add("r_key4", "int", "[0-98]", distribution)
                 .add("r_key5", "string", "[1-1010000]", distribution)
                 .withRowCount(1010000)
+                .withColumnGrouping(groups)
                 .generateParquet();
     }
 
-    boolean generateTimedTable(String distribution) {
+    boolean generateTimedTable(String distribution, String[] groups) {
         long minTime = 1676557157537L;
         long maxTime = minTime + getGeneratedRowCount() - 1;
         return api.table("timed")
@@ -404,6 +435,7 @@ final public class StandardTestRunner {
                 .add("key3", "int", "[0-8]", distribution)
                 .add("key4", "int", "[0-98]", distribution)
                 .withFixedRowCount(true)
+                .withColumnGrouping(groups)
                 .generateParquet();
     }
 
