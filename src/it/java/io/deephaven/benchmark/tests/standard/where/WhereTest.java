@@ -17,6 +17,7 @@ public class WhereTest {
     }
 
     @Test
+    @Tag("Iterate")
     void where1Filter() {
         runner.setScaleFactors(330, 310);
         var q = """

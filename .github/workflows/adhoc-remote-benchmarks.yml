@@ -16,9 +16,10 @@ on:
        default: 'edge'
        type: string
      run_label:
-       description: 'Run Label'
+       description: 'Set Label'
        required: true
        type: string
+       default: ''
      test_package:
        description: 'Benchmark Test Package'
        required: true

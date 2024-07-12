@@ -10,7 +10,7 @@ on:
      docker_image:
        description: 'Docker Image Name'
        required: true
-       default: '0.32.0'
+       default: '0.35.0'
        type: string
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     with:
       run_type: release
       docker_image: ${{ inputs.docker_image }}
-      run_label: ""
+      run_label: "<version>"
       test_package: "io.deephaven.benchmark.tests.standard"
       test_class_regex: "^(Test.*|.+[.$]Test.*|.*Tests?)$"
       test_iterations: 1

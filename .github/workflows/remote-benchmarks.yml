@@ -95,7 +95,7 @@ jobs:
         
     - name: Fetch Benchmark Results and Prepare for Upload
       run: |
-        ${SD}/fetch-results-local.sh ${HOST} ${USER} ${RUN_TYPE} "${ACTOR}" "${RUN_LABEL}"
+        ${SD}/fetch-results-local.sh ${HOST} ${USER} ${SD} ${RUN_TYPE} "${ACTOR}" "${RUN_LABEL}" "${DOCKER_IMG}"
 
     - name: Authorize GCloud Credentials
       uses: google-github-actions/auth@v1
@@ -104,13 +104,6 @@ jobs:
         
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
-      
-    - name: Backup Existing Benchmark Summary SVG
-      run: |
-        SUMMARY_PREFIX=gs://deephaven-benchmark/${RUN_TYPE}/benchmark-summary
-        if gsutil stat ${SUMMARY_PREFIX}.svg &>/dev/null; then
-          gsutil mv ${SUMMARY_PREFIX}.svg ${SUMMARY_PREFIX}.prev.svg &>/dev/null
-        fi
 
     - name: Upload Benchmark Results to GCloud
       uses: google-github-actions/upload-cloud-storage@v1

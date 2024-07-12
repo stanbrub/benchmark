@@ -54,7 +54,11 @@ class FileTestRunner {
      * @param testName name that will appear in the results as the benchmark name
      */
     void runCsvReadTest(String testName, String... columnNames) {
-        var q = "read_csv('/data/source.ptr.csv', ${types})";
+        var q = """ 
+        read_csv('/data/source.ptr.csv', ${types})
+        metric_file_size = os.path.getsize('/data/source.ptr.csv')
+        bench_api_metrics_add('data', 'file.size', str(metric_file_size), 'csv')
+        """;
         q = q.replace("${types}", getTypes(columnNames));
         runReadTest(testName, q);
     }
@@ -65,7 +69,12 @@ class FileTestRunner {
      * @param testName name that will appear in the results as the benchmark name
      */
     void runParquetReadTest(String testName) {
-        runReadTest(testName, "read('/data/source.ptr.parquet').select()");
+        var q = """
+        read('/data/source.ptr.parquet').select()
+        metric_file_size = os.path.getsize('/data/source.ptr.parquet')
+        bench_api_metrics_add('data', 'file.size', str(metric_file_size), 'parquet')
+        """;
+        runReadTest(testName, q);
     }
 
     /**
@@ -80,6 +89,8 @@ class FileTestRunner {
         write(
             source, '/data/source.ptr.parquet', compression_codec_name='${codec}'${parquetSettings}
         )
+        metric_file_size = os.path.getsize('/data/source.ptr.parquet')
+        bench_api_metrics_add('data', 'file.size', str(metric_file_size), 'parquet')
         """;
         q = q.replace("${codec}", codec.equalsIgnoreCase("none") ? "UNCOMPRESSED" : codec);
         q = q.replace("${parquetSettings}", useParquetDefaultSettings ? "" : (",\n    " + parquetCfg));
@@ -93,7 +104,12 @@ class FileTestRunner {
      * @param columnNames the names of the pre-defined columns to generate
      */
     void runCsvWriteTest(String testName, String... columnNames) {
-        runWriteTest(testName, "write_csv(source, '/data/source.ptr.csv')", columnNames);
+        var q = """
+        write_csv(source, '/data/source.ptr.csv')
+        metric_file_size = os.path.getsize('/data/source.ptr.csv')
+        bench_api_metrics_add('data', 'file.size', str(metric_file_size), 'csv')
+        """;
+        runWriteTest(testName, q, columnNames);
     }
 
     /**
@@ -103,11 +119,9 @@ class FileTestRunner {
      */
     private void runReadTest(String testName, String readQuery, String... columnNames) {
         var q = """
-        bench_api_metrics_snapshot()
         begin_time = time.perf_counter_ns()
         source = ${readQuery}
         end_time = time.perf_counter_ns()
-        bench_api_metrics_snapshot()
         standard_metrics = bench_api_metrics_collect()
         
         stats = new_table([
@@ -126,11 +140,9 @@ class FileTestRunner {
             ${generators}
         ])] * ${scaleFactor})
         
-        bench_api_metrics_snapshot()
         begin_time = time.perf_counter_ns()
         ${writeQuery}
         end_time = time.perf_counter_ns()
-        bench_api_metrics_snapshot()
         standard_metrics = bench_api_metrics_collect()
         
         stats = new_table([
@@ -157,7 +169,7 @@ class FileTestRunner {
                 api.result().test("deephaven-engine", Duration.ofNanos(elapsedNanos), rowCount);
             }).fetchAfter("standard_metrics", table -> {
                 api.metrics().add(table);
-                var metrics = new Metrics(Timer.now(), "test-runner", "setup", "test");
+                var metrics = new Metrics(Timer.now(), "test-runner", "setup.scale");
                 metrics.set("static_scale_factor", scaleFactor);
                 metrics.set("row_count_factor", rowCountFactor);
                 api.metrics().add(metrics);
@@ -231,12 +243,14 @@ class FileTestRunner {
 
     private Bench initialize(Object testInst) {
         var query = """
-        import time
+        import time, os
         from deephaven import empty_table, garbage_collect, new_table, merge
         from deephaven.column import long_col, double_col
         from deephaven.parquet import read, write
         from deephaven import read_csv, write_csv
         from deephaven import dtypes as dht
+        
+        bench_api_metrics_init()
         """;
 
         this.api = Bench.create(testInst);
@@ -247,14 +261,14 @@ class FileTestRunner {
         api.query(query).execute();
         return api;
     }
-    
+
     private void addDockerLog(Bench api) {
         var timer = api.timer();
         var logText = controller.getLog();
         if (logText.isBlank())
             return;
         api.log().add("deephaven-engine", logText);
-        var metrics = new Metrics(Timer.now(), "test-runner", "teardown", "docker");
+        var metrics = new Metrics(Timer.now(), "test-runner", "teardown.docker");
         metrics.set("log", timer.duration().toMillis(), "standard");
         api.metrics().add(metrics);
     }
@@ -263,7 +277,7 @@ class FileTestRunner {
         var timer = api.timer();
         if (!controller.restartService())
             return;
-        var metrics = new Metrics(Timer.now(), "test-runner", "setup", "docker");
+        var metrics = new Metrics(Timer.now(), "test-runner", "setup.docker");
         metrics.set("restart", timer.duration().toMillis(), "standard");
         api.metrics().add(metrics);
     }

@@ -7,16 +7,32 @@ set -o nounset
 # Fetches Benchmark results and logs from the remote test server and
 # compresses the runs before upload
 
+if [[ $# != 7 ]]; then
+  echo "$0: Missing host, user, run type, script dir, actor, docker img, or run label arguments"
+  exit 1
+fi
+
 HOST=$1
 USER=$2
-RUN_TYPE=$3
-ACTOR=${4:-}
-RUN_LABEL=${5:-}
+SCRIPT_DIR=$3
+RUN_TYPE=$4
+ACTOR=$5
+RUN_LABEL=${6:-$(echo -n "set-"; ${SCRIPT_DIR}/base62.sh $(date +%s%03N))}
+DOCKER_IMG=$7
 RUN_DIR=/root/run
 
-if [[ $# != 3 ]] && [[ $# != 5 ]]; then
-    echo "$0: Missing host, user, run type, actor, or run label arguments"
-    exit 1
+# Get the date for the Set Label, since Github Workflows don't have 'with: ${{github.date}}'
+if [ "${RUN_LABEL}" = "<date>" ]; then
+  RUN_LABEL=$(date '+%Y-%m-%d')
+fi
+
+# Get the version for the Set Label, since Github Workflows don't have 'with: ${{github.date}}'
+if [ "${RUN_LABEL}" = "<version>" ]; then
+  vers=${DOCKER_IMG}
+  major=$(printf '%02d\n' $(echo ${vers} | cut -d "." -f 1))
+  minor=$(printf '%03d\n' $(echo ${vers} | cut -d "." -f 2))
+  patch=$(printf '%02d\n' $(echo ${vers} | cut -d "." -f 3))
+  RUN_LABEL="${major}.${minor}.${patch}"
 fi
 
 # Pull results from the benchmark server
@@ -24,17 +40,9 @@ scp -r ${USER}@${HOST}:${RUN_DIR}/results .
 scp -r ${USER}@${HOST}:${RUN_DIR}/logs .
 scp -r ${USER}@${HOST}:${RUN_DIR}/*.jar .
 
-# If the RUN_TYPE is adhoc, userfy the destination directory
-DEST_DIR=${RUN_TYPE}
-if [ "${RUN_TYPE}" = "adhoc" ]; then
-    if [ -z "${ACTOR}" ] || [ -z "${RUN_LABEL}" ]; then
-        echo "$0: Missing actor of run label argument for adhoc run type"
-        exit 1
-    fi
-    DEST_DIR=${RUN_TYPE}/${ACTOR}/${RUN_LABEL}
-    mkdir -p ${DEST_DIR}
-fi
-
+# Move the results into the destination directory
+DEST_DIR=${RUN_TYPE}/${ACTOR}/${RUN_LABEL}
+mkdir -p ${DEST_DIR}
 rm -rf ${DEST_DIR}
 mv results/ ${DEST_DIR}/
 
@@ -46,13 +54,14 @@ TMP_SVG_DIR=${DEST_DIR}/tmp-svg
 mkdir -p ${TMP_SVG_DIR}
 mv ${DEST_DIR}/*.svg ${TMP_SVG_DIR}
 mv ${TMP_SVG_DIR}/${RUN_TYPE}-benchmark-summary.svg ${DEST_DIR}/benchmark-summary.svg
+cp ${DEST_DIR}/benchmark-summary.svg ${DEST_DIR}/../
 rm -rf ${TMP_SVG_DIR}
 
 # Compress CSV and Test Logs
 for runId in `find ${DEST_DIR}/ -name "run-*"`
 do
-    (cd ${runId}; gzip *.csv)
-    (cd ${runId}/test-logs; tar -zcvf test-logs.tgz *; mv test-logs.tgz ../)
-    rm -rf ${runId}/test-logs/
+  (cd ${runId}; gzip *.csv)
+  (cd ${runId}/test-logs; tar -zcvf test-logs.tgz *; mv test-logs.tgz ../)
+  rm -rf ${runId}/test-logs/
 done
 
