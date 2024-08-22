@@ -215,6 +215,7 @@ final public class StandardTestRunner {
 
     Result runStaticTest(String name, String operation, String read, String... loadColumns) {
         var staticQuery = """
+        source = timed = None
         ${loadSupportTables}
         ${mainTable} = ${readTable}
         loaded_tbl_size = ${mainTable}.size
@@ -223,6 +224,12 @@ final public class StandardTestRunner {
         garbage_collect()
 
         ${preOpQueries}
+        backup_source = source = source if source else timed
+        source = source.head_by(100000)
+        result = ${operation}
+        source = timed = backup_source
+        del backup_source
+        del result
         print('${logOperationBegin}')
         
         begin_time = time.perf_counter_ns()
