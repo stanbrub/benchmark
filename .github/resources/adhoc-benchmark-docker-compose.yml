@@ -6,7 +6,7 @@ services:
     volumes:
       - ./data:/data
     environment:
-      - "START_OPTS=-Xmx24g -DQueryTable.memoizeResults=true -XX:MaxInlineSize=70 -XX:FreqInlineSize=650 -DAuthHandlers=io.deephaven.auth.AnonymousAuthenticationHandler"
+      - "START_OPTS=-Xmx24g -DQueryTable.memoizeResults=true -DAuthHandlers=io.deephaven.auth.AnonymousAuthenticationHandler"
 
   redpanda:
     command:
