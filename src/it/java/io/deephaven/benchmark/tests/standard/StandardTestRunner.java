@@ -225,7 +225,7 @@ final public class StandardTestRunner {
 
         ${preOpQueries}
         backup_source = source = source if source else timed
-        source = source.head_by(100000)
+        source = source.head_by(1000)
         result = ${operation}
         source = timed = backup_source
         del backup_source
