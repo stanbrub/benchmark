@@ -224,12 +224,12 @@ final public class StandardTestRunner {
         garbage_collect()
 
         ${preOpQueries}
-        backup_source = source = source if source else timed
-        source = source.head_by(1000)
-        result = ${operation}
-        source = timed = backup_source
-        del backup_source
-        del result
+        #backup_source = source = source if source else timed
+        #source = source.head_by(1000)
+        #result = ${operation}
+        #source = timed = backup_source
+        #del backup_source
+        #del result
         print('${logOperationBegin}')
         
         begin_time = time.perf_counter_ns()
