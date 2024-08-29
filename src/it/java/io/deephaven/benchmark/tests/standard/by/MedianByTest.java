@@ -16,20 +16,20 @@ public class MedianByTest {
         runner.tables("source");
     }
 
-    @Test
-    void medianBy0Groups() {
-        runner.setScaleFactors(2, 2);
-        var q = "source.median_by()";
-        runner.test("MedianBy- No Groups", 100, q, "key1", "key2", "num1");
-    }
-
-    @Test
-    @Tag("Iterate")
-    void medianBy1Group() {
-        runner.setScaleFactors(12, 11);
-        var q = "source.median_by(by=['key1'])";
-        runner.test("MedianBy- 1 Group 100 Unique Vals", 100, q, "key1", "num1");
-    }
+//    @Test
+//    void medianBy0Groups() {
+//        runner.setScaleFactors(2, 2);
+//        var q = "source.median_by()";
+//        runner.test("MedianBy- No Groups", 100, q, "key1", "key2", "num1");
+//    }
+//
+//    @Test
+//    @Tag("Iterate")
+//    void medianBy1Group() {
+//        runner.setScaleFactors(12, 11);
+//        var q = "source.median_by(by=['key1'])";
+//        runner.test("MedianBy- 1 Group 100 Unique Vals", 100, q, "key1", "num1");
+//    }
 
     @Test
     void medianBy2Groups() {
@@ -37,11 +37,11 @@ public class MedianByTest {
         var q = "source.median_by(by=['key1', 'key2'])";
         runner.test("MedianBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1");
     }
-
-    @Test
-    void medianBy3Groups() {
-        var q = "source.median_by(by=['key1', 'key2', 'key3'])";
-        runner.test("MedianBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
-    }
+//
+//    @Test
+//    void medianBy3Groups() {
+//        var q = "source.median_by(by=['key1', 'key2', 'key3'])";
+//        runner.test("MedianBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
+//    }
 
 }

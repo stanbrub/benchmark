@@ -191,6 +191,10 @@ final public class StandardTestRunner {
         return (expectedRowCount < 1) ? Long.MAX_VALUE : expectedRowCount;
     }
 
+    long getWarmupRowCount() {
+        return (long) api.propertyAsIntegral("warmup.row.count", "0");
+    }
+
     String getReadOperation(int scaleFactor, String... loadColumns) {
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
@@ -213,23 +217,29 @@ final public class StandardTestRunner {
         return read;
     }
 
+    String getWarmupOperations() {
+        var rowCount = getWarmupRowCount();
+        System.out.println("Warmup Row Count: " + rowCount);
+        return (rowCount < 1) ? "" : """
+        backup_source = source = source if source else timed
+        source = source.head(${warmup_row_count})
+        result = ${operation}
+        source = timed = backup_source
+        del backup_source
+        del result
+        """.replace("${warmup_row_count}", "" + rowCount);
+    }
+
     Result runStaticTest(String name, String operation, String read, String... loadColumns) {
         var staticQuery = """
-        source = timed = None
+        source = right = timed = None
         ${loadSupportTables}
         ${mainTable} = ${readTable}
         loaded_tbl_size = ${mainTable}.size
         ${setupQueries}
-
-        garbage_collect()
-
         ${preOpQueries}
-        #backup_source = source = source if source else timed
-        #source = source.head_by(1000)
-        #result = ${operation}
-        #source = timed = backup_source
-        #del backup_source
-        #del result
+        ${warmupOperations}
+        garbage_collect()
         print('${logOperationBegin}')
         
         begin_time = time.perf_counter_ns()
@@ -263,9 +273,8 @@ final public class StandardTestRunner {
             right = right.where(right_filter)
             print('Using Inc Right')
         
-        garbage_collect()
-        
         ${preOpQueries}
+        garbage_collect()
         print('${logOperationBegin}')
         begin_time = time.perf_counter_ns()
         result = ${operation}
@@ -302,6 +311,7 @@ final public class StandardTestRunner {
         query = query.replace("${loadColumns}", listStr(loadColumns));
         query = query.replace("${setupQueries}", String.join("\n", setupQueries));
         query = query.replace("${preOpQueries}", String.join("\n", preOpQueries));
+        query = query.replace("${warmupOperations}", getWarmupOperations());
         query = query.replace("${operation}", operation);
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
