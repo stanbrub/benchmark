@@ -9,7 +9,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import io.deephaven.benchmark.api.Bench;
 import io.deephaven.benchmark.controller.DeephavenDockerController;
+import io.deephaven.benchmark.metric.Metrics;
 import io.deephaven.benchmark.util.Filer;
+import io.deephaven.benchmark.util.Timer;
 
 /**
  * A wrapper for the Bench api that allows running tests for the purpose of comparing Deephaven to other products that
@@ -55,11 +57,11 @@ public class CompareTestRunner {
      * @param columnNames the columns in both tables to included
      */
     public void initDeephaven(int rowCountFactor, String leftTable, String rightTable, String... columnNames) {
-        restartDocker();
+        restartServices();
         generateTable(rowCountFactor, leftTable, columnNames);
         if (rightTable != null)
             generateTable(rowCountFactor, rightTable, columnNames);
-        restartDocker();
+        restartServices();
         initialize(testInst);
     }
 
@@ -303,6 +305,7 @@ public class CompareTestRunner {
         if (api == null)
             throw new RuntimeException("Initialize with initDeephaven() or initPython()s before running the test");
         api.setName(name);
+        stopUnusedServices();
         query = query.replace("${setupQueries}", setup);
         query = query.replace("${operation}", operation);
         query = query.replace("${mainSizeGetter}", mainSizeGetter);
@@ -352,23 +355,22 @@ public class CompareTestRunner {
         api.query(query).execute();
     }
 
-    void restartDocker() {
-        var api = Bench.create("# Docker Restart");
+    void restartServices() {
+        var api = Bench.create("# Services Restart");
         try {
-            api.setName("# Docker Restart");
-            var controller = new DeephavenDockerController(api.property("docker.compose.file", ""),
+            api.setName("# Services Restart");
+            var c = new DeephavenDockerController(api.property("docker.compose.file", ""),
                     api.property("deephaven.addr", ""));
-            if (!controller.restartService())
-                return;
+            c.restartService();
         } finally {
             api.close();
         }
     }
 
     void restartDocker(int heapGigs) {
-        var api = Bench.create("# Docker Restart");
+        var api = Bench.create("# Services Restart");
         try {
-            api.setName("# Docker Restart " + heapGigs + "G");
+            api.setName("# Services Restart " + heapGigs + "G");
             String dockerComposeFile = api.property("docker.compose.file", "");
             String deephavenHostPort = api.property("deephaven.addr", "");
             if (dockerComposeFile.isBlank() || deephavenHostPort.isBlank())
@@ -379,6 +381,16 @@ public class CompareTestRunner {
         } finally {
             api.close();
         }
+    }
+
+    void stopUnusedServices() {
+        var timer = api.timer();
+        var c = new DeephavenDockerController(api.property("docker.compose.file", ""), api.property("deephaven.addr", ""));
+        if (!c.stopService(Set.of("deephaven")))
+            return;
+        var metrics = new Metrics(Timer.now(), "test-runner", "setup.services");
+        metrics.set("stop", timer.duration().toMillis(), "standard");
+        api.metrics().add(metrics);
     }
 
     // Replace heap (e.g. -Xmx64g) in docker-compose.yml with new heap value
