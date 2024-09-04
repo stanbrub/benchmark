@@ -33,7 +33,7 @@ public class MedianByTest {
 
     @Test
     void medianBy2Groups() {
-        runner.setScaleFactors(3, 3);
+        runner.setScaleFactors(3, 0);
         var q = "source.median_by(by=['key1', 'key2'])";
         runner.test("MedianBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1");
     }

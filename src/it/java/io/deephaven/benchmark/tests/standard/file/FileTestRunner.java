@@ -59,6 +59,10 @@ class FileTestRunner {
     void useParquetDefaultSettings() {
         this.useParquetDefaultSettings = true;
     }
+    
+    long getWarmupRowCount() {
+        return (long) api.propertyAsIntegral("warmup.row.count", "0");
+    }
 
     /**
      * Run a benchmark that measures csv read performance. This test always runs after a corresponding write test.
@@ -170,6 +174,9 @@ class FileTestRunner {
      */
     private void runReadTest(String testName, String readQuery, String... columnNames) {
         var q = """
+        #source = ${readQuery}
+        #source = None
+        garbage_collect()
         begin_time = time.perf_counter_ns()
         source = ${readQuery}
         end_time = time.perf_counter_ns()
@@ -194,6 +201,8 @@ class FileTestRunner {
         else:
             source = empty_table(${rowCount}).update([${generators}])
         
+        #${writeQuery}
+        garbage_collect()
         begin_time = time.perf_counter_ns()
         ${writeQuery}
         end_time = time.perf_counter_ns()
