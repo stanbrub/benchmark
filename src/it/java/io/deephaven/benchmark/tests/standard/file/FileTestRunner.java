@@ -174,8 +174,8 @@ class FileTestRunner {
      */
     private void runReadTest(String testName, String readQuery, String... columnNames) {
         var q = """
-        source = ${readQuery}
-        source = None
+        #source = ${readQuery}
+        #source = None
         garbage_collect()
         begin_time = time.perf_counter_ns()
         source = ${readQuery}
@@ -201,7 +201,7 @@ class FileTestRunner {
         else:
             source = empty_table(${rowCount}).update([${generators}])
         
-        ${writeQuery}
+        #${writeQuery}
         garbage_collect()
         begin_time = time.perf_counter_ns()
         ${writeQuery}
