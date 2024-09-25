@@ -32,6 +32,12 @@ on:
       distribution:
         required: true
         type: string
+      test_device_addr:
+        required: true
+        type: string
+      config_options:
+        required: true
+        type: string
 
 jobs:
   setup-benchmarks:
@@ -40,13 +46,14 @@ jobs:
       matrix-iterations: ${{ steps.matrix-iterations.outputs.matrix-iterations }}
     env:
       SD: .github/scripts
-      HOST: ${{secrets.BENCHMARK_HOST}}
+      HOST: "${{ inputs.test_device_addr == '<default>' && secrets.BENCHMARK_HOST || inputs.test_device_addr }}"
       USER: ${{secrets.BENCHMARK_USER}}
       REPO: ${{github.repository}}
       BRANCH: ${{github.ref_name}}
       RUN_TYPE: ${{inputs.run_type}}
       DOCKER_IMG: ${{inputs.docker_image}}
       TEST_ITERS: ${{inputs.test_iterations}}
+      CONFIG_OPTS: "${{inputs.config_options}}"
 
     steps:
     - uses: actions/checkout@v4
@@ -55,7 +62,6 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-        cache: maven
         
     - name: Setup Local Scripts
       run: |
@@ -67,18 +73,18 @@ jobs:
         ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} setup-test-server-remote ${REPO} ${BRANCH} ${RUN_TYPE} "${DOCKER_IMG}"
 
     - name: Run Remote Server Distribution Build
-      if: ${{ contains(env.DOCKER_IMG, '::') }}
+      if: ${{ !contains(env.DOCKER_IMG, '@sha256:') && contains(env.DOCKER_IMG, ':') }}
       run: |
         ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} build-server-distribution-remote "${DOCKER_IMG}"
         
     - name: Run Remote Docker Image Build
-      if: ${{ contains(env.DOCKER_IMG, '::') }}
+      if: ${{ !contains(env.DOCKER_IMG, '@sha256:') && contains(env.DOCKER_IMG, ':') }}
       run: |
         ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} build-docker-image-remote
 
     - name: Start Remote Deephaven Server
       run: | 
-        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} manage-deephaven-remote start "${DOCKER_IMG}"
+        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} manage-deephaven-remote start "${DOCKER_IMG}" "${CONFIG_OPTS}"
 
     - name: Run Remote Benchmark Artifact Build
       run: |
@@ -98,11 +104,11 @@ jobs:
         tag: ${{ fromJson(needs.setup-benchmarks.outputs.matrix-iterations) }}
     env: 
       SD: .github/scripts
-      HOST: ${{secrets.BENCHMARK_HOST}}
+      HOST: "${{ inputs.test_device_addr == '<default>' && secrets.BENCHMARK_HOST || inputs.test_device_addr }}"
       USER: ${{secrets.BENCHMARK_USER}}
       RUN_TYPE: ${{inputs.run_type}}
       TEST_PKG: ${{inputs.test_package}}
-      TEST_RGX: ${{inputs.test_class_regex}}
+      TEST_RGX: "${{inputs.test_class_regex}}"
       ROW_CNT: ${{inputs.scale_row_count}}
       DISTRIB: ${{inputs.distribution}}
 
@@ -123,12 +129,12 @@ jobs:
     runs-on: ubuntu-22.04
     env: 
       SD: .github/scripts
-      HOST: ${{secrets.BENCHMARK_HOST}}
+      HOST: "${{ inputs.test_device_addr == '<default>' && secrets.BENCHMARK_HOST || inputs.test_device_addr }}"
       USER: ${{secrets.BENCHMARK_USER}}
       RUN_TYPE: ${{inputs.run_type}}
       DOCKER_IMG: ${{inputs.docker_image}}
       RUN_LABEL: ${{inputs.run_label}}
-      ACTOR: "${{ inputs.run_label == 'adhoc' && github.actor || github.repository_owner }}" 
+      ACTOR: "${{ inputs.run_type == 'adhoc' && github.actor || github.repository_owner }}" 
     
     steps:
     - uses: actions/checkout@v4
@@ -138,7 +144,6 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-        cache: maven
     
     - name: Setup Local Scripts
       run: |
@@ -146,8 +151,10 @@ jobs:
         ${SD}/setup-ssh-local.sh ${HOST} "${{secrets.BENCHMARK_KEY}}"
     
     - name: Fetch Benchmark Results and Prepare for Upload
+      id: fetch-results
       run: |
         ${SD}/fetch-results-local.sh ${HOST} ${USER} ${SD} ${RUN_TYPE} "${ACTOR}" "${RUN_LABEL}" "${DOCKER_IMG}"
+        cat fetch-results-local.out >> "$GITHUB_OUTPUT"
 
     - name: Authorize GCloud Credentials
       uses: google-github-actions/auth@v2
@@ -162,8 +169,10 @@ jobs:
       with:
         path: ${{env.RUN_TYPE}}
         destination: deephaven-benchmark
+        process_gcloudignore: false
         
     - name: Sync GCloud with Demo NFS
+      if: ${{ env.RUN_TYPE != 'adhoc' }}
       run: |
         gcloud compute ssh --zone "us-central1-a" --project "deephaven-oss" dhc-demo-nfs-client --command="sudo gsutil -m rsync -d -r gs://deephaven-benchmark /nfs/deephaven-benchmark"
         gcloud compute ssh --zone "us-central1-a" --project "deephaven-oss" dhc-demo-nfs-client --command="sudo find /nfs/deephaven-benchmark -mindepth 1 -type d -empty -delete"
@@ -175,9 +184,8 @@ jobs:
     - name: Archive Results
       uses: actions/upload-artifact@v4
       with:
-        name: Benchmarks and Logs
+        name: Benchmarks and Logs for Set ${{steps.fetch-results.outputs.SET_LABEL}}
         path: |
           ${{env.RUN_TYPE}}/**/*
           logs/**/*
-
 
