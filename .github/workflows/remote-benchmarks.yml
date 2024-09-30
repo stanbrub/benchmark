@@ -1,3 +1,5 @@
+# Copyright (c) 2023-2024 Deephaven Data Labs and Patent Pending
+
 # Run benchmarks on a remote system for the release the project is using
 # - This workflow is reusable with run_type set to release or nightly
 # - Scripts ending in "-local" run on the github runner
