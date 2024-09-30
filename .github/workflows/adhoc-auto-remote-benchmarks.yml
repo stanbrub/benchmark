@@ -1,3 +1,5 @@
+# Copyright (c) 2023-2024 Deephaven Data Labs and Patent Pending
+
 # Provision a server and run benchmarks on that system, cleaning up after
 # - Deploys a new server on the fly
 # - Calls the reusable worflow remote-benchmarks.yml to run and upload benchmarks
@@ -93,7 +95,7 @@ jobs:
     - name: Deploy Bare Metal
       id: deploy-metal
       run: |
-        ${SD}/adhoc.sh deploy-metal ${METAL_API_KEY} ${METAL_PROJECT_ID} ${METAL_PLAN} ${METAL_ACTOR} ${METAL_EXPIRE}
+        ${SD}/adhoc.sh deploy-metal "${METAL_API_KEY}" "${METAL_PROJECT_ID}" "${METAL_PLAN}" "${METAL_ACTOR}" "${METAL_EXPIRE}"
         cat adhoc-deploy-metal.out >> "$GITHUB_OUTPUT"
     
     - name: Archive Setup Logs
