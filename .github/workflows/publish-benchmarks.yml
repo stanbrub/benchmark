@@ -8,11 +8,105 @@ name: Publish Deephaven Benchmarks
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Benchmark Release Version'
+        required: true
+        default: '0.36.0'
+        type: string
+      release-commit:
+        description: 'Benchmark Release Commit Hash'
+        required: true
+        default: '849d7e99a873ad6ff1ccd6c1a5099d33f8393f1a'
+        type: string
+      previous-version:
+        description: 'Benchmark Previous Version'
+        required: true
+        default: '0.35.0'
+        type: string
+      mark-latest:
+        description: 'Mark Release as Latest'
+        required: false
+        type: boolean
+   
+env:
+  VERSION: "${{inputs.version}}"
+  COMMIT: "${{inputs.release-commit}}"
+  PREV_VERSION: "${{inputs.previous-version}}"
+  LATEST_DIR: ${{github.workspace}}/latest
+  RELEASE_DIR: ${{github.workspace}}/release
+
+permissions:
+  actions: write
+  contents: write
 
 jobs:
-  echo:
+  build:
     runs-on: ubuntu-22.04
+
     steps:
-    - name: Echo Something
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Checkout Latest
+      uses: actions/checkout@v4
+      with:
+        path: latest
+
+    - name: Checkout Release
+      uses: actions/checkout@v4
+      with:
+        path: release
+        fetch-depth: 0
+        fetch-tags: true
+
+    - name: Checkout Distro Target
+      working-directory: ${{env.RELEASE_DIR}}
+      run: git checkout ${COMMIT}
+
+    - name: Build Release Artifacts
+      working-directory: ${{env.RELEASE_DIR}}
       run: |
-        echo "Something"
+        cp ${LATEST_DIR}/.github/resources/integration-docker-compose.yml docker-compose.yml
+        docker compose up -d
+
+    - name: Build Release Artifacts
+      working-directory: ${{env.RELEASE_DIR}}
+      run: | 
+        mvn -B verify --file pom.xml
+        docker compose down 
+      
+    - name: Build Release Distro and Notes
+      working-directory: ${{env.RELEASE_DIR}}
+      run: ${LATEST_DIR}/.github/scripts/make-release-distro.sh ${VERSION} ${COMMIT} ${PREV_VERSION}
+      
+    - name: Test Release Distro
+      working-directory: ${{env.RELEASE_DIR}}
+      run: |
+        ${LATEST_DIR}/.github/scripts/test-release-distro.sh ${VERSION}
+        ls -l ${RELEASE_DIR}/target/
+      
+    - name: Archive Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: Deephaven Benchmark Release
+        path: |
+          ${{env.RELEASE_DIR}}/target/deephaven-benchmark-${{env.VERSION}}.tar
+          ${{env.RELEASE_DIR}}/target/deephaven-benchmark-${{env.VERSION}}-results.tar
+          ${{env.RELEASE_DIR}}/target/release-notes.md
+          
+    - name: Publish Github Release
+      if: ${{ github.ref_name == 'main' }}
+      uses: ncipollo/release-action@v1
+      with:
+        tag: "v${{env.VERSION}}"
+        commit: ${{env.COMMIT}}
+        makeLatest: ${{inputs.mark-latest}}
+        allowUpdates: true
+        artifacts: "${{env.RELEASE_DIR}}/target/deephaven-benchmark-${{env.VERSION}}.tar"
+        bodyFile: "${{env.RELEASE_DIR}}/target/release-notes.md"
+
+
