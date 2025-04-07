@@ -206,7 +206,7 @@ final public class StandardTestRunner {
     }
 
     String getReadOperation(int scaleFactor, long rowCount, String... loadColumns) {
-        var headRows = (rowCount >= getGeneratedRowCount())?"":".head(${rows})";
+        var headRows = (rowCount >= getGeneratedRowCount()) ? "" : ".head(${rows})";
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
             merge([
@@ -215,7 +215,7 @@ final public class StandardTestRunner {
                 'timestamp=timestamp.plusMillis((long)(ii / ${rows}) * ${rows})'
             ]).select()
             """;
-            read = read.replace("${headRows}",headRows);
+            read = read.replace("${headRows}", headRows);
             return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + rowCount);
         }
 
@@ -226,7 +226,7 @@ final public class StandardTestRunner {
             read = "merge([${readTable}] * ${scaleFactor})".replace("${readTable}", read);
             read = read.replace("${scaleFactor}", "" + scaleFactor);
         }
-        return read.replace("${headRows}",headRows).replace("${rows}", "" + rowCount);
+        return read.replace("${headRows}", headRows).replace("${rows}", "" + rowCount);
     }
 
     String getStaticQuery(String name, String operation, long rowCount, String... loadColumns) {
@@ -373,7 +373,7 @@ final public class StandardTestRunner {
         from deephaven.parquet import read
         from numpy import typing as npt
         import numpy as np
-        import numba as nb
+        # import numba as nb
         """;
 
         this.api = Bench.create(testInst);
