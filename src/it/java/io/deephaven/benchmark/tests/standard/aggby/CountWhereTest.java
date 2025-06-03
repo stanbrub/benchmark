@@ -27,22 +27,21 @@ public class CountWhereTest {
     void countWhere1Group() {
         runner.setScaleFactors(8, 7);
         var q = "source.agg_by(aggs, by=['key1'])";
-        runner.test("CountWhere-AggBy- 1 Group 100 Unique Vals", 100, q, "key1", "num1", "num2");
+        runner.test("CountWhere-AggBy- 1 Group 100 Unique Vals", 100, q, "key1", "num1");
     }
 
     @Test
     void countWhere2Group() {
         runner.setScaleFactors(3, 2);
         var q = "source.agg_by(aggs, by=['key1', 'key2'])";
-        runner.test("CountWhere-AggBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1", "num2");
+        runner.test("CountWhere-AggBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1");
     }
 
     @Test
     void countWhere3Group() {
         runner.setScaleFactors(2, 1);
         var q = "source.agg_by(aggs, by=['key1', 'key2', 'key3'])";
-        runner.test("CountWhere-AggBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1",
-                "num2");
+        runner.test("CountWhere-AggBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
     }
 
 }
