@@ -32,7 +32,7 @@ public class RollingCountWhereTimeTest {
         """;
 
     @Test
-    void rollingRollingCountWhereTime0Group3Ops() {
+    void rollingCountWhereTime0Group3Ops() {
         setup.factors(5, 4, 3);
         runner.addSetupQuery(thousands);
         var q = "timed.update_by(ops=[contains_row])";
@@ -40,7 +40,7 @@ public class RollingCountWhereTimeTest {
     }
 
     @Test
-    void rollingRollingCountWhereTime1Group3Ops() {
+    void rollingCountWhereTime1Group3Ops() {
         setup.factors(4, 2, 1);
         runner.addSetupQuery(fifty1Group);
         var q = "timed.update_by(ops=[contains_row], by=['key1'])";
@@ -48,7 +48,7 @@ public class RollingCountWhereTimeTest {
     }
 
     @Test
-    void rollingRollingCountWhereTime2Groups3Ops() {
+    void rollingCountWhereTime2Groups3Ops() {
         setup.factors(2, 2, 1);
         runner.addSetupQuery(fifty2Groups);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
@@ -56,7 +56,7 @@ public class RollingCountWhereTimeTest {
     }
 
     @Test
-    void rollingRollingCountWhereTime3Groups3Ops() {
+    void rollingCountWhereTime3Groups3Ops() {
         setup.factors(1, 3, 1);
         runner.addSetupQuery(fifty3Groups);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
