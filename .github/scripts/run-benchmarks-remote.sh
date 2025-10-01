@@ -3,6 +3,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
+set -f
 
 # Copyright (c) 2023-2024 Deephaven Data Labs and Patent Pending
 
@@ -13,7 +14,7 @@ set -o nounset
 # Note: Assumes the deephaven-benchmark-*.jar artifact has been built and placed
 
 if [[ $# != 6 ]]; then
-  echo "$0: Missing run type, test package, test regex, row count, distribution, or tag name"
+  echo "$0: Missing run type, test package, test classes, row count, distribution, or tag name"
   exit 1
 fi
 
@@ -39,9 +40,11 @@ title "- Running Remote Benchmark Artifact on ${HOST} -"
 cd ${DEEPHAVEN_DIR};
 
 title "-- Running Benchmarks --"
+set +f
 cd ${RUN_DIR}
 cat ${RUN_TYPE}-scale-benchmark.properties | sed 's|${baseRowCount}|'"${ROW_COUNT}|g" | sed 's|${baseDistrib}|'"${DISTRIB}|g" > scale-benchmark.properties
-JAVA_OPTS="-Dbenchmark.profile=scale-benchmark.properties -jar deephaven-benchmark-*-standalone.jar -cp standard-tests.jar"
+JAVA_OPTS=$(echo -Dbenchmark.profile=scale-benchmark.properties -jar deephaven-benchmark-*-standalone.jar -cp standard-tests.jar)
+set -f
 
 if [ "${TAG_NAME}" = "Any" ]; then
   java ${JAVA_OPTS} -p ${TEST_PACKAGE} -n "${TEST_PATTERN}"
