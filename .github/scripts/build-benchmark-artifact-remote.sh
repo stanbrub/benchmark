@@ -36,4 +36,5 @@ mkdir -p ${RUN_DIR}/
 cp ${GIT_DIR}/target/deephaven-benchmark-*.jar ${RUN_DIR}/
 mv ${RUN_DIR}/deephaven-benchmark-*-tests.jar ${RUN_DIR}/standard-tests.jar
 cp ${GIT_DIR}/.github/resources/*.properties ${RUN_DIR}/
+cp ${GIT_DIR}/.github/resources/*.vmoptions ${RUN_DIR}/
 

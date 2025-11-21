@@ -4,6 +4,7 @@ services:
     ports:
       - "${DEEPHAVEN_PORT:-10000}:10000"
     volumes:
+      - ./dh-default.vmoptions:/opt/deephaven/latest/etc/dh-default.vmoptions
       - ./data:/data
       - ./minio:/minio
     environment:
