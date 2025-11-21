@@ -31,7 +31,7 @@ cat ${BENCH_PROPS_PATH} | sed 's|${slackToken}|'"${SLACK_TOKEN}|g" | sed 's|${sl
 
 cd ${DEEPHAVEN_DIR}
 cp ${GIT_DIR}/.github/resources/integration-docker-compose.yml docker-compose.yml
-cp ${GIT_DIR}/.github/resources/*.vmoptions ${RUN_DIR}/
+cp ${GIT_DIR}/.github/resources/dh-default.vmoptions dh-default.vmoptions
 docker compose pull
 sudo docker compose down
 sudo docker compose up -d
