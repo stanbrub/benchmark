@@ -44,7 +44,7 @@ elif [[ ${DOCKER_IMG} == *":"* ]]; then
 fi
 
 if [[ ${IS_BRANCH} == "false" ]]; then
-  echo "DOCKER_IMG=ghcr.io/deephaven/server:${DOCKER_IMG}" >> .env
+  echo "DOCKER_IMG=ghcr.io/stanbrub/server:${DOCKER_IMG}" >> .env
   docker compose pull
 else 
   echo "DOCKER_IMG=deephaven/server:benchmark-local" >> .env
