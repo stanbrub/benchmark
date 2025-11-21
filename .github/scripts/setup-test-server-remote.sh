@@ -96,6 +96,6 @@ title "-- Staging Docker Resources --"
 mkdir -p ${DEEPHAVEN_DIR}
 cd ${DEEPHAVEN_DIR}
 cp ${GIT_DIR}/benchmark/.github/resources/${RUN_TYPE}-benchmark-docker-compose.yml docker-compose.yml
-cp ${GIT_DIR}/.github/resources/dh-default.vmoptions dh-default.vmoptions
+cp ${GIT_DIR}/benchmark/.github/resources/dh-default.vmoptions dh-default.vmoptions
 
 
