@@ -27,18 +27,11 @@ mvn verify
 
 title "-- Cleanup After Build  --"
 cd ${DEEPHAVEN_DIR};
-docker compose down
-
-title "-- Create AOT Stuff --"  # Presumes the AOTMode=record has been turned on previous to verify
-sed -i '/AOT_OPTS/c\
-AOT_OPTS=-XX:AOTMode=create -XX:AOTConfiguration=/data/app.aotconf -XX:AOTCache=/data/app.aot' .env
-docker compose up 
-docker compose down
+docker compose down --timeout 600    # For AOT cache generation wait up to 10 minutes
 
 # Set up all successive docker runs to use the cached AOT if the compose file has the AOT_OPTS var
 sed -i '/AOT_OPTS/c\
 AOT_OPTS=-XX:AOTCache=/data/app.aot -XX:AOTMode=on' .env
-
 
 rm -f data/*.*
 

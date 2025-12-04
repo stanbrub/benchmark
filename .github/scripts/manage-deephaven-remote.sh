@@ -35,7 +35,7 @@ if [[ ${CONFIG_OPTS} == "<default>" ]]; then
   CONFIG_OPTS="-Xmx24g"
 fi
 echo "CONFIG_OPTS=${CONFIG_OPTS}" > .env
-echo "AOT_OPTS=-XX:AOTMode=record -XX:AOTConfiguration=/data/deephaven.aotconf" >> .env
+echo "AOT_OPTS=-XX:AOTMode=create -XX:AOTConfiguration=/data/app.aotconf -XX:AOTCache=/data/app.aot" >> .env
 
 IS_BRANCH="false"
 if [[ ${DOCKER_IMG} == *"@sha"*":"* ]]; then
