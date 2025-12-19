@@ -33,7 +33,7 @@ docker compose down --timeout 600    # For AOT cache generation wait up to 10 mi
 sed -i '/AOT_OPTS/c\
 AOT_OPTS=-XX:AOTCache=/data/app.aot -XX:AOTMode=on -Xlog:aot=info' .env
 
-rm -f data/*.*
+find data/ -maxdepth 1 ! -name 'app.aot' -type f -exec rm -f {} +
 
 title "-- Copying Artifact and Tests to Run Directory --"
 rm -rf ${RUN_DIR}
