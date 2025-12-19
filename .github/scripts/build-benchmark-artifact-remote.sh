@@ -31,7 +31,7 @@ docker compose down --timeout 600    # For AOT cache generation wait up to 10 mi
 
 # Set up all successive docker runs to use the cached AOT if the compose file has the AOT_OPTS var
 sed -i '/AOT_OPTS/c\
-AOT_OPTS=-XX:AOTCache=/data/app.aot -XX:AOTMode=on' .env
+AOT_OPTS=-XX:AOTCache=/data/app.aot -XX:AOTMode=on -Xlog:aot=info' .env
 
 rm -f data/*.*
 
