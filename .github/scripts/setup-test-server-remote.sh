@@ -98,4 +98,7 @@ cd ${DEEPHAVEN_DIR}
 cp ${GIT_DIR}/benchmark/.github/resources/${RUN_TYPE}-benchmark-docker-compose.yml docker-compose.yml
 cp ${GIT_DIR}/benchmark/.github/resources/dh-default.vmoptions dh-default.vmoptions
 
+title "-- Disabling ASLR --"
+echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+sudo sysctl -w kernel.randomize_va_space=0
 
