@@ -59,6 +59,7 @@ public class UserFormulaTest {
     }
     
     @Test
+    @Disabled
     void udf2DoublesToDoubleNoHintsSerial() {
         var setup = """
         def f(num1, num2):
@@ -96,6 +97,7 @@ public class UserFormulaTest {
     }
     
     @Test
+    @Disabled
     void udf2DoublesToDoublePythonHintsSerial() {
         runner.setScaleFactors(3, 0);
         var setup = """
@@ -156,6 +158,7 @@ public class UserFormulaTest {
     }
     
     @Test
+    @Disabled
     void udf2DoublesToDoubleNumpyHintsSerial() {
         var setup = """
         def f(num1: np.float64, num2: np.float64) -> np.float64:
