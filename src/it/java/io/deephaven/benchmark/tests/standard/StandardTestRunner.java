@@ -395,11 +395,17 @@ final public class StandardTestRunner {
     }
 
     void restartServices() {
-        var timer = api.timer();
-        if (!controller.restartService())
-            return;
         var metrics = new Metrics(Timer.now(), "test-runner", "setup.services");
-        metrics.set("restart", timer.duration().toMillis() / 1000.0, "standard");
+        
+        var timer = api.timer();
+        controller.stopService();
+        metrics.set("stop", timer.duration().toMillis() / 1000.0, "standard");
+        
+        timer = api.timer();
+        if (!controller.startService(Collections.emptyList()))
+            return;
+        metrics.set("start", timer.duration().toMillis() / 1000.0, "standard");
+        
         api.metrics().add(metrics);
     }
 
