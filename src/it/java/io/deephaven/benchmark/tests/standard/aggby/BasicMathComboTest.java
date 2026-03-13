@@ -28,7 +28,7 @@ public class BasicMathComboTest {
 
     @Test
     void mathComboAggBy7Ops0Groups() {
-        runner.setScaleFactors(40, 15);
+        runner.setScaleFactors(50, 25);
         var q = "source.agg_by(aggs)";
         runner.test("MathCombo-AggBy- 7 Ops No Groups", 1, q, "num1", "num2");
     }
