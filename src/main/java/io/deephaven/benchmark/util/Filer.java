@@ -6,6 +6,8 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,25 @@ public class Filer {
             }
         } catch (Exception ex) {
             throw new RuntimeException("Failed to delete path: " + path);
+        }
+    }
+
+    /**
+     * Create a file with the given name in the given parent directory. Create the parent directory if it does not
+     * exist. Permissions are 755 for directories and 644 for files.
+     * 
+     * @param parentDir the parent directory to contain the file
+     * @param fileName the name of the file to create
+     * @return the path of the created file
+     */
+    static public Path createFile(String parentDir, String fileName) {
+        try {
+            var d = Files.createDirectories(Paths.get(parentDir), PosixFilePermissions.asFileAttribute(
+                    PosixFilePermissions.fromString("rwxr-xr-x")));
+            return Files.createFile(d.resolve(fileName),
+                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to create temp file: " + fileName, ex);
         }
     }
 
