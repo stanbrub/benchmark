@@ -1,4 +1,4 @@
-/* Copyright (c) 2026-2026 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.generator;
 
 import java.nio.file.Path;
@@ -14,11 +14,13 @@ import io.deephaven.benchmark.util.Threads;
 import blue.strategic.parquet.*;
 
 /**
- * Generator that produces rows to a local Parquet file according to the provided column definitions.
- * consumer.
+ * Generator that produces rows to a local Parquet file according to the provided column definitions.<pr/> Note: This
+ * generator MUST generate the same row and column data in the same order and types as the non-local
+ * <code>AvroKafkaGenerator</code> when the two generators have the same column definitions. (The "same data" is defined
+ * by how it looks in Deephaven tables, not byte-for-byte in the files.)
  */
 public class LocalParquetGenerator implements Generator {
-    final private ExecutorService queue = Threads.single("ProtobufKafkaGenerator");
+    final private ExecutorService queue = Threads.single("LocalParquetGenerator");
     final private Path parquetOut;
     final private ParquetWriter<Row> writer;
     final private ColumnDefs columnDefs;
@@ -75,6 +77,7 @@ public class LocalParquetGenerator implements Generator {
                         }
                         // Write the record to Parquet file
                         writer.write(rec);
+                        rec.clear();
 
                         if (++recCount % 10_000_000 == 0)
                             Log.info("Produced %s records to topic '%s'", recCount, topic);
@@ -82,7 +85,7 @@ public class LocalParquetGenerator implements Generator {
                         if (duration > maxDuration)
                             isDone = true;
                     } catch (Exception ex) {
-                        throw new RuntimeException("Failed to send to topic: " + topic, ex);
+                        throw new RuntimeException("Failed to write to topic: " + topic, ex);
                     }
                 }
                 Log.info("Produced %s records to topic: %s", recCount, topic);
@@ -135,7 +138,7 @@ public class LocalParquetGenerator implements Generator {
         for (Map.Entry<String, String> e : fieldDefs.toTypeMap().entrySet()) {
             var name = e.getKey();
             var type = e.getValue();
-            fields += String.format("required %s %s %s\n", getFieldType(type), name, getCharEncoding(type));
+            fields += String.format("required %s %s %s;\n", getFieldType(type), name, getCharEncoding(type));
         }
         schema = schema.replace("${topic}", topic);
         return schema.replace("${fields}", fields);
@@ -147,7 +150,7 @@ public class LocalParquetGenerator implements Generator {
             case "int" -> "int32";
             case "double" -> "double";
             case "float" -> "float";
-            case "string" -> "string";
+            case "string" -> "binary";
             case "timestamp-millis" -> "google.protobuf.Timestamp";
             default -> throw new RuntimeException("Unsupported generator data type: " + type);
         };
@@ -155,7 +158,7 @@ public class LocalParquetGenerator implements Generator {
 
     private String getCharEncoding(String type) {
         return switch (type) {
-            case "string" -> "UTF8";
+            case "string" -> "(UTF8)";
             default -> "";
         };
     }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.tests.standard;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,6 +32,8 @@ final public class StandardTestRunner {
     private int staticFactor = 1;
     private int incFactor = 1;
     private int rowCountFactor = 1;
+    private boolean useMemorySource = true;
+    private boolean useLocalParquet = false;
 
     public StandardTestRunner(Object testInst) {
         this.testInst = testInst;
@@ -94,6 +96,25 @@ final public class StandardTestRunner {
     public void setServices(String... services) {
         requiredServices.clear();
         requiredServices.addAll(Arrays.asList(services));
+    }
+
+    /**
+     * Set if the generated tables are loaded into memory before running the test queries.
+     * 
+     * @return true if in memory source, otherwise false
+     */
+    public void useMemorySource(boolean useMemorySource) {
+        this.useMemorySource = useMemorySource;
+    }
+
+    /**
+     * Set if the generated tables are created through Deephaven (i.e. real client-server) or through the local file
+     * system (i.e. a local copy). The default of "false" is preferred.
+     * 
+     * @param useLocalParquet false to generate tables through Deephaven, otherwise false
+     */
+    public void useLocalParquet(boolean useLocalParquet) {
+        this.useLocalParquet = useLocalParquet;
     }
 
     /**
@@ -207,26 +228,28 @@ final public class StandardTestRunner {
 
     String getReadOperation(int scaleFactor, long rowCount, String... loadColumns) {
         var headRows = (rowCount >= getGeneratedRowCount()) ? "" : ".head(${rows})";
+        var selectStr = useMemorySource ? "select" : "view";
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
             merge([
                 read('/data/timed.parquet').view(formulas=[${loadColumns}])${headRows}
             ] * ${scaleFactor}).update_view([
                 'timestamp=timestamp.plusMillis((long)(ii / ${rows}) * ${rows})'
-            ]).select()
+            ]).${selectStr}()
             """;
-            read = read.replace("${headRows}", headRows);
+            read = read.replace("${headRows}", headRows).replace("${selectStr}", selectStr);
             return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + rowCount);
         }
 
-        var read = "read('/data/${mainTable}.parquet')${headRows}.select(formulas=[${loadColumns}])";
+        var read = "read('/data/${mainTable}.parquet')${headRows}.${selectStr}(formulas=[${loadColumns}])";
         read = (loadColumns.length == 0) ? ("empty_table(${rows})") : read;
 
         if (scaleFactor > 1) {
             read = "merge([${readTable}] * ${scaleFactor})".replace("${readTable}", read);
             read = read.replace("${scaleFactor}", "" + scaleFactor);
         }
-        return read.replace("${headRows}", headRows).replace("${rows}", "" + rowCount);
+        read = read.replace("${headRows}", headRows).replace("${rows}", "" + rowCount);
+        return read.replace("${selectStr}", selectStr);
     }
 
     String getStaticQuery(String name, String operation, long rowCount, String... loadColumns) {
@@ -435,7 +458,7 @@ final public class StandardTestRunner {
     }
 
     boolean generateSourceTable(String distribution, String[] groups) {
-        return api.table("source")
+        var t = api.table("source")
                 .add("num1", "double", "[0-4]", distribution)
                 .add("num2", "double", "[1-10]", distribution)
                 .add("key1", "string", "[1-100]", distribution)
@@ -444,8 +467,8 @@ final public class StandardTestRunner {
                 .add("key4", "int", "[0-98]", distribution)
                 .add("key5", "string", "[1-1000000]", distribution)
                 .withRowCount(getGeneratedRowCount())
-                .withColumnGrouping(groups)
-                .generateParquet();
+                .withColumnGrouping(groups);
+        return useLocalParquet ? t.generateLocalParquet() : t.generateParquet();
     }
 
     boolean generateRightTable(String distribution, String[] groups) {
@@ -455,21 +478,21 @@ final public class StandardTestRunner {
             distribution = "ascending";
         }
         supportTables.add("right");
-        return api.table("right")
+        var t = api.table("right")
                 .add("r_key1", "string", "[1-100]", distribution)
                 .add("r_key2", "string", "[1-101]", distribution)
                 .add("r_wild", "string", "[1-10000]", distribution)
                 .add("r_key4", "int", "[0-98]", distribution)
                 .add("r_key5", "string", "[1-1010000]", distribution)
                 .withRowCount(1010000)
-                .withColumnGrouping(groups)
-                .generateParquet();
+                .withColumnGrouping(groups);
+        return useLocalParquet ? t.generateLocalParquet() : t.generateParquet();
     }
 
     boolean generateTimedTable(String distribution, String[] groups) {
         long minTime = 1676557157537L;
         long maxTime = minTime + getGeneratedRowCount() - 1;
-        return api.table("timed")
+        var t = api.table("timed")
                 .add("timestamp", "timestamp-millis", "[" + minTime + "-" + maxTime + "]", "ascending")
                 .add("num1", "double", "[0-4]", distribution)
                 .add("num2", "double", "[1-10]", distribution)
@@ -478,8 +501,8 @@ final public class StandardTestRunner {
                 .add("key3", "int", "[0-8]", distribution)
                 .add("key4", "int", "[0-98]", distribution)
                 .withFixedRowCount(true)
-                .withColumnGrouping(groups)
-                .generateParquet();
+                .withColumnGrouping(groups);
+        return useLocalParquet ? t.generateLocalParquet() : t.generateParquet();
     }
 
     record Result(long loadedRowCount, Duration elapsedTime, long resultRowCount) {
