@@ -27,10 +27,6 @@ final public class Bench {
      * The root benchmark result directory
      */
     static final public Path rootOutputDir = Paths.get("results");
-    /**
-     * The root benchmark result directory
-     */
-    static final public Path tmpDir = createTmpDir();
 
     /**
      * The name of the benchmark results csv file
@@ -296,13 +292,6 @@ final public class Bench {
         if (!profile.isPropertyDefined("timestamp.test.results")) {
             System.setProperty("timestamp.test.results", "false");
         }
-    }
-
-    static private Path createTmpDir() {
-        var f = Filer.createFile(System.getProperty("java.io.tmpdir") + "/bench", "test.delete.me");
-        Filer.putFileText(f, "test write and delete");
-        Filer.delete(f);
-        return f.getParent();
     }
 
 }

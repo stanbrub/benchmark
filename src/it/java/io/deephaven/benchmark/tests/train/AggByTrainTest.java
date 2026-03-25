@@ -4,15 +4,14 @@ package io.deephaven.benchmark.tests.train;
 import org.junit.jupiter.api.*;
 
 /**
- * Standard tests for the aggBy table operation. Applies basic math aggregations to table data
+ * Training tests for the aggBy table operations that do aggregations (e.g. sum, std, min/max. var, avg). See
+ * <code>TrainTestRunner</code> for more information.
  */
 public class AggByTrainTest {
     final TrainTestRunner runner = new TrainTestRunner(this);
 
-    @BeforeEach
-    void setup() {
-        runner.setRowFactor(2);
-        runner.tables("source");
+    void setup(double rowFactor) {
+        runner.tables(rowFactor, "timed");
 
         var setupStr = """
         from deephaven import agg
@@ -26,15 +25,17 @@ public class AggByTrainTest {
     }
 
     @Test
-    void mathComboAggBy7Ops0Groups() {
-        var q = "source.agg_by(aggs)";
-        runner.test("MathCombo-AggBy- 7 Ops No Groups", 1, q, "num1", "num2");
+    void aggBy0Groups() {
+        setup(40);
+        var q = "timed.agg_by(aggs)";
+        runner.test("AggBy- No Groups", 1, q, "num1", "num2");
     }
 
     @Test
-    void mathComboAggBy7Ops2Groups() {
-        var q = "source.agg_by(aggs, by=['key1', 'key2'])";
-        runner.test("MathCombo-AggBy- 7 Ops 2 Groups 10K Unique Combos ", 10100, q, "key1", "key2", "num1", "num2");
+    void aggBy2Groups() {
+        setup(20);
+        var q = "timed.agg_by(aggs, by=['key1', 'key2'])";
+        runner.test("AggBy- 2 Groups 10K Unique Combos ", 10100, q, "key1", "key2", "num1", "num2");
     }
 
 }

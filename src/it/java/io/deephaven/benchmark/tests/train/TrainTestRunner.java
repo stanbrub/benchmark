@@ -1,6 +1,7 @@
 /* Copyright (c) 2026-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.tests.train;
 
+import java.util.Arrays;
 import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 
 /**
@@ -13,20 +14,24 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  * versions and GC types.
  */
 final public class TrainTestRunner {
+    static final int maxRowFactor = 40;
     final StandardTestRunner delegate;
+    final long baseRowCount;
 
     TrainTestRunner(Object testInst) {
         this.delegate = new StandardTestRunner(testInst);
+        this.baseRowCount = delegate.getGeneratedRowCount();
         delegate.useMemorySource(false);
         delegate.useLocalParquet(true);
+        delegate.setRowFactor(maxRowFactor);
     }
 
-    public void setRowFactor(int i) {
-        delegate.setRowFactor(i);
-    }
-
-    public void tables(String... names) {
+    public void tables(double rowFactor, String... names) {
         delegate.tables(names);
+        if (rowFactor > maxRowFactor)
+            throw new IllegalArgumentException("Row factor cannot be greater than " + maxRowFactor);
+        var q = "%s = %s.head(%d)".formatted(names[0], names[0], (long) (baseRowCount * rowFactor));
+        delegate.addSetupQuery(q);
     }
 
     public void addSetupQuery(String query) {

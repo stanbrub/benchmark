@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.api;
 
 import java.io.Closeable;
@@ -200,19 +200,20 @@ final public class BenchTable implements Closeable {
 
         var m = bench.awaitCompletion(generateWithAvro());
         Log.info("Produce Send Rate: %.2f recs/sec", m.getValue("send.rate"));
-        Log.info("Produce Data Duration: %d secs", timer.duration().toMillis());
+        Log.info("Produce Data Duration: %d secs", timer.duration().toSeconds());
         timer = Timer.start();
 
         q = replaceTableAndGeneratorFields(kafkaToParquetQuery);
         bench.query(q).execute();
 
-        Log.info("DH Write Table Duration: %d secs", timer.duration().toMillis());
+        Log.info("DH Write Table Duration: %d secs", timer.duration().toSeconds());
         return true;
     }
 
     /**
      * Generate the table synchronously to a parquet file in the engine's data directory. If a parquet file already
-     * exists in the Deephaven data directory that matches this table definition, use it and skip generation. <pr/>
+     * exists in the Deephaven data directory that matches this table definition, use it and skip generation.
+     * <p>
      * Note: This is the same as <code>generateParquet()</code> except it generates the parquet file directly to the
      * engine's data directory without going through kafka. As such, it will not work when the test runner and the
      * engine are not co-located.
@@ -244,12 +245,9 @@ final public class BenchTable implements Closeable {
 
         var m = bench.awaitCompletion(generateWithLocalParquet(hostDataDir.get(), tableGenParquet.get()));
         Log.info("Produce Send Rate: %.2f recs/sec", m.getValue("send.rate"));
-        Log.info("Produce Data Duration: %d secs", timer.duration().toMillis());
-        timer = Timer.start();
+        Log.info("Produce Data Duration: %d secs", timer.duration().toSeconds());
 
         bench.query(localToParquetQuery).execute();
-
-        Log.info("DH Write Table Duration: %d secs", timer.duration().toMillis());
         return true;
     }
 

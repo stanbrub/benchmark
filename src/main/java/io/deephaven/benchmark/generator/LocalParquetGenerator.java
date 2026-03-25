@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2026 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2026-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.generator;
 
 import java.nio.file.Path;
@@ -29,14 +29,13 @@ public class LocalParquetGenerator implements Generator {
     final private AtomicBoolean isClosed = new AtomicBoolean(false);
 
     /**
-     * Initialize with kafka server and schema registry locations, kafka topic, column definitions, and compression
-     * scheme
+     * Create a local Parquet generator with the provided column definitions and output file. The column definitions
+     * determine the schema of the Parquet file and the data generated for each column.
      * 
-     * @param bootstrapServers the kafka external location (ex. localhost:9092)
-     * @param schemaRegistryUrl the ReST schema registry location (ex. localhost:8081)
-     * @param topic the kafka topic to produce record to (ex. mytable)
-     * @param columnDefs the column definitions specifying what the data looks like
-     * @param compression one of Kafka's <code>ProducerConfig.COMPRESSION_TYPE_CONFIG</code> schemes
+     * @param parquetFile output Parquet file path
+     * @param topic topic name (used for logging and schema generation)
+     * @param columnDefs column definitions that determine the schema and generated data
+     * @param compression compression type for Parquet file (e.g. "SNAPPY", "GZIP", "UNCOMPRESSED")
      */
     public LocalParquetGenerator(String parquetFile, String topic, ColumnDefs columnDefs, String compression) {
         this.topic = topic;
@@ -60,10 +59,11 @@ public class LocalParquetGenerator implements Generator {
             public Metrics call() {
                 final long maxDuration = maxDurationSecs * 1000;
                 final long beginTime = System.currentTimeMillis();
+                final int columnDefsCount = columnDefs.getCount();
+                final var rec = new Row(schema, new ArrayList<>(columnDefs.getCount()));
                 long recCount = 0;
                 long duration = 0;
                 boolean isDone = false;
-                var rec = new Row(schema, new ArrayList<>(columnDefs.getCount()));
                 while (!isClosed.get() && !isDone) {
                     try {
                         if (recCount >= maxRecordCount) {
@@ -71,7 +71,7 @@ public class LocalParquetGenerator implements Generator {
                             continue;
                         }
                         // Build a record with the column defs for Parquet row write
-                        for (int i = 0, n = columnDefs.getCount(); i < n; i++) {
+                        for (int i = 0, n = columnDefsCount; i < n; i++) {
                             var v = columnDefs.nextValue(i, recCount, maxRecordCount);
                             rec.addValue(v);
                         }
@@ -151,7 +151,7 @@ public class LocalParquetGenerator implements Generator {
             case "double" -> "double";
             case "float" -> "float";
             case "string" -> "binary";
-            case "timestamp-millis" -> "google.protobuf.Timestamp";
+            case "timestamp-millis" -> "int64";
             default -> throw new RuntimeException("Unsupported generator data type: " + type);
         };
     }
@@ -159,6 +159,7 @@ public class LocalParquetGenerator implements Generator {
     private String getCharEncoding(String type) {
         return switch (type) {
             case "string" -> "(UTF8)";
+            case "timestamp-millis" -> "(TIMESTAMP(MILLIS,true))";
             default -> "";
         };
     }

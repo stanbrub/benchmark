@@ -12,7 +12,7 @@ import io.deephaven.benchmark.util.Numbers;
  * Note: All possible data values are loaded up front to prevent object-creation during production. This can take a
  * considerable amount of memory for larger scales, especially for generated strings.
  */
-public class ColumnDefs {
+final public class ColumnDefs {
     final int valueCacheSize;
     final List<ColumnDef> columns = new ArrayList<>();
     private String defaultDistribution = "random";

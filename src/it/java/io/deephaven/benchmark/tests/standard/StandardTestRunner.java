@@ -214,12 +214,12 @@ final public class StandardTestRunner {
         }
     }
 
-    long getWarmupRowCount() {
-        return (long) (api.propertyAsIntegral("warmup.row.count", "0") * rowCountFactor);
+    public long getGeneratedRowCount() {
+        return (long) (api.propertyAsIntegral("scale.row.count", "100000") * rowCountFactor);
     }
 
-    long getGeneratedRowCount() {
-        return (long) (api.propertyAsIntegral("scale.row.count", "100000") * rowCountFactor);
+    long getWarmupRowCount() {
+        return (long) (api.propertyAsIntegral("warmup.row.count", "0") * rowCountFactor);
     }
 
     long getMaxExpectedRowCount(long expectedRowCount, long scaleFactor) {
@@ -478,15 +478,15 @@ final public class StandardTestRunner {
             distribution = "ascending";
         }
         supportTables.add("right");
-        var t = api.table("right")
+        return api.table("right")
                 .add("r_key1", "string", "[1-100]", distribution)
                 .add("r_key2", "string", "[1-101]", distribution)
                 .add("r_wild", "string", "[1-10000]", distribution)
                 .add("r_key4", "int", "[0-98]", distribution)
                 .add("r_key5", "string", "[1-1010000]", distribution)
                 .withRowCount(1010000)
-                .withColumnGrouping(groups);
-        return useLocalParquet ? t.generateLocalParquet() : t.generateParquet();
+                .withColumnGrouping(groups)
+                .generateParquet();
     }
 
     boolean generateTimedTable(String distribution, String[] groups) {
