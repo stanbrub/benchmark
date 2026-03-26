@@ -26,7 +26,7 @@ public class WhereTest {
         runner.test("Where- 1 Filter", q, "key1", "num1");
     }
 
-    @Test @Disabled
+    @Test
     void where2Filters() {
         runner.setScaleFactors(310, 300);
         var q = """

@@ -23,7 +23,7 @@ public class SortComboTest {
         runner.test("Sort- Both Directions 2 Cols", q, "key1", "key2", "num1");
     }
 
-    @Test @Disabled
+    @Test
     void sort3ColsAscendDescend() {
         var q = """
         source.sort(order_by=['key1', 'key2', 'key3'], order=[SortDirection.ASCENDING, SortDirection.DESCENDING,

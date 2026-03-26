@@ -61,7 +61,7 @@ public class RollingComboTest {
         runner.test("RollingCombo- No Groups 12 Cols", q, "num1", "num2", "timestamp");
     }
 
-    @Test  @Disabled
+    @Test
     void rollingCombo1Groups6Ops() {
         setup.factors(2, 1, 1);
         runner.addSetupQuery(group100);
@@ -71,7 +71,7 @@ public class RollingComboTest {
         runner.test("RollingCombo- 1 Groups 100 Unique Vals", q, "key1", "num1", "num2", "timestamp");
     }
 
-    @Test @Disabled
+    @Test
     void rollingCombo2Groups6Ops() {
         setup.factors(1, 2, 1);
         runner.addSetupQuery(group10K);

@@ -23,7 +23,7 @@ public class NaturalJoinTest {
         runner.test("NaturalJoin- Join On 1 Col", q, "key5", "num1");
     }
 
-    @Test @Disabled
+    @Test
     void NaturalJoinOn2Cols() {
         setup(6);
         var q = "source.natural_join(right, on=['key1 = r_wild', 'key2 = r_key2'])";
