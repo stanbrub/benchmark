@@ -12,7 +12,7 @@ public class BasicMathComboTest {
 
     @BeforeEach
     void setup() {
-        runner.setRowFactor(2);
+        runner.setRowFactor(3);
         runner.tables("source");
 
         var setupStr = """
@@ -28,19 +28,19 @@ public class BasicMathComboTest {
 
     @Test
     void mathComboAggBy7Ops0Groups() {
-        runner.setScaleFactors(50, 25);
+        runner.setScaleFactors(20, 9);
         var q = "source.agg_by(aggs)";
         runner.test("MathCombo-AggBy- 7 Ops No Groups", 1, q, "num1", "num2");
     }
 
-    @Test @Disabled
+    @Test
     void mathComboAggBy7Ops1Group() {
         runner.setScaleFactors(9, 4);
         var q = "source.agg_by(aggs, by=['key1'])";
         runner.test("MathCombo-AggBy- 7 Ops 1 Group 100 Unique Vals ", 100, q, "key1", "num1", "num2");
     }
 
-    @Test @Disabled
+    @Test
     void mathComboAggBy7Ops2Groups() {
         runner.setScaleFactors(2, 1);
         var q = "source.agg_by(aggs, by=['key1', 'key2'])";
