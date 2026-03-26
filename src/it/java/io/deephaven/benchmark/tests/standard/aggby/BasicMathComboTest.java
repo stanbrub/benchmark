@@ -49,7 +49,6 @@ public class BasicMathComboTest {
 
     @Test
     void mathComboAggBy7Ops3Groups() {
-        runner.setScaleFactors(2, 1);
         var q = "source.agg_by(aggs, by=['key1', 'key2', 'key3'])";
         runner.test("MathCombo-AggBy- 7 Ops 3 Groups 100K Unique Combos ", 90900, q, "key1", "key2", "key3", "num1",
                 "num2");
