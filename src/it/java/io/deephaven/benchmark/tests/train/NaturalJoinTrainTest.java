@@ -16,7 +16,7 @@ public class NaturalJoinTrainTest {
 
     @Test
     void naturalJoinOn1Col() {
-        setup(40);
+        setup(60);
         var r = "right = right.select_distinct(['r_wild'])";
         runner.addSetupQuery(r);
         var q = "timed.natural_join(right, on=['key1 = r_wild'])";

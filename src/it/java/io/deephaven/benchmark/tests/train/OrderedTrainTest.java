@@ -2,7 +2,6 @@
 package io.deephaven.benchmark.tests.train;
 
 import org.junit.jupiter.api.*;
-import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 
 /**
  * Training tests for the aggBy table operations that do ordering (e.g.. median, percentile, sorted_first/last). See

@@ -1,8 +1,7 @@
-/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2026-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.tests.train;
 
 import org.junit.jupiter.api.*;
-import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 
 /**
  * Standard tests for the whereIn table operation. Filters rows of data from the source table where the rows match
@@ -27,14 +26,14 @@ public class FilterTrainTest {
 
     @Test
     void filter1Col() {
-        setup(40);
+        setup(390);
         var q = "timed.where_in(where_filter, cols=['key1 = set1']).where(['key1 < `4`'])";
         runner.test("Filter- 1 Col", 0, q, "key1", "num1");
     }
-    
+
     @Test
     void filter3Cols() {
-        setup(40);
+        setup(390);
         var q = """
         timed.where_in(where_filter, cols=['key1 = set1', 'key2 = set2', 'key3 = set3']) \
             .where(filters=["key1 = '1'", "key2 < '100'", "key3 in -2, -1, 0, 1, 2"])

@@ -1,17 +1,17 @@
 /* Copyright (c) 2026-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.generator;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import blue.strategic.parquet.*;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.MessageTypeParser;
 import io.deephaven.benchmark.metric.Metrics;
 import io.deephaven.benchmark.util.Log;
 import io.deephaven.benchmark.util.Threads;
-import blue.strategic.parquet.*;
 
 /**
  * Generator that produces rows to a local Parquet file according to the provided column definitions.<pr/> Note: This
@@ -21,80 +21,77 @@ import blue.strategic.parquet.*;
  */
 public class LocalParquetGenerator implements Generator {
     final private ExecutorService queue = Threads.single("LocalParquetGenerator");
-    final private Path parquetOut;
-    final private ParquetWriter<Row> writer;
     final private ColumnDefs columnDefs;
     final private String topic;
+    final private long startSeed;
     final private MessageType schema;
+    final private File parquetFile;
     final private AtomicBoolean isClosed = new AtomicBoolean(false);
+    private ParquetWriter<Object[]> writer;
 
     /**
      * Create a local Parquet generator with the provided column definitions and output file. The column definitions
      * determine the schema of the Parquet file and the data generated for each column.
-     * 
+     *
      * @param parquetFile output Parquet file path
      * @param topic topic name (used for logging and schema generation)
      * @param columnDefs column definitions that determine the schema and generated data
-     * @param compression compression type for Parquet file (e.g. "SNAPPY", "GZIP", "UNCOMPRESSED")
+     * @param startSeed starting seed for data generation
      */
-    public LocalParquetGenerator(String parquetFile, String topic, ColumnDefs columnDefs, String compression) {
+    public LocalParquetGenerator(String parquetFile, String topic, ColumnDefs columnDefs, long startSeed) {
         this.topic = topic;
         this.columnDefs = columnDefs;
+        this.startSeed = startSeed;
+        this.parquetFile = new File(parquetFile);
         this.schema = MessageTypeParser.parseMessageType(getSchemaMessage(topic, columnDefs));
-        this.parquetOut = Paths.get(parquetFile);
-        this.writer = createParquetWriter(schema, parquetOut);
+        try {
+            this.writer = ParquetWriter.writeFile(schema, this.parquetFile, createDehydrator());
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to create Parquet writer for topic: " + topic, ex);
+        }
     }
 
     /**
-     * Produce a maximum number of records to a Kafka topic asynchronously.
-     * 
+     * Produce a maximum number of records asynchronously.
+     *
      * @param perRecordPauseMillis wait time between each record sent
      * @param maxRecordCount maximum records to produce
-     * @param maxDurationSecs maximum duration to produce (May prevent maximum records from being produces)
+     * @param maxDurationSecs maximum duration to produce
      */
     public Future<Metrics> produce(int perRecordPauseMillis, long maxRecordCount, int maxDurationSecs) {
         checkClosed();
-        var r = new Callable<Metrics>() {
-            @Override
-            public Metrics call() {
-                final long maxDuration = maxDurationSecs * 1000;
-                final long beginTime = System.currentTimeMillis();
-                final int columnDefsCount = columnDefs.getCount();
-                final var rec = new Row(schema, new ArrayList<>(columnDefs.getCount()));
-                long recCount = 0;
-                long duration = 0;
-                boolean isDone = false;
-                while (!isClosed.get() && !isDone) {
-                    try {
-                        if (recCount >= maxRecordCount) {
-                            isDone = true;
-                            continue;
-                        }
-                        // Build a record with the column defs for Parquet row write
-                        for (int i = 0, n = columnDefsCount; i < n; i++) {
-                            var v = columnDefs.nextValue(i, recCount, maxRecordCount);
-                            rec.addValue(v);
-                        }
-                        // Write the record to Parquet file
-                        writer.write(rec);
-                        rec.clear();
+        return queue.submit(() -> {
+            final long maxDuration = maxDurationSecs * 1000L;
+            final long beginTime = System.currentTimeMillis();
+            final int colCount = columnDefs.getCount();
 
-                        if (++recCount % 10_000_000 == 0)
-                            Log.info("Produced %s records to topic '%s'", recCount, topic);
-                        duration = System.currentTimeMillis() - beginTime;
-                        if (duration > maxDuration)
-                            isDone = true;
-                    } catch (Exception ex) {
-                        throw new RuntimeException("Failed to write to topic: " + topic, ex);
-                    }
+            long recCount = startSeed;
+            long totalWritten = 0;
+            long duration = 0;
+            Object[] row = new Object[colCount];
+
+            while (!isClosed.get() && recCount < maxRecordCount) {
+                for (int i = 0; i < colCount; i++) {
+                    row[i] = columnDefs.nextValue(i, recCount, maxRecordCount);
                 }
-                Log.info("Produced %s records to topic: %s", recCount, topic);
-                var metrics = new Metrics("test-runner", "generate." + topic).set("duration.secs", duration / 1000.0)
-                        .set("record.count", recCount).set("send.rate", recCount / (duration / 1000.0));
-                return metrics;
+                writer.write(row);
+                recCount++;
+
+                if (++totalWritten % 10_000_000 == 0)
+                    Log.info("Produced %s records to topic '%s'", totalWritten, topic);
+
+                duration = System.currentTimeMillis() - beginTime;
+                if (duration > maxDuration)
+                    break;
             }
-        };
-        return queue.submit(r);
+
+            Log.info("Produced %s records to topic: %s", totalWritten, topic);
+            duration = System.currentTimeMillis() - beginTime;
+            return new Metrics("test-runner", "generate." + topic)
+                    .set("duration.secs", duration / 1000.0)
+                    .set("record.count", totalWritten)
+                    .set("send.rate", totalWritten / (duration / 1000.0));
+        });
     }
 
     /**
@@ -117,15 +114,13 @@ public class LocalParquetGenerator implements Generator {
             throw new RuntimeException("Generator is closed");
     }
 
-    private ParquetWriter<Row> createParquetWriter(MessageType schema, Path parquetOut) {
-        try {
-            Dehydrator<Row> dehydrator = (row, valueWriter) -> {
-                row.write(valueWriter);
-            };
-            return ParquetWriter.writeFile(schema, parquetOut.toFile(), dehydrator);
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed to create Parquet writer for topic: " + topic, ex);
-        }
+    private Dehydrator<Object[]> createDehydrator() {
+        final String[] colNames = columnDefs.toTypeMap().keySet().toArray(new String[0]);
+        return (row, valueWriter) -> {
+            for (int i = 0; i < colNames.length; i++) {
+                valueWriter.write(colNames[i], row[i]);
+            }
+        };
     }
 
     private String getSchemaMessage(String topic, ColumnDefs fieldDefs) {
@@ -162,22 +157,6 @@ public class LocalParquetGenerator implements Generator {
             case "timestamp-millis" -> "(TIMESTAMP(MILLIS,true))";
             default -> "";
         };
-    }
-
-    record Row(MessageType schema, List<Object> values) {
-        public void addValue(Object value) {
-            values.add(value);
-        }
-
-        public void write(ValueWriter valueWriter) {
-            for (int i = 0, n = values.size(); i < n; i++) {
-                valueWriter.write(schema.getFieldName(i), values.get(i));
-            }
-        }
-
-        public void clear() {
-            values.clear();
-        }
     }
 
 }

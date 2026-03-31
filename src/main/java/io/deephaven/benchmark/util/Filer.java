@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2023 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.util;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -52,6 +52,21 @@ public class Filer {
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
         } catch (Exception ex) {
             throw new RuntimeException("Failed to create temp file: " + fileName, ex);
+        }
+    }
+
+    /**
+     * Get the size of a file or directory in bytes. Directory sizes are calculated recursively by summing the sizes of
+     * all regular files contained within.
+     * 
+     * @param file the file or directory to get the size of
+     * @return the size of the file or directory in bytes
+     */
+    static public long getByteSize(String path) {
+        try {
+            return Files.walk(Paths.get(path)).filter(Files::isRegularFile).mapToLong(f -> f.toFile().length()).sum();
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get size of file: " + path, ex);
         }
     }
 

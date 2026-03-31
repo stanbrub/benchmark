@@ -271,17 +271,16 @@
 			<artifactId>kafka-protobuf-serializer</artifactId>
 			<version>8.1.1</version>
 		</dependency>
-		<dependency>
-			<groupId>io.deephaven</groupId>
-			<artifactId>deephaven-java-client-barrage-dagger</artifactId>
-			<version>41.3</version>
-		</dependency>
-		<!-- Use the same parquet hadoop version is DHC -->
         <dependency>
             <groupId>blue.strategic.parquet</groupId>
             <artifactId>parquet-floor</artifactId>
             <version>1.64</version>
         </dependency>
+		<dependency>
+			<groupId>io.deephaven</groupId>
+			<artifactId>deephaven-java-client-barrage-dagger</artifactId>
+			<version>41.3</version>
+		</dependency>
 		<dependency>
 			<groupId>io.deephaven</groupId>
 			<artifactId>deephaven-log-to-slf4j</artifactId>

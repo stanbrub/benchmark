@@ -34,7 +34,7 @@ public class UpdateByTrainTest {
 
     @Test
     void mixedComboNoGroups() {
-        setup(10);
+        setup(9.8);
         runner.addSetupQuery(noGroups);
         var q = "timed.update_by(ops=[avg_contains, max_before, prod_after, ema_tick_op, min_op, sum_op])";
         runner.test("UpdateBy- No Groups 12 Cols", 0, q, "num1", "num2", "timestamp");
@@ -42,7 +42,7 @@ public class UpdateByTrainTest {
 
     @Test
     void rollingCombo2Groups() {
-        setup(3);
+        setup(2.8);
         runner.addSetupQuery(group10K);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1','key2'])

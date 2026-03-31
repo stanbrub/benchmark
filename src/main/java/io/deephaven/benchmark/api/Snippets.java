@@ -187,6 +187,47 @@ class Snippets {
         """;
 
     /**
+     * Make a file containing a one line reference to another file. Note: This is to get around the fact that
+     * Deephaven's parquet can't read from symbolic links that are directories.
+     * <p>
+     * ex. bench_api_link('my_parquet_dir_or_file', 'my_link_name')
+     * 
+     * @param target the table to link
+     * @param link_name the name to link the table to for retrieval
+     */
+    static String bench_api_link = """
+        import os, glob
+        def bench_api_link(target, link_name):
+            for f in glob.glob(link_name + '*'):
+                os.remove(f)
+            if target.endswith('.dataset'):
+                with open(link_name + '.link', 'w') as f:
+                    f.write(target)
+            else:
+                os.link(target, link_name)
+        """;
+
+    /**
+     * Read a parquet file or dataset into a Deephaven table. If the filename is a link (e.g. ".link") grab the file
+     * reference within it.
+     * <p>
+     * ex. source = bench_api_read('/data/timed.parquet')
+     * 
+     * @param file_name the name of the file containing the link reference
+     * @return a table containing the contents of the linked parquet file or dataset
+     */
+    static String bench_api_read = """
+        import os
+        from deephaven.parquet import read
+        def bench_api_read(file_name):
+            link_path = file_name + '.link'
+            if os.path.exists(link_path):
+                with open(link_path, 'r') as f:
+                    file_name = f.read().strip()
+            return read(file_name)
+        """;
+
+    /**
      * Returns a query containing the api functions called by the query
      * 
      * @param query the query containing called functions
@@ -206,6 +247,8 @@ class Snippets {
         defs += getFunc("bench_api_metrics_add", bench_api_metrics_add, query, defs);
         defs += getFunc("bench_api_metrics_collect", bench_api_metrics_collect, query, defs);
         defs += getFunc("bench_api_await_column_value_limit", bench_api_await_column_value_limit, query, defs);
+        defs += getFunc("bench_api_link", bench_api_link, query, defs);
+        defs += getFunc("bench_api_read", bench_api_read, query, defs);
         return defs;
     }
 

@@ -232,7 +232,7 @@ final public class StandardTestRunner {
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
             merge([
-                read('/data/timed.parquet').view(formulas=[${loadColumns}])${headRows}
+                bench_api_read('/data/timed.parquet').view(formulas=[${loadColumns}])${headRows}
             ] * ${scaleFactor}).update_view([
                 'timestamp=timestamp.plusMillis((long)(ii / ${rows}) * ${rows})'
             ]).${selectStr}()
@@ -241,7 +241,7 @@ final public class StandardTestRunner {
             return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + rowCount);
         }
 
-        var read = "read('/data/${mainTable}.parquet')${headRows}.${selectStr}(formulas=[${loadColumns}])";
+        var read = "bench_api_read('/data/${mainTable}.parquet')${headRows}.${selectStr}(formulas=[${loadColumns}])";
         read = (loadColumns.length == 0) ? ("empty_table(${rows})") : read;
 
         if (scaleFactor > 1) {
@@ -379,7 +379,7 @@ final public class StandardTestRunner {
     }
 
     String loadSupportTables() {
-        return supportTables.stream().map(t -> t + " = read('/data/" + t + ".parquet').select()\n")
+        return supportTables.stream().map(t -> t + " = bench_api_read('/data/" + t + ".parquet').select()\n")
                 .collect(Collectors.joining(""));
     }
 
