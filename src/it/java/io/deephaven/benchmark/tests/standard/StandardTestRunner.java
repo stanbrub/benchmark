@@ -21,10 +21,14 @@ import io.deephaven.benchmark.util.Timer;
  * conventions are followed (ex. main file is "source")
  */
 final public class StandardTestRunner {
+    static {
+        System.setProperty("root.test.package", "io.deephaven.benchmark.tests");
+    }
     final Object testInst;
     final List<String> supportTables = new ArrayList<>();
     final List<String> setupQueries = new ArrayList<>();
     final List<String> preOpQueries = new ArrayList<>();
+    final List<String> teardownQueries = new ArrayList<>();
     final Set<String> requiredServices = new TreeSet<>(List.of("deephaven"));
     private String mainTable = "source";
     private Bench api;
@@ -136,6 +140,16 @@ final public class StandardTestRunner {
      */
     public void addPreOpQuery(String query) {
         preOpQueries.add(query);
+    }
+
+    /**
+     * Add a query to be run after everything else is done. This is useful for teardown of any resources after the test
+     * is run like logging, temporary files, perf table retrieval, etc.
+     * 
+     * @param query the query to run after the measured operation
+     */
+    public void addTeardownQuery(String query) {
+        teardownQueries.add(query);
     }
 
     /**
@@ -264,9 +278,11 @@ final public class StandardTestRunner {
         bench_api_metrics_start()
         print('${logOperationBegin}')
 
+        begin_clock = time.time_ns()
         begin_time = time.perf_counter_ns()
         result = ${operation}
         end_time = time.perf_counter_ns()
+        end_clock = time.time_ns()
         
         print('${logOperationEnd}')
         bench_api_metrics_end()
@@ -276,7 +292,10 @@ final public class StandardTestRunner {
             double_col("elapsed_nanos", [end_time - begin_time]),
             long_col("processed_row_count", [loaded_tbl_size]),
             long_col("result_row_count", [result.size]),
+            long_col("begin_clock_nanos", [begin_clock]),
+            long_col("end_clock_nanos", [end_clock]),
         ])
+        ${teardownQueries}
         """;
         var read = getReadOperation(staticFactor, rowCount, loadColumns);
         return populateQuery(name, staticQuery, operation, read, loadColumns);
@@ -301,6 +320,7 @@ final public class StandardTestRunner {
         ${preOpQueries}
         bench_api_metrics_start()
         print('${logOperationBegin}')
+        begin_clock = time.time_ns()
         begin_time = time.perf_counter_ns()
         result = ${operation}
         
@@ -314,6 +334,7 @@ final public class StandardTestRunner {
         source_filter.waitForCompletion()
         
         end_time = time.perf_counter_ns()
+        end_clock = time.time_ns()
         print('${logOperationEnd}')
         bench_api_metrics_end()
         standard_metrics = bench_api_metrics_collect()
@@ -321,8 +342,11 @@ final public class StandardTestRunner {
         stats = new_table([
             double_col("elapsed_nanos", [end_time - begin_time]),
             long_col("processed_row_count", [loaded_tbl_size]),
-            long_col("result_row_count", [result.size])
+            long_col("result_row_count", [result.size]),
+            long_col("begin_clock_nanos", [begin_clock]),
+            long_col("end_clock_nanos", [end_clock]),
         ])
+        ${teardownQueries}
         """;
         var read = getReadOperation(incFactor, rowCount, loadColumns);
         return populateQuery(name, incQuery, operation, read, loadColumns);
@@ -336,6 +360,7 @@ final public class StandardTestRunner {
         query = query.replace("${setupQueries}", String.join("\n", setupQueries));
         query = query.replace("${preOpQueries}", String.join("\n", preOpQueries));
         query = query.replace("${operation}", operation);
+        query = query.replace("${teardownQueries}", String.join("\n", teardownQueries));
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
         return query;
@@ -365,6 +390,8 @@ final public class StandardTestRunner {
                 metrics.set("inc.factor", incFactor);
                 metrics.set("row.factor", rowCountFactor);
                 api.metrics().add(metrics);
+            }).fetchAfter("standard_events", table -> {
+                api.events().add(table);
             }).execute();
             api.result().test("deephaven-engine", result.get().elapsedTime(), result.get().loadedRowCount());
             return result.get();

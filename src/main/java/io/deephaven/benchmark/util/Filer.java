@@ -46,12 +46,25 @@ public class Filer {
      */
     static public Path createFile(String parentDir, String fileName) {
         try {
-            var d = Files.createDirectories(Paths.get(parentDir), PosixFilePermissions.asFileAttribute(
-                    PosixFilePermissions.fromString("rwxr-xr-x")));
-            return Files.createFile(d.resolve(fileName),
+            return Files.createFile(createDirectory(parentDir).resolve(fileName),
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to create temp file: " + fileName, ex);
+            throw new RuntimeException("Failed to create file: " + fileName, ex);
+        }
+    }
+
+    /**
+     * Create a directory with the given name. Create parent directories if they do not exist. Permissions are 755.
+     * 
+     * @param dir the directory to create
+     * @return the path of the created directories
+     */
+    static public Path createDirectory(String dir) {
+        try {
+            return Files.createDirectories(Paths.get(dir), PosixFilePermissions.asFileAttribute(
+                    PosixFilePermissions.fromString("rwxr-xr-x")));
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to create temp directory: " + dir, ex);
         }
     }
 

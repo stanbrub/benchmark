@@ -26,7 +26,7 @@ final public class BenchLog {
     BenchLog(Path parent, Class<?> testClass) {
         this.testClass = testClass;
         this.parent = parent;
-        this.logFile = getLogFile(parent, testClass);
+        this.logFile = parent.resolve("engine.log");
     }
 
     /**

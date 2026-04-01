@@ -78,7 +78,7 @@ public class LocalParquetGenerator implements Generator {
                 recCount++;
 
                 if (++totalWritten % 10_000_000 == 0)
-                    Log.info("Produced %s records to topic '%s'", totalWritten, topic);
+                    Log.info("Produced %s records to topic: %s", totalWritten, topic);
 
                 duration = System.currentTimeMillis() - beginTime;
                 if (duration > maxDuration)

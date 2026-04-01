@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2024 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.api;
 
 /**
@@ -75,7 +75,7 @@ class Snippets {
 
     /**
      * Initialize the container for storing benchmark metrics. Define functions for getting some MX Bean data for gc,
-     * jit and heap
+     * jit and heap.
      * <p>
      * ex. bench_api_metrics_init()
      */
@@ -184,6 +184,9 @@ class Snippets {
                     'name=``+m[3]','value=``+m[4]','note=``+m[5]'])    
                 t.add(m1)
             return t
+            
+        standard_events = new_table([ string_col("origin",[]), string_col("type",[]), long_col("start_ns",[]), 
+            long_col("duration_ns",[]), string_col("detail",[])])
         """;
 
     /**
