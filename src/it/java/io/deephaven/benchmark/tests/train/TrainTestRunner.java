@@ -49,46 +49,90 @@ final public class TrainTestRunner {
         Recording = jpy.get_type("jdk.jfr.Recording")
         rec = Recording()
         rec.setName("benchmark")
+        
+        enabled_events=['jdk.GarbageCollection', 'jdk.GCPhasePause', 'jdk.GCPhaseConcurrent', 'jdk.GCCPUTime']
+        for n in enabled_events:
+            try:
+                rec.enable(n)
+            except Exception as e:
+                print(f"Event Not Enabled: {e}")
+
+        disabled_events=['jdk.ExecutionSample', 'jdk.JavaMonitorEnter', 'jdk.JavaMonitorWait', 'jdk.ThreadSleep', 
+            'jdk.SocketRead', 'jdk.SocketWrite']
+        for n in disabled_events:
+            try:
+                rec.disable(_ename)
+            except Exception:
+                print(f"Event Not Disabled: {e}")
+
         rec.start()
         """;
     
     static final String stopJfrQuery = """
         Paths = jpy.get_type("java.nio.file.Paths")
         RecordingFile = jpy.get_type("jdk.jfr.consumer.RecordingFile")
+
         rec.dump(Paths.get("/data/benchmark.jfr"))
         rec.stop()
         rec.close()
+        
         events = RecordingFile.readAllEvents(Paths.get("/data/benchmark.jfr"))
 
-        # Log each event's fields to the console for inspection
-        print("=== JFR event dump begin ===")
-        for i in range(events.size()):
-            e = events.get(i)
-            etype = e.getEventType()
-            print(f"Event {i}: type={etype.getName()}")
-            fields = e.getFields()
-            for idx in range(fields.size()):
-                fd = fields.get(idx)
-                fname = fd.getName()
-                fval = e.getValue(fname)
-                print(f"  {fname} = {fval}")
-            print("--")
-        print("=== JFR event dump end ===")
-
         jfr_rows = []
+
+        def getEventValue(ev, field):
+            try:
+                return ev.getValue(field)
+            except Exception:
+                return None
+                
+        def getNanoValue(ev, duration_field):
+            val = ev.getValue(duration_field)
+            if val is None or str(val) == "null": return 0
+            if isinstance(val, int): return val
+            if hasattr(val, "size") and hasattr(val, "get"):
+                total = 0
+                for i in range(val.size()):
+                    d = val.get(i)
+                    if d is not None and str(d) != "null": total += d.toNanos()
+                return total
+            if hasattr(val, "toNanos"): return val.toNanos()
+            raise TypeError(f"Unsupported JFR value type: {type(val)}")
+
+
         for i in range(events.size()):
             e = events.get(i)
-            start = e.getStartTime().getEpochSecond() * 1000000000 + e.getStartTime().getNano()
-            dur = e.getDuration().getSeconds() * 1000000000 + e.getDuration().getNano()
-            jfr_rows.append([str(e.getEventType().getName()), start, dur, str(e)])
-        jfr = new_table([
-            string_col("origin", ["jfr" for r in jfr_rows]),
-            string_col("type", [r[0] for r in jfr_rows]),
-            long_col("start_ns", [r[1] for r in jfr_rows]),
-            long_col("duration_ns", [r[2] for r in jfr_rows]),
-            string_col("detail", [r[3] for r in jfr_rows]),
-        ])
-        standard_events = merge([standard_events, jfr])
+            etype = e.getEventType().getName()
+            start = e.getStartTime().getEpochSecond() * 1000000000 + e.getStartTime().getNano();
+
+            if etype == 'jdk.GarbageCollection':
+                duration = getNanoValue(e, 'duration')
+                name = getEventValue(e, 'name')
+                value = getNanoValue(e, 'sumOfPauses')
+            elif etype == 'jdk.GCPhasePause' or etype == 'jdk.GCPhaseConcurrent':
+                duration = getNanoValue(e, 'duration')
+                name = getEventValue(e, 'name')
+                value = duration
+            elif etype == 'jdk.GCCPUTime':
+                duration = getNanoValue(e, 'realTime')
+                name = "cpuTime"
+                value = getNanoValue(e, 'systemTime') + getNanoValue(e, 'userTime')
+            else:
+                continue
+
+            jfr_rows.append([etype, start, duration, name, value])
+
+        # Only create a table if we saw any GC events
+        if len(jfr_rows) > 0:
+            jfr_gc = new_table([
+                string_col("origin", ["deephaven-engine" for r in jfr_rows]),
+                string_col("type", [r[0] for r in jfr_rows]),
+                long_col("start_ns", [r[1] for r in jfr_rows]),
+                long_col("duration_ns", [r[2] for r in jfr_rows]),
+                string_col("name", [r[3] for r in jfr_rows]),
+                double_col("value", [r[4] for r in jfr_rows]),
+            ])
+            standard_events = merge([standard_events, jfr_gc])
         """;
     
     static final String ugpQuery = """

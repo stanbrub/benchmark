@@ -12,7 +12,7 @@ import io.deephaven.benchmark.connect.ResultTable;
  * Represents the events gathered during usage of the Bench API. These can include events gather by the API or the user.
  */
 final public class BenchEvents {
-    static final String header = "benchmark_name,origin,type,start,duration,detail";
+    static final String header = "benchmark_name,origin,type,start,duration,name,value";
     final List<Event> events = new ArrayList<>();
     final Path file;
     private String name = null;
@@ -38,8 +38,9 @@ final public class BenchEvents {
             var type = table.getValue(r, "type").toString();
             var startNanos = table.getNumber(r, "start_ns").longValue();
             var durationNanos = table.getNumber(r, "duration_ns").longValue();
-            var details = table.getValue(r, "detail").toString();
-            var event = new Event(origin, type, startNanos, durationNanos, details);
+            var name = String.valueOf(table.getValue(r, "name"));
+            var value = table.getNumber(r, "value").doubleValue();
+            var event = new Event(origin, type, startNanos, durationNanos, name, value);
             events.add(event);
         }
         return this;
@@ -75,9 +76,9 @@ final public class BenchEvents {
         }
     }
 
-    record Event(String origin, String type, long startNanos, long durationNanos, String detail) {
+    record Event(String origin, String type, long startNanos, long durationNanos, String name, double value) {
         String toCsv() {
-            return origin + "," + type + "," + startNanos + "," + durationNanos + "," + detail;
+            return origin + "," + type + "," + startNanos + "," + durationNanos + "," + name + "," + value;
         }
     }
 

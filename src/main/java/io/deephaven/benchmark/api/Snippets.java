@@ -175,7 +175,8 @@ class Snippets {
      * ex. bench_api_metrics_table = bench_api_metrics_collect()
      */
     static String bench_api_metrics_collect = """
-        from deephaven import input_table, empty_table, dtypes as dht
+        from deephaven import input_table, empty_table, new_table, dtypes as dht
+        from deephaven.column import string_col, long_col, double_col
         def bench_api_metrics_collect():
             s = dht.string
             t = input_table({'timestamp':s,'origin':s,'category':s,'name':s,'value':s,'note':s})
@@ -185,8 +186,15 @@ class Snippets {
                 t.add(m1)
             return t
             
-        standard_events = new_table([ string_col("origin",[]), string_col("type",[]), long_col("start_ns",[]), 
-            long_col("duration_ns",[]), string_col("detail",[])])
+        # Standard events table used by JFR workflows
+        standard_events = new_table([
+            string_col("origin", []),
+            string_col("type", []),
+            long_col("start_ns", []),
+            long_col("duration_ns", []),
+            string_col("name", []),
+            double_col("value", []),
+        ])
         """;
 
     /**

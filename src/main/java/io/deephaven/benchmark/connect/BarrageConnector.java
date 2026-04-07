@@ -35,7 +35,8 @@ class BarrageConnector implements Connector {
     static {
         System.setProperty("thread.initialization", ""); // Remove server side initializers (e.g. DebuggingInitializer)
     }
-    static final int maxFetchCount = 1000;
+    static final int maxFetchCount = 100000;
+    static final int inboundMessageMB = 64;
     final private BarrageSession session;
     final private ConsoleSession console;
     final private ManagedChannel channel;
@@ -243,6 +244,9 @@ class BarrageConnector implements Connector {
         final ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forAddress(host, port);
         channelBuilder.usePlaintext();
         // channelBuilder.useTransportSecurity(); If eventually security is needed
+        // Increase the maximum inbound message size so large Barrage snapshots (e.g. standard_events)
+        // do not trip the default 4 MiB gRPC limit while prototyping benchmarks.
+        channelBuilder.maxInboundMessageSize(inboundMessageMB * 1024 * 1024); // 32 MiB
 
         return channelBuilder.build();
     }
