@@ -39,11 +39,12 @@ final public class TrainTestRunner {
 
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
         delegate.addSetupQuery(startJfrQuery);
+        delegate.addSetupQuery(startUgpQuery);
+        delegate.addTeardownQuery(stopUgpQuery);
         delegate.addTeardownQuery(stopJfrQuery);
-        delegate.addTeardownQuery(ugpQuery);
         delegate.test(name, maxExpectedRowCount, operation, loadColumns);
     }
-    
+
     static final String startJfrQuery = """
         import jpy
         Recording = jpy.get_type("jdk.jfr.Recording")
@@ -54,20 +55,20 @@ final public class TrainTestRunner {
         for n in enabled_events:
             try:
                 rec.enable(n)
-            except Exception as e:
-                print(f"Event Not Enabled: {e}")
+            except Exception:
+                print(f"Event Not Enabled: {n}")
 
         disabled_events=['jdk.ExecutionSample', 'jdk.JavaMonitorEnter', 'jdk.JavaMonitorWait', 'jdk.ThreadSleep', 
             'jdk.SocketRead', 'jdk.SocketWrite']
         for n in disabled_events:
             try:
-                rec.disable(_ename)
+                rec.disable(n)
             except Exception:
-                print(f"Event Not Disabled: {e}")
+                print(f"Event Not Disabled: {n}")
 
         rec.start()
         """;
-    
+
     static final String stopJfrQuery = """
         Paths = jpy.get_type("java.nio.file.Paths")
         RecordingFile = jpy.get_type("jdk.jfr.consumer.RecordingFile")
@@ -77,7 +78,6 @@ final public class TrainTestRunner {
         rec.close()
         
         events = RecordingFile.readAllEvents(Paths.get("/data/benchmark.jfr"))
-
         jfr_rows = []
 
         def getEventValue(ev, field):
@@ -98,7 +98,6 @@ final public class TrainTestRunner {
                 return total
             if hasattr(val, "toNanos"): return val.toNanos()
             raise TypeError(f"Unsupported JFR value type: {type(val)}")
-
 
         for i in range(events.size()):
             e = events.get(i)
@@ -122,7 +121,6 @@ final public class TrainTestRunner {
 
             jfr_rows.append([etype, start, duration, name, value])
 
-        # Only create a table if we saw any GC events
         if len(jfr_rows) > 0:
             jfr_gc = new_table([
                 string_col("origin", ["deephaven-engine" for r in jfr_rows]),
@@ -134,11 +132,44 @@ final public class TrainTestRunner {
             ])
             standard_events = merge([standard_events, jfr_gc])
         """;
-    
-    static final String ugpQuery = """
-        from deephaven import write_csv
-        import deephaven.perfmon as pm
-        ugp = pm.update_performance_log()
-        write_csv(ugp, "/data/ugp_cycles.csv")
+
+    static final String startUgpQuery = """
+        from deephaven import time_table
+        from deephaven.table_listener import listen
+        import time
+
+        if 'train_ugp_listener' in globals(): train_ugp_listener.stop()
+        train_wall_epoch_ns = time.time_ns()
+        train_ugp_times = [time.perf_counter_ns()]
+        train_time_table = time_table("PT0.001S").tail(1)
+
+        def train_ugp_update(update, is_replay):
+            train_ugp_times.append(time.perf_counter_ns())
+        
+        train_ugp_listener = listen(train_time_table, train_ugp_update)
+        """;
+
+    static final String stopUgpQuery = """
+        if 'train_ugp_listener' in globals(): train_ugp_listener.stop()
+        if len(train_ugp_times) > 1:
+            mono_start = train_ugp_times[0]
+            ugp_rows = []
+            for i in range(1, len(train_ugp_times)):
+                mono_prev = train_ugp_times[i - 1]
+                mono_curr = train_ugp_times[i]
+                delta_ns = mono_curr - mono_prev
+                wall_clock_ns = train_wall_epoch_ns + (mono_curr - mono_start)
+                ugp_rows.append([wall_clock_ns, delta_ns, mono_curr])
+        
+            ugp_events = new_table([
+                string_col("origin", ["deephaven-engine"] * len(ugp_rows)),
+                string_col("type", ["ugp.delta"] * len(ugp_rows)),
+                long_col("start_ns", [r[0] for r in ugp_rows]),
+                long_col("duration_ns", [r[1] for r in ugp_rows]),
+                string_col("name", ["elapsedTime"] * len(ugp_rows)),
+                double_col("value", [float(r[2]) for r in ugp_rows]),
+            ])
+        
+            standard_events = merge([standard_events, ugp_events])
         """;
 }

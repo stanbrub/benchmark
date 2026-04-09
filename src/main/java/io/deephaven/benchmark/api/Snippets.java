@@ -185,8 +185,7 @@ class Snippets {
                     'name=``+m[3]','value=``+m[4]','note=``+m[5]'])    
                 t.add(m1)
             return t
-            
-        # Standard events table used by JFR workflows
+
         standard_events = new_table([
             string_col("origin", []),
             string_col("type", []),
