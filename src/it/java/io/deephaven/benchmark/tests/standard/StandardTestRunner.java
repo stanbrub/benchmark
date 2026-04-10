@@ -10,6 +10,7 @@ import io.deephaven.benchmark.api.Bench;
 import io.deephaven.benchmark.controller.Controller;
 import io.deephaven.benchmark.controller.DeephavenDockerController;
 import io.deephaven.benchmark.metric.Metrics;
+import io.deephaven.benchmark.util.Log;
 import io.deephaven.benchmark.util.Timer;
 
 /**
@@ -374,6 +375,7 @@ final public class StandardTestRunner {
         stopUnusedServices(requiredServices);
 
         try {
+            Log.info("Running Test: %s", name);
             if (getWarmupRowCount() > 0)
                 api.query(warmupQuery).execute();
             var result = new AtomicReference<Result>();
