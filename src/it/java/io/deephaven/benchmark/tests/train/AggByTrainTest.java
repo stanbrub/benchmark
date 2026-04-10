@@ -17,8 +17,8 @@ public class AggByTrainTest {
         from deephaven import agg
         
         aggs = [
-           agg.sum_('Sum=num1'), agg.std('Std=num2'), agg.min_('Min=num1'), agg.max_('Max=num2'),
-           agg.avg('Avg=num1'), agg.var('Var=num2'), agg.count_('num1')
+            agg.sum_('Sum=num1'), agg.std('Std=num2'), agg.min_('Min=num1'), agg.max_('Max=num2'),
+            agg.avg('Avg=num1'), agg.var('Var=num2'), agg.count_('num1')
         ]
         """;
         runner.addSetupQuery(setupStr);
@@ -26,7 +26,7 @@ public class AggByTrainTest {
 
     @Test
     void aggBy0Groups() {
-        setup(572);
+        setup(400);
         var q = "timed.agg_by(aggs)";
         runner.test("AggBy- No Groups", 1, q, "num1", "num2");
     }
