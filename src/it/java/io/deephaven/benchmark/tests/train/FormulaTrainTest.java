@@ -16,7 +16,7 @@ public class FormulaTrainTest {
 
     @Test
     void formulaUdf() {
-        setup(4.8);
+        setup(9);
         var setup = """
         def f_py(num1: float, num2: float) -> float:
             return (num2 + num1) / 2
@@ -30,14 +30,14 @@ public class FormulaTrainTest {
 
     @Test
     void formulaInline() {
-        setup(220);
+        setup(467);
         var q = "timed.view(['New1 = (float)((num2 + num1) / 2)', 'New2 = (float)(num1 + num2)']).sum_by()";
         runner.test("Formula- Inline 2 Calcs", 1, q, "num1", "num2");
     }
     
     @Test
     void formulaDate() {
-        setup(1.8);
+        setup(2.7);
         var q = """
         timed.view([
             'New1 = parseDuration(`PT4H52M14S`).toHours()', 

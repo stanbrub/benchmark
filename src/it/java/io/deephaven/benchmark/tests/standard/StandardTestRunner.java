@@ -36,7 +36,7 @@ final public class StandardTestRunner {
     private int staticFactor = 1;
     private int incFactor = 1;
     private int rowCountFactor = 1;
-    private boolean useMemorySource = true;
+    private boolean useCachedSource = true;
     private boolean useLocalParquet = false;
 
     public StandardTestRunner(Object testInst) {
@@ -107,8 +107,8 @@ final public class StandardTestRunner {
      * 
      * @return true if in memory source, otherwise false
      */
-    public void useMemorySource(boolean useMemorySource) {
-        this.useMemorySource = useMemorySource;
+    public void useCachedSource(boolean useMemorySource) {
+        this.useCachedSource = useMemorySource;
     }
 
     /**
@@ -242,7 +242,7 @@ final public class StandardTestRunner {
 
     String getReadOperation(int scaleFactor, long rowCount, String... loadColumns) {
         var headRows = (rowCount >= getGeneratedRowCount()) ? "" : ".head(${rows})";
-        var selectStr = useMemorySource ? "select" : "view";
+        var selectStr = useCachedSource ? "select" : "view";
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
             merge([

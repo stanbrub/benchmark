@@ -80,9 +80,19 @@ class Snippets {
      * ex. bench_api_metrics_init()
      */
     static String bench_api_metrics_init = """
+        from deephaven import new_table
+        from deephaven.column import string_col, long_col, double_col
         def bench_api_metrics_init():
-            global bench_api_metrics
+            global bench_api_metrics, standard_events
             bench_api_metrics = []
+            standard_events = new_table([
+                string_col("origin", []),
+                string_col("type", []),
+                long_col("start_ns", []),
+                long_col("duration_ns", []),
+                string_col("name", []),
+                double_col("value", []),
+            ])
         """;
 
     /**
@@ -185,15 +195,6 @@ class Snippets {
                     'name=``+m[3]','value=``+m[4]','note=``+m[5]'])    
                 t.add(m1)
             return t
-
-        standard_events = new_table([
-            string_col("origin", []),
-            string_col("type", []),
-            long_col("start_ns", []),
-            long_col("duration_ns", []),
-            string_col("name", []),
-            double_col("value", []),
-        ])
         """;
 
     /**

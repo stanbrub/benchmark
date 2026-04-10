@@ -25,18 +25,18 @@ public class FilterTrainTest {
     }
 
     @Test
-    void filter1Col() {
-        setup(390);
-        var q = "timed.where_in(where_filter, cols=['key1 = set1']).where(['key1 < `4`'])";
-        runner.test("Filter- 1 Col", 0, q, "key1", "num1");
+    void filter2Cols() {
+        setup(815);
+        var q = "timed.where_in(where_filter, cols=['key1 = set1']).where(['inRange(num1, 0, 100)'])";
+        runner.test("Filter- 2 Cols", 0, q, "key1", "key2", "num1");
     }
 
     @Test
     void filter3Cols() {
-        setup(390);
+        setup(336);
         var q = """
         timed.where_in(where_filter, cols=['key1 = set1', 'key2 = set2', 'key3 = set3']) \
-            .where(filters=["key1 = '1'", "key2 < '100'", "key3 in -2, -1, 0, 1, 2"])
+            .where(filters=["key1 = '1'", 'inRange(num1, 0, 100)', 'key3 in -2, -1, 0, 1, 2'])
         """;
         runner.test("Filter- 3 Cols", 0, q, "key1", "key2", "key3", "num1");
     }

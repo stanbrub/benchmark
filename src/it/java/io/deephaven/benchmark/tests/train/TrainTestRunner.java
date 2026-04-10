@@ -13,16 +13,17 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  * versions and GC types.
  */
 final public class TrainTestRunner {
-    static final int maxRowFactor = 400;
+    static final int maxRowFactor = 1000;
     final StandardTestRunner delegate;
     final long baseRowCount;
 
     TrainTestRunner(Object testInst) {
         this.delegate = new StandardTestRunner(testInst);
         this.baseRowCount = delegate.getGeneratedRowCount();
-        delegate.useMemorySource(false);
+        delegate.useCachedSource(false);
         delegate.useLocalParquet(true);
         delegate.setRowFactor(maxRowFactor);
+        delegate.setScaleFactors(1, 0);  // TODO: This is temporary for just-statics tests
     }
 
     public void tables(double rowFactor, String... names) {
@@ -38,10 +39,10 @@ final public class TrainTestRunner {
     }
 
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
-        delegate.addSetupQuery(startJfrQuery);
-        delegate.addSetupQuery(startUgpQuery);
-        delegate.addTeardownQuery(stopUgpQuery);
-        delegate.addTeardownQuery(stopJfrQuery);
+//        delegate.addSetupQuery(startJfrQuery);
+//        delegate.addSetupQuery(startUgpQuery);
+//        delegate.addTeardownQuery(stopUgpQuery);
+//        delegate.addTeardownQuery(stopJfrQuery);
         delegate.test(name, maxExpectedRowCount, operation, loadColumns);
     }
 

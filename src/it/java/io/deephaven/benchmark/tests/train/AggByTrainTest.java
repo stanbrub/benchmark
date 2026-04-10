@@ -25,18 +25,17 @@ public class AggByTrainTest {
     }
 
     @Test
-    @Disabled
     void aggBy0Groups() {
-        setup(120);
+        setup(572);
         var q = "timed.agg_by(aggs)";
         runner.test("AggBy- No Groups", 1, q, "num1", "num2");
     }
 
     @Test
     void aggBy2Groups() {
-        setup(21);
+        setup(66);
         var q = "timed.agg_by(aggs, by=['key1', 'key2'])";
-        runner.test("AggBy- 2 Groups 10K Unique Combos ", 10100, q, "key1", "key2", "num1", "num2");
+        runner.test("AggBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1", "num2");
     }
 
 }

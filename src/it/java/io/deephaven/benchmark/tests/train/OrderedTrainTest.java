@@ -27,14 +27,14 @@ public class OrderedTrainTest {
 
     @Test
     void ordered0Groups() {
-        setup(21);
+        setup(145);
         var q = "timed.agg_by(aggs)";
         runner.test("Ordered- No Groups", 100, q, "key3", "key4", "num1", "num2");
     }
 
     @Test
     void ordered2Groups() {
-        setup(5);
+        setup(22);
         var q = "timed.agg_by(aggs, by=['key1', 'key2'])";
         runner.test("Ordered- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "key3", "key4", "num1", "num2");
     }
