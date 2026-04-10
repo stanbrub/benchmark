@@ -26,7 +26,7 @@ public class AggByTrainTest {
 
     @Test
     void aggBy0Groups() {
-        setup(400);
+        setup(572);
         var q = "timed.agg_by(aggs)";
         runner.test("AggBy- No Groups", 1, q, "num1", "num2");
     }

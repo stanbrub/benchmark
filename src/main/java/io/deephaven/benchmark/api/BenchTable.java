@@ -246,7 +246,7 @@ final public class BenchTable implements Closeable {
             throw new RuntimeException("DEEPHAVEN_HOST_OS_DIR env must be set to use local parquet generation");
 
         var parquetPath = (dhHostOsDir.get() + "/" + tableGenParquet.get()).replace(".parquet", ".dataset");
-        var threadCount = Runtime.getRuntime().availableProcessors();
+        var threadCount = 8;
         var rowsPerThread = getRowCount() / threadCount;
         var futures = new ArrayList<Future<Metrics>>(threadCount);
         for (int i = 0; i < threadCount; i++) {
