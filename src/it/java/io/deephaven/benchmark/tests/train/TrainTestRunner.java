@@ -13,7 +13,7 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  * versions and GC types.
  */
 final public class TrainTestRunner {
-    static final int maxRowFactor = 1000;
+    static final int maxRowFactor = 850;
     final StandardTestRunner delegate;
     final long baseRowCount;
 
