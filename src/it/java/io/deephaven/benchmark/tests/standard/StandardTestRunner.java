@@ -355,7 +355,6 @@ final public class StandardTestRunner {
 
     String populateQuery(String name, String query, String operation, String read, String... loadColumns) {
         query = query.replace("${readTable}", read);
-        query = query.replace("${mainTable}", mainTable);
         query = query.replace("${loadSupportTables}", loadSupportTables());
         query = query.replace("${loadColumns}", listStr(loadColumns));
         query = query.replace("${setupQueries}", String.join("\n", setupQueries));
@@ -364,6 +363,7 @@ final public class StandardTestRunner {
         query = query.replace("${teardownQueries}", String.join("\n", teardownQueries));
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
+        query = query.replace("${mainTable}", mainTable);
         return query;
     }
 

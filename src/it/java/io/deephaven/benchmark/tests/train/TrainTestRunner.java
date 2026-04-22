@@ -1,6 +1,7 @@
 /* Copyright (c) 2026-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.tests.train;
 
+import java.util.*;
 import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 
 /**
@@ -16,6 +17,11 @@ final public class TrainTestRunner {
     static final int maxRowFactor = 850;
     final StandardTestRunner delegate;
     final long baseRowCount;
+    final List<String> setupQueries = new ArrayList<>();
+    final List<String> teardownQueries = new ArrayList<>();
+    private String headQuery = null;
+    private double staticRowFactor = 1;
+    private double incRowFactor = 1;
 
     TrainTestRunner(Object testInst) {
         this.delegate = new StandardTestRunner(testInst);
@@ -23,27 +29,45 @@ final public class TrainTestRunner {
         delegate.useCachedSource(false);
         delegate.useLocalParquet(true);
         delegate.setRowFactor(maxRowFactor);
-        delegate.setScaleFactors(1, 0);  // TODO: This is temporary for just-statics tests
     }
 
-    public void tables(double rowFactor, String... names) {
+    public void tables(double staticRowFactor, double incRowFactor, String... names) {
+        if (Math.max(staticRowFactor, incRowFactor) > maxRowFactor)
+            throw new IllegalArgumentException("Row factors cannot be greater than " + maxRowFactor);
+        this.staticRowFactor = staticRowFactor;
+        this.incRowFactor = incRowFactor;
         delegate.tables(names);
-        if (rowFactor > maxRowFactor)
-            throw new IllegalArgumentException("Row factor cannot be greater than " + maxRowFactor);
-        var q = "%s = %s.head(%d)".formatted(names[0], names[0], (long) (baseRowCount * rowFactor));
-        delegate.addSetupQuery(q);
+        headQuery = "%s = %s.head(${trainRowCount})".formatted(names[0], names[0]);
     }
 
     public void addSetupQuery(String query) {
-        delegate.addSetupQuery(query);
+        setupQueries.add(query);
     }
 
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
-//        delegate.addSetupQuery(startJfrQuery);
-//        delegate.addSetupQuery(startUgpQuery);
-//        delegate.addTeardownQuery(stopUgpQuery);
-//        delegate.addTeardownQuery(stopJfrQuery);
-        delegate.test(name, maxExpectedRowCount, operation, loadColumns);
+        // setupQueries(startJfrQuery);
+        //setupQueries.add(startUgpQuery);
+        //teardownQueries.add(stopUgpQuery);
+        // teardownQueries(stopJfrQuery);
+        if (staticRowFactor > 0) {
+            delegate.setScaleFactors(1, 0); // Turn on Static and off Inc
+            var h = headQuery.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * staticRowFactor)));
+            delegate.addSetupQuery(h);
+            setupQueries.forEach(delegate::addSetupQuery);
+            teardownQueries.forEach(delegate::addTeardownQuery);
+            delegate.test(name, maxExpectedRowCount, operation, loadColumns);
+        }
+        if (incRowFactor > 0) {
+            delegate.setScaleFactors(0, 1); // Turn off Static and on Inc
+            var h = headQuery.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * incRowFactor)));
+            delegate.addSetupQuery(h);
+            setupQueries.forEach(delegate::addSetupQuery);
+            teardownQueries.forEach(delegate::addTeardownQuery);
+            delegate.test(name, maxExpectedRowCount, operation, loadColumns);
+        } else {
+            throw new IllegalStateException("At least one of staticRowFactor or incRowFactor must be > 0");
+        }
+
     }
 
     static final String startJfrQuery = """
@@ -52,15 +76,18 @@ final public class TrainTestRunner {
         rec = Recording()
         rec.setName("benchmark")
         
-        enabled_events=['jdk.GarbageCollection', 'jdk.GCPhasePause', 'jdk.GCPhaseConcurrent', 'jdk.GCCPUTime']
+        enabled_events=['jdk.ExecutionSample','jdk.NativeMethodSample','jdk.ThreadCPULoad','jdk.GarbageCollection',
+            'jdk.GCPhasePause','jdk.SafepointBegin','jdk.SafepointEnd','jdk.SafepointState',
+            'jdk.ObjectAllocationInNewTLAB','jdk.ObjectAllocationOutsideTLAB']
         for n in enabled_events:
             try:
                 rec.enable(n)
             except Exception:
                 print(f"Event Not Enabled: {n}")
 
-        disabled_events=['jdk.ExecutionSample', 'jdk.JavaMonitorEnter', 'jdk.JavaMonitorWait', 'jdk.ThreadSleep', 
-            'jdk.SocketRead', 'jdk.SocketWrite']
+        disabled_events=['jdk.GCPhaseConcurrent','jdk.GCPhaseConcurrentMark','jdk.GCPhaseConcurrentEvacuation',
+            'jdk.G1GarbageCollection','jdk.ShenandoahGarbageCollection','jdk.ZGarbageCollection','jdk.GCHeapSummary',
+            'jdk.GCReferenceStatistics','jdk.GCWorkerData','jdk.GCCPUTime','jdk.GCPhasePause']
         for n in disabled_events:
             try:
                 rec.disable(n)
@@ -107,16 +134,12 @@ final public class TrainTestRunner {
 
             if etype == 'jdk.GarbageCollection':
                 duration = getNanoValue(e, 'duration')
-                name = getEventValue(e, 'name')
+                name = 'sumOfPauses'
                 value = getNanoValue(e, 'sumOfPauses')
-            elif etype == 'jdk.GCPhasePause' or etype == 'jdk.GCPhaseConcurrent':
+            elif etype == 'jdk.GCPhasePause':
                 duration = getNanoValue(e, 'duration')
                 name = getEventValue(e, 'name')
                 value = duration
-            elif etype == 'jdk.GCCPUTime':
-                duration = getNanoValue(e, 'realTime')
-                name = "cpuTime"
-                value = getNanoValue(e, 'systemTime') + getNanoValue(e, 'userTime')
             else:
                 continue
 
@@ -145,7 +168,7 @@ final public class TrainTestRunner {
         train_time_table = time_table("PT0.001S").tail(1)
 
         def train_ugp_update(update, is_replay):
-            train_ugp_times.append(time.perf_counter_ns())
+            train_ugp_times.append((time.perf_counter_ns(), ${mainTable}.size))
         
         train_ugp_listener = listen(train_time_table, train_ugp_update)
         """;

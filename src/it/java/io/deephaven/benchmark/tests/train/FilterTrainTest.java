@@ -11,8 +11,8 @@ import org.junit.jupiter.api.*;
 public class FilterTrainTest {
     final TrainTestRunner runner = new TrainTestRunner(this);
 
-    void setup(double rowFactor) {
-        runner.tables(rowFactor, "timed");
+    void setup(double staticRowFactor, double incRowFactor) {
+        runner.tables(staticRowFactor, incRowFactor, "timed");
         var setup = """
         from deephaven.column import string_col, int_col
         where_filter = new_table([
@@ -26,14 +26,14 @@ public class FilterTrainTest {
 
     @Test
     void filter2Cols() {
-        setup(815);
+        setup(815, 815);
         var q = "timed.where_in(where_filter, cols=['key1 = set1']).where(['inRange(num1, 0, 100)'])";
         runner.test("Filter- 2 Cols", 0, q, "key1", "key2", "num1");
     }
 
     @Test
     void filter3Cols() {
-        setup(336);
+        setup(400, 400);
         var q = """
         timed.where_in(where_filter, cols=['key1 = set1', 'key2 = set2', 'key3 = set3']) \
             .where(filters=["key1 = '1'", 'inRange(num1, 0, 100)', 'key3 in -2, -1, 0, 1, 2'])

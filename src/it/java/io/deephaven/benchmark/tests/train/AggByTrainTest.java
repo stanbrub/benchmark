@@ -10,8 +10,8 @@ import org.junit.jupiter.api.*;
 public class AggByTrainTest {
     final TrainTestRunner runner = new TrainTestRunner(this);
 
-    void setup(double rowFactor) {
-        runner.tables(rowFactor, "timed");
+    void setup(double staticRowFactor, double incRowFactor) {
+        runner.tables(staticRowFactor, incRowFactor, "timed");
 
         var setupStr = """
         from deephaven import agg
@@ -26,14 +26,14 @@ public class AggByTrainTest {
 
     @Test
     void aggBy0Groups() {
-        setup(572);
+        setup(572, 286);
         var q = "timed.agg_by(aggs)";
         runner.test("AggBy- No Groups", 1, q, "num1", "num2");
     }
 
     @Test
     void aggBy2Groups() {
-        setup(66);
+        setup(66, 38);
         var q = "timed.agg_by(aggs, by=['key1', 'key2'])";
         runner.test("AggBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1", "num2");
     }

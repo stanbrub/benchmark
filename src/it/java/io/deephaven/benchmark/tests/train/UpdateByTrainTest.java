@@ -19,8 +19,8 @@ public class UpdateByTrainTest {
         prod_after = rolling_prod_time(ts_col='timestamp',cols=['E=num1','F=num2'],rev_time='-PT1M',fwd_time='PT4M')
         """;
 
-    void setup(double rowFactor) {
-        runner.tables(rowFactor, "timed");
+    void setup(double staticRowFactor, double incRowFactor) {
+        runner.tables(staticRowFactor, incRowFactor, "timed");
         var setup = """
         from deephaven.updateby import rolling_avg_time, rolling_max_tick, rolling_prod_time
         from deephaven.updateby import ema_tick, cum_min, cum_sum
@@ -34,7 +34,7 @@ public class UpdateByTrainTest {
 
     @Test
     void mixedComboNoGroups() {
-        setup(21.8);
+        setup(21.8, 17);
         runner.addSetupQuery(noGroups);
         var q = "timed.update_by(ops=[avg_contains, max_before, prod_after, ema_tick_op, min_op, sum_op])";
         runner.test("UpdateBy- No Groups 12 Cols", 0, q, "num1", "num2", "timestamp");
@@ -42,7 +42,7 @@ public class UpdateByTrainTest {
 
     @Test
     void rollingCombo2Groups() {
-        setup(5.8);
+        setup(5.8, 4.2);
         runner.addSetupQuery(group10K);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1','key2'])

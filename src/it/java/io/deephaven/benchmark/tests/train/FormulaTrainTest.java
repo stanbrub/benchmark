@@ -10,13 +10,13 @@ import org.junit.jupiter.api.*;
 public class FormulaTrainTest {
     final TrainTestRunner runner = new TrainTestRunner(this);
 
-    void setup(double rowFactor) {
-        runner.tables(rowFactor, "timed");
+    void setup(double staticRowFactor, double incRowFactor) {
+        runner.tables(staticRowFactor, incRowFactor, "timed");
     }
 
     @Test
     void formulaUdf() {
-        setup(9);
+        setup(9, 9);
         var setup = """
         def f_py(num1: float, num2: float) -> float:
             return (num2 + num1) / 2
@@ -30,14 +30,14 @@ public class FormulaTrainTest {
 
     @Test
     void formulaInline() {
-        setup(467);
+        setup(467, 467);
         var q = "timed.view(['New1 = (float)((num2 + num1) / 2)', 'New2 = (float)(num1 + num2)']).sum_by()";
         runner.test("Formula- Inline 2 Calcs", 1, q, "num1", "num2");
     }
     
     @Test
     void formulaDate() {
-        setup(2.7);
+        setup(3, 3);
         var q = """
         timed.view([
             'New1 = parseDuration(`PT4H52M14S`).toHours()', 

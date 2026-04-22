@@ -10,13 +10,13 @@ import org.junit.jupiter.api.*;
 public class NaturalJoinTrainTest {
     final TrainTestRunner runner = new TrainTestRunner(this);
 
-    void setup(double rowFactor) {
-        runner.tables(rowFactor, "timed", "right");
+    void setup(double staticRowFactor, double incRowFactor) {
+        runner.tables(staticRowFactor, incRowFactor, "timed", "right");
     }
 
     @Test
     void naturalJoinOn1Col() {
-        setup(230);
+        setup(230, 120);
         var r = "right = right.select_distinct(['r_wild'])";
         runner.addSetupQuery(r);
         var q = "timed.natural_join(right, on=['key1 = r_wild'])";
@@ -25,7 +25,7 @@ public class NaturalJoinTrainTest {
     
     @Test
     void naturalJoinOn3Cols() {
-        setup(100);
+        setup(100, 20);
         var q = "timed.natural_join(right, on=['key1 = r_wild', 'key2 = r_key2', 'key1 = r_key1'])";
         runner.test("NaturalJoin- Join On 3 Cols", 0, q, "key1", "key2", "num1");
     }
