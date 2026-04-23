@@ -42,10 +42,10 @@ final public class TrainTestRunner {
         if (staticRowFactor <= 0 && incRowFactor <= 0)
             throw new IllegalStateException("At least one of staticRowFactor or incRowFactor must be > 0");
 
-        // setupQueries(startJfrQuery);
-        setupQueries.add(startUgpQuery);
-        teardownQueries.add(stopUgpQuery);
-        // teardownQueries(stopJfrQuery);
+        setupQueries.add(startJfrQuery);
+        // setupQueries.add(startUgpQuery);
+        // teardownQueries.add(stopUgpQuery);
+        teardownQueries.add(stopJfrQuery);
 
         if (staticRowFactor > 0)
             test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
