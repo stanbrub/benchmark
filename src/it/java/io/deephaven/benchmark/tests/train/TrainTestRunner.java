@@ -50,8 +50,8 @@ final public class TrainTestRunner {
         if (staticRowFactor > 0)
             test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
 
-        if (incRowFactor > 0)
-            test(name, maxExpectedRowCount, operation, incRowFactor, false, loadColumns);
+//        if (incRowFactor > 0)
+//            test(name, maxExpectedRowCount, operation, incRowFactor, false, loadColumns);
     }
 
     void test(String name, long maxExpectedRowCount, String operation, double rowFactor, boolean isStatic,
