@@ -15,20 +15,15 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  */
 final public class TrainTestRunner {
     static final int maxRowFactor = 850;
-    final StandardTestRunner delegate;
-    final long baseRowCount;
+    final Object testInst;
     final List<String> setupQueries = new ArrayList<>();
     final List<String> teardownQueries = new ArrayList<>();
-    private String headQuery = null;
     private double staticRowFactor = 1;
     private double incRowFactor = 1;
+    private String[] tableNames = null;
 
     TrainTestRunner(Object testInst) {
-        this.delegate = new StandardTestRunner(testInst);
-        this.baseRowCount = delegate.getGeneratedRowCount();
-        delegate.useCachedSource(false);
-        delegate.useLocalParquet(true);
-        delegate.setRowFactor(maxRowFactor);
+        this.testInst = testInst;
     }
 
     public void tables(double staticRowFactor, double incRowFactor, String... names) {
@@ -36,8 +31,7 @@ final public class TrainTestRunner {
             throw new IllegalArgumentException("Row factors cannot be greater than " + maxRowFactor);
         this.staticRowFactor = staticRowFactor;
         this.incRowFactor = incRowFactor;
-        delegate.tables(names);
-        headQuery = "%s = %s.head(${trainRowCount})".formatted(names[0], names[0]);
+        tableNames = names;
     }
 
     public void addSetupQuery(String query) {
@@ -45,29 +39,40 @@ final public class TrainTestRunner {
     }
 
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
-        // setupQueries(startJfrQuery);
-        //setupQueries.add(startUgpQuery);
-        //teardownQueries.add(stopUgpQuery);
-        // teardownQueries(stopJfrQuery);
-        if (staticRowFactor > 0) {
-            delegate.setScaleFactors(1, 0); // Turn on Static and off Inc
-            var h = headQuery.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * staticRowFactor)));
-            delegate.addSetupQuery(h);
-            setupQueries.forEach(delegate::addSetupQuery);
-            teardownQueries.forEach(delegate::addTeardownQuery);
-            delegate.test(name, maxExpectedRowCount, operation, loadColumns);
-        }
-        if (incRowFactor > 0) {
-            delegate.setScaleFactors(0, 1); // Turn off Static and on Inc
-            var h = headQuery.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * incRowFactor)));
-            delegate.addSetupQuery(h);
-            setupQueries.forEach(delegate::addSetupQuery);
-            teardownQueries.forEach(delegate::addTeardownQuery);
-            delegate.test(name, maxExpectedRowCount, operation, loadColumns);
-        } else {
+        if (staticRowFactor <= 0 && incRowFactor <= 0)
             throw new IllegalStateException("At least one of staticRowFactor or incRowFactor must be > 0");
-        }
 
+        // setupQueries(startJfrQuery);
+        setupQueries.add(startUgpQuery);
+        teardownQueries.add(stopUgpQuery);
+        // teardownQueries(stopJfrQuery);
+
+        if (staticRowFactor > 0)
+            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
+
+        if (incRowFactor > 0)
+            test(name, maxExpectedRowCount, operation, incRowFactor, false, loadColumns);
+    }
+
+    void test(String name, long maxExpectedRowCount, String operation, double rowFactor, boolean isStatic,
+            String... loadColumns) {
+        var delegate = new StandardTestRunner(testInst);
+        var baseRowCount = delegate.getGeneratedRowCount();
+        delegate.useCachedSource(false);
+        delegate.useLocalParquet(true);
+        delegate.setRowFactor(maxRowFactor);
+        delegate.tables(tableNames);
+        delegate.setScaleFactors(isStatic ? 1 : 0, isStatic ? 0 : 1);
+
+        var headQuery = """
+        ${mainTable} = ${mainTable}.head(${trainRowCount})
+        loaded_tbl_size = ${mainTable}.size
+        """.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * rowFactor)));
+        
+        delegate.addSetupQuery(headQuery);
+        setupQueries.forEach(delegate::addSetupQuery);
+        teardownQueries.forEach(delegate::addTeardownQuery);
+        delegate.test(name, maxExpectedRowCount, operation, loadColumns);
     }
 
     static final String startJfrQuery = """
@@ -164,7 +169,7 @@ final public class TrainTestRunner {
 
         if 'train_ugp_listener' in globals(): train_ugp_listener.stop()
         train_wall_epoch_ns = time.time_ns()
-        train_ugp_times = [time.perf_counter_ns()]
+        train_ugp_times = [(time.perf_counter_ns(), 0)]
         train_time_table = time_table("PT0.001S").tail(1)
 
         def train_ugp_update(update, is_replay):
@@ -176,21 +181,24 @@ final public class TrainTestRunner {
     static final String stopUgpQuery = """
         if 'train_ugp_listener' in globals(): train_ugp_listener.stop()
         if len(train_ugp_times) > 1:
-            mono_start = train_ugp_times[0]
+            mono_start = train_ugp_times[0][0]
             ugp_rows = []
             for i in range(1, len(train_ugp_times)):
-                mono_prev = train_ugp_times[i - 1]
-                mono_curr = train_ugp_times[i]
+                mono_prev = train_ugp_times[i - 1][0]
+                mono_curr = train_ugp_times[i][0]
+                size_prev = train_ugp_times[i - 1][1]
+                size_curr = train_ugp_times[i][1]
                 delta_ns = mono_curr - mono_prev
                 wall_clock_ns = train_wall_epoch_ns + (mono_curr - mono_start)
-                ugp_rows.append([wall_clock_ns, delta_ns, mono_curr])
+                delta_rows = max(0, size_curr - size_prev)
+                ugp_rows.append([wall_clock_ns, delta_ns, delta_rows])
         
             ugp_events = new_table([
                 string_col("origin", ["deephaven-engine"] * len(ugp_rows)),
                 string_col("type", ["ugp.delta"] * len(ugp_rows)),
                 long_col("start_ns", [r[0] for r in ugp_rows]),
                 long_col("duration_ns", [r[1] for r in ugp_rows]),
-                string_col("name", ["elapsedTime"] * len(ugp_rows)),
+                string_col("name", ["duration_rows"] * len(ugp_rows)),
                 double_col("value", [float(r[2]) for r in ugp_rows]),
             ])
         
