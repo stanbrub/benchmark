@@ -43,15 +43,17 @@ final public class TrainTestRunner {
             throw new IllegalStateException("At least one of staticRowFactor or incRowFactor must be > 0");
 
         setupQueries.add(startJfrQuery);
-        // setupQueries.add(startUgpQuery);
-        // teardownQueries.add(stopUgpQuery);
+        setupQueries.add(startUgpQuery);
+        teardownQueries.add(stopUgpQuery);
         teardownQueries.add(stopJfrQuery);
+        
+        operation += "\ntrain_ugp_listener = listen(result, train_ugp_update)";
 
-        if (staticRowFactor > 0)
-            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
+//        if (staticRowFactor > 0)
+//            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
 
-//        if (incRowFactor > 0)
-//            test(name, maxExpectedRowCount, operation, incRowFactor, false, loadColumns);
+        if (incRowFactor > 0)
+            test(name, maxExpectedRowCount, operation, incRowFactor, false, loadColumns);
     }
 
     void test(String name, long maxExpectedRowCount, String operation, double rowFactor, boolean isStatic,
@@ -74,7 +76,7 @@ final public class TrainTestRunner {
         teardownQueries.forEach(delegate::addTeardownQuery);
         delegate.test(name, maxExpectedRowCount, operation, loadColumns);
     }
-
+    
     static final String startJfrQuery = """
         import jpy
         Recording = jpy.get_type("jdk.jfr.Recording")
@@ -135,7 +137,7 @@ final public class TrainTestRunner {
         for i in range(events.size()):
             e = events.get(i)
             etype = e.getEventType().getName()
-            start = e.getStartTime().getEpochSecond() * 1000000000 + e.getStartTime().getNano();
+            start = e.getStartTime().getEpochSecond() * 1000000000 + e.getStartTime().getNano()
 
             if etype == 'jdk.GarbageCollection':
                 duration = getNanoValue(e, 'duration')
@@ -163,19 +165,17 @@ final public class TrainTestRunner {
         """;
 
     static final String startUgpQuery = """
-        from deephaven import time_table
+        from deephaven import time_table, perfmon
         from deephaven.table_listener import listen
         import time
 
+        ss_log = perfmon.server_state_log()
         if 'train_ugp_listener' in globals(): train_ugp_listener.stop()
         train_wall_epoch_ns = time.time_ns()
         train_ugp_times = [(time.perf_counter_ns(), 0)]
-        train_time_table = time_table("PT0.001S").tail(1)
 
         def train_ugp_update(update, is_replay):
             train_ugp_times.append((time.perf_counter_ns(), ${mainTable}.size))
-        
-        train_ugp_listener = listen(train_time_table, train_ugp_update)
         """;
 
     static final String stopUgpQuery = """
@@ -203,5 +203,22 @@ final public class TrainTestRunner {
             ])
         
             standard_events = merge([standard_events, ugp_events])
+        
+        ss_log = perfmon.server_state_log().snapshot()
+        if ss_log.size > 0:
+            ss_rows = []
+            for row in ss_log.iter_dict():
+                start = row['IntervalStartTime'].getEpochSecond() * 1000000000 + row['IntervalStartTime'].getNano()
+                ss_rows.append((start, row['IntervalCollectionTimeMicros'] * 1000, row['IntervalUGPCyclesOnBudget']))
+
+            ss_events = new_table([
+                string_col("origin", ["deephaven-engine"] * len(ss_rows)),
+                string_col("type", ["server_state_log"] * len(ss_rows)),
+                long_col("start_ns", [r[0] for r in ss_rows]),
+                long_col("duration_ns", [r[1] for r in ss_rows]),
+                string_col("name", ["cycles.on.budget"] * len(ss_rows)),
+                double_col("value", [r[2] for r in ss_rows]),
+            ])
+            standard_events = merge([standard_events, ss_events])
         """;
 }
