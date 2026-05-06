@@ -34,9 +34,10 @@ final public class StandardTestRunner {
     private String mainTable = "source";
     private Bench api;
     private Controller controller;
+    private int rowCountFactor = 1;
     private int staticFactor = 1;
     private int incFactor = 1;
-    private int rowCountFactor = 1;
+    private float incCycleFactor = 1.0f;
     private boolean useCachedSource = true;
     private boolean useLocalParquet = false;
 
@@ -180,6 +181,16 @@ final public class StandardTestRunner {
     }
 
     /**
+     * Set the cycle factor used for the autotune incremental release filter. This is a fraction that controls how many
+     * rows the filter attempts to release per cycle compared to the ugp cycle time.
+     * 
+     * @param incCycleFactor the number of rows processed per cycle for the incremental release filter
+     */
+    public void setIncCycleFactor(float incCycleFactor) {
+        this.incCycleFactor = incCycleFactor;
+    }
+
+    /**
      * Run a single operation test through the Bench API with no upper bound expected on the resulting row count
      * 
      * @see #test(String, long, String, String...)
@@ -312,7 +323,7 @@ final public class StandardTestRunner {
         ${setupQueries}
         
         autotune = jpy.get_type('io.deephaven.engine.table.impl.select.AutoTuningIncrementalReleaseFilter')
-        source_filter = autotune(0, 1000000, 1.0, True)
+        source_filter = autotune(0, 1000000, ${incCycleFactor}, True)
         ${mainTable} = ${mainTable}.where(source_filter)
         if right: 
             right_filter = autotune(0, 1010000, 1.0, True)
@@ -365,6 +376,7 @@ final public class StandardTestRunner {
         query = query.replace("${teardownQueries}", String.join("\n", teardownQueries));
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
+        query = query.replace("${incCycleFactor}", "" + incCycleFactor);
         query = query.replace("${mainTable}", mainTable);
         return query;
     }
@@ -393,6 +405,7 @@ final public class StandardTestRunner {
                 metrics.set("static.factor", staticFactor);
                 metrics.set("inc.factor", incFactor);
                 metrics.set("row.factor", rowCountFactor);
+                metrics.set("inc.cycle.factor", incCycleFactor);
                 api.metrics().add(metrics);
             }).fetchAfter("standard_events", table -> {
                 api.events().add(table);
