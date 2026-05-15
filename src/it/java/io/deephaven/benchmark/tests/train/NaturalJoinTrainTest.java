@@ -16,6 +16,7 @@ public class NaturalJoinTrainTest {
 
     @Test
     void naturalJoinOn1Col() {
+        runner.setIncReleaseRowCount(11326845);
         setup(230, 120);
         var r = "right = right.select_distinct(['r_wild'])";
         runner.addSetupQuery(r);
@@ -25,6 +26,7 @@ public class NaturalJoinTrainTest {
     
     @Test
     void naturalJoinOn3Cols() {
+        runner.setIncReleaseRowCount(2018917);
         setup(100, 20);
         var q = "timed.natural_join(right, on=['key1 = r_wild', 'key2 = r_key2', 'key1 = r_key1'])";
         runner.test("NaturalJoin- Join On 3 Cols", 0, q, "key1", "key2", "num1");

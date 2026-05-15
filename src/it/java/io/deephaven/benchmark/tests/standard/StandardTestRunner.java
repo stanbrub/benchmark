@@ -37,9 +37,10 @@ final public class StandardTestRunner {
     private int rowCountFactor = 1;
     private int staticFactor = 1;
     private int incFactor = 1;
-    private float incCycleFactor = 1.0f;
     private boolean useCachedSource = true;
     private boolean useLocalParquet = false;
+    private float incCycleFactor = 1.0f;
+    private long incReleaseRowCount = 1000000;
 
     public StandardTestRunner(Object testInst) {
         this.testInst = testInst;
@@ -181,13 +182,15 @@ final public class StandardTestRunner {
     }
 
     /**
-     * Set the cycle factor used for the autotune incremental release filter. This is a fraction that controls how many
-     * rows the filter attempts to release per cycle compared to the ugp cycle time.
+     * Set the incremental release filter to use for the incremental test. By default, this is an auto-tuning release
+     * filter with a target cycle factor of 1.0f.
      * 
-     * @param incCycleFactor the number of rows processed per cycle for the incremental release filter
+     * @param cycleFactor if isAutoTune is true, the target cycle factor, otherwise ignored
+     * @param releaseRowsCount if isAutoTune is true, ignored, otherwise the number of rows to release per cycle
      */
-    public void setIncCycleFactor(float incCycleFactor) {
-        this.incCycleFactor = incCycleFactor;
+    public void setIncReleaseFilter(float cycleFactor, long releaseRowCount) {
+        this.incCycleFactor = cycleFactor;
+        this.incReleaseRowCount = releaseRowCount;
     }
 
     /**
@@ -322,11 +325,15 @@ final public class StandardTestRunner {
         loaded_tbl_size = ${mainTable}.size
         ${setupQueries}
         
-        autotune = jpy.get_type('io.deephaven.engine.table.impl.select.AutoTuningIncrementalReleaseFilter')
-        source_filter = autotune(0, 1000000, ${incCycleFactor}, True)
+        isat = System.getProperty('train.autotune', 'true').lower() == 'true' or ${incReleaseRowCount} <= 0
+        filter_name = 'AutoTuningIncrementalReleaseFilter' if isat else 'IncrementalReleaseFilter'
+        autotune = jpy.get_type(f'io.deephaven.engine.table.impl.select.{filter_name}')
+        print("******* ISAT:",isat, "FILTER:", filter_name)
+        
+        source_filter = autotune(0,1000000,${incCycleFactor},True) if isat else autotune(0,${incReleaseRowCount})
         ${mainTable} = ${mainTable}.where(source_filter)
         if right: 
-            right_filter = autotune(0, 1010000, 1.0, True)
+            right_filter = autotune(0,1010000,${incCycleFactor},True) if isat else autotune(0,${incReleaseRowCount})
             right = right.where(right_filter)
         
         ${preOpQueries}
@@ -377,6 +384,7 @@ final public class StandardTestRunner {
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
         query = query.replace("${incCycleFactor}", "" + incCycleFactor);
+        query = query.replace("${incReleaseRowCount}", "" + incReleaseRowCount);
         query = query.replace("${mainTable}", mainTable);
         return query;
     }
@@ -405,7 +413,6 @@ final public class StandardTestRunner {
                 metrics.set("static.factor", staticFactor);
                 metrics.set("inc.factor", incFactor);
                 metrics.set("row.factor", rowCountFactor);
-                metrics.set("inc.cycle.factor", incCycleFactor);
                 api.metrics().add(metrics);
             }).fetchAfter("standard_events", table -> {
                 api.events().add(table);

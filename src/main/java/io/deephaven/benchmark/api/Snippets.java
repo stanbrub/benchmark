@@ -80,8 +80,10 @@ class Snippets {
      * ex. bench_api_metrics_init()
      */
     static String bench_api_metrics_init = """
+        import jpy
         from deephaven import new_table
         from deephaven.column import string_col, long_col, double_col
+        System = jpy.get_type('java.lang.System')
         def bench_api_metrics_init():
             global bench_api_metrics, standard_events
             bench_api_metrics = []

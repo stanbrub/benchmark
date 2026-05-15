@@ -15,12 +15,13 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  */
 final public class TrainTestRunner {
     static final int maxRowFactor = 850;
-    static final float incCycleFactor = 0.95f;
+    static final float incCycleFactor = 1.0f;
     final Object testInst;
     final List<String> setupQueries = new ArrayList<>();
     final List<String> teardownQueries = new ArrayList<>();
     private double staticRowFactor = 1;
     private double incRowFactor = 1;
+    private long incReleaseRowCount = 0;
     private String[] tableNames = null;
 
     TrainTestRunner(Object testInst) {
@@ -39,6 +40,10 @@ final public class TrainTestRunner {
         setupQueries.add(query);
     }
 
+    public void setIncReleaseRowCount(long incReleaseRowCount) {
+        this.incReleaseRowCount = incReleaseRowCount;
+    }
+
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
         if (staticRowFactor <= 0 && incRowFactor <= 0)
             throw new IllegalStateException("At least one of staticRowFactor or incRowFactor must be > 0");
@@ -47,11 +52,11 @@ final public class TrainTestRunner {
         setupQueries.add(startUgpQuery);
         teardownQueries.add(stopUgpQuery);
         teardownQueries.add(stopJfrQuery);
-        
+
         operation += "\ntrain_ugp_listener = listen(result, train_ugp_update)";
 
-//        if (staticRowFactor > 0)
-//            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
+        // if (staticRowFactor > 0)
+        // test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
 
         if (incRowFactor > 0)
             test(name, maxExpectedRowCount, operation, incRowFactor, false, loadColumns);
@@ -66,19 +71,19 @@ final public class TrainTestRunner {
         delegate.setRowFactor(maxRowFactor);
         delegate.tables(tableNames);
         delegate.setScaleFactors(isStatic ? 1 : 0, isStatic ? 0 : 1);
-        delegate.setIncCycleFactor(incCycleFactor);
-
+        delegate.setIncReleaseFilter(incCycleFactor, incReleaseRowCount);
+        
         var headQuery = """
         ${mainTable} = ${mainTable}.head(${trainRowCount})
         loaded_tbl_size = ${mainTable}.size
         """.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * rowFactor)));
-        
+
         delegate.addSetupQuery(headQuery);
         setupQueries.forEach(delegate::addSetupQuery);
         teardownQueries.forEach(delegate::addTeardownQuery);
         delegate.test(name, maxExpectedRowCount, operation, loadColumns);
     }
-    
+
     static final String startJfrQuery = """
         import jpy
         Recording = jpy.get_type("jdk.jfr.Recording")
@@ -174,10 +179,15 @@ final public class TrainTestRunner {
         ss_log = perfmon.server_state_log()
         if 'train_ugp_listener' in globals(): train_ugp_listener.stop()
         train_wall_epoch_ns = time.time_ns()
-        train_ugp_times = [(time.perf_counter_ns(), 0)]
+        train_ugp_times = [(time.perf_counter_ns(), 0, 0)]
 
         def train_ugp_update(update, is_replay):
-            train_ugp_times.append((time.perf_counter_ns(), ${mainTable}.size))
+            inc_size = 0
+            if autotune:
+                m = source_filter.getClass().getDeclaredMethod('getSizeIncrement', [])
+                m.setAccessible(True)
+                inc_size = m.invoke(source_filter, [])
+            train_ugp_times.append((time.perf_counter_ns(), ${mainTable}.size, inc_size))
         """;
 
     static final String stopUgpQuery = """
@@ -190,10 +200,12 @@ final public class TrainTestRunner {
                 mono_curr = train_ugp_times[i][0]
                 size_prev = train_ugp_times[i - 1][1]
                 size_curr = train_ugp_times[i][1]
+                inc_size = train_ugp_times[i][2]
                 delta_ns = mono_curr - mono_prev
                 wall_clock_ns = train_wall_epoch_ns + (mono_curr - mono_start)
                 delta_rows = max(0, size_curr - size_prev)
-                ugp_rows.append([wall_clock_ns, delta_ns, delta_rows])
+                inc_rows = max(0, inc_size)
+                ugp_rows.append([wall_clock_ns, delta_ns, delta_rows, inc_rows])
         
             ugp_events = new_table([
                 string_col("origin", ["deephaven-engine"] * len(ugp_rows)),
@@ -203,8 +215,17 @@ final public class TrainTestRunner {
                 string_col("name", ["duration_rows"] * len(ugp_rows)),
                 double_col("value", [float(r[2]) for r in ugp_rows]),
             ])
+            
+            ugp_inc_events = new_table([
+                string_col("origin", ["deephaven-engine"] * len(ugp_rows)),
+                string_col("type", ["ugp.delta"] * len(ugp_rows)),
+                long_col("start_ns", [r[0] for r in ugp_rows]),
+                long_col("duration_ns", [r[1] for r in ugp_rows]),
+                string_col("name", ["autotune_rows"] * len(ugp_rows)),
+                double_col("value", [float(r[3]) for r in ugp_rows]),
+            ])
         
-            standard_events = merge([standard_events, ugp_events])
+            standard_events = merge([standard_events, ugp_events, ugp_inc_events])
         
         ss_log = perfmon.server_state_log().snapshot()
         if ss_log.size > 0:
