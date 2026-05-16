@@ -26,7 +26,7 @@ public class FilterTrainTest {
 
     @Test
     void filter2Cols() {
-        runner.setIncReleaseRowCount(130137642);
+        runner.setIncReleaseRowCount(133608747);
         setup(815, 815);
         var q = "timed.where_in(where_filter, cols=['key1 = set1']).where(['inRange(num1, 0, 100)'])";
         runner.test("Filter- 2 Cols", 0, q, "key1", "key2", "num1");
@@ -34,7 +34,7 @@ public class FilterTrainTest {
 
     @Test
     void filter3Cols() {
-        runner.setIncReleaseRowCount(55466962);
+        runner.setIncReleaseRowCount(49190811);
         setup(400, 400);
         var q = """
         timed.where_in(where_filter, cols=['key1 = set1', 'key2 = set2', 'key3 = set3']) \
