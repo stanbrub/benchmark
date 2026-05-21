@@ -7,7 +7,6 @@ import org.junit.jupiter.api.*;
  * Standard tests for the whereIn table operation. Filters rows of data from the source table where the rows match
  * column values in the filter table.
  */
-@Tag("Iterate")
 public class FilterTrainTest {
     final TrainTestRunner runner = new TrainTestRunner(this);
 
@@ -26,7 +25,7 @@ public class FilterTrainTest {
 
     @Test
     void filter2Cols() {
-        runner.setIncReleaseRowCount(66808754);
+        runner.setIncReleaseRowCount(6776701);
         setup(815, 815);
         var q = "timed.where_in(where_filter, cols=['key1 = set1']).where(['inRange(num1, 0, 100)'])";
         runner.test("Filter- 2 Cols", 0, q, "key1", "key2", "num1");
@@ -34,7 +33,7 @@ public class FilterTrainTest {
 
     @Test
     void filter3Cols() {
-        runner.setIncReleaseRowCount(36522009);
+        runner.setIncReleaseRowCount(3468549);
         setup(400, 400);
         var q = """
         timed.where_in(where_filter, cols=['key1 = set1', 'key2 = set2', 'key3 = set3']) \
