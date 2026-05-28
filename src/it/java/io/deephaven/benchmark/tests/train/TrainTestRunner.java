@@ -228,19 +228,20 @@ final public class TrainTestRunner {
         
             standard_events = merge([standard_events, ugp_events, ugp_inc_events])
         
-        ss_log = perfmon.server_state_log().snapshot()
+        ss_log = perfmon.server_state_log().ungroup(["IntervalUGPCyclesTimeMicros"]).snapshot()
         if ss_log.size > 0:
             ss_rows = []
             for row in ss_log.iter_dict():
                 start = row['IntervalStartTime'].getEpochSecond() * 1000000000 + row['IntervalStartTime'].getNano()
-                ss_rows.append((start, row['IntervalCollectionTimeMicros'] * 1000, row['IntervalUGPCyclesOnBudget']))
+                ss_rows.append((start, row['IntervalCollectionTimeMicros'] * 1000, 
+                row['IntervalUGPCyclesTimeMicros'] * 1000))
 
             ss_events = new_table([
                 string_col("origin", ["deephaven-engine"] * len(ss_rows)),
                 string_col("type", ["server_state_log"] * len(ss_rows)),
                 long_col("start_ns", [r[0] for r in ss_rows]),
                 long_col("duration_ns", [r[1] for r in ss_rows]),
-                string_col("name", ["cycles.on.budget"] * len(ss_rows)),
+                string_col("name", ["ugp.cycle.time"] * len(ss_rows)),
                 double_col("value", [r[2] for r in ss_rows]),
             ])
             standard_events = merge([standard_events, ss_events])
