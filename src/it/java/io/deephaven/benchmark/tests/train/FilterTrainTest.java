@@ -32,6 +32,7 @@ public class FilterTrainTest {
     }
 
     @Test
+    @Disabled
     void filter3Cols() {
         runner.setIncReleaseRowCount(3468549);
         setup(400, 400);

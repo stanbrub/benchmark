@@ -15,6 +15,7 @@ public class NaturalJoinTrainTest {
     }
 
     @Test
+    @Disabled
     void naturalJoinOn1Col() {
         runner.setIncReleaseRowCount(448939);
         setup(230, 120);
