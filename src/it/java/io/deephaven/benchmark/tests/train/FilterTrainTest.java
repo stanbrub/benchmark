@@ -25,7 +25,7 @@ public class FilterTrainTest {
 
     @Test
     void filter2Cols() {
-        runner.setIncReleaseRowCount(6776701);
+        runner.setIncReleaseRowCount(67767010);
         setup(815, 815);
         var q = "timed.where_in(where_filter, cols=['key1 = set1']).where(['inRange(num1, 0, 100)'])";
         runner.test("Filter- 2 Cols", 0, q, "key1", "key2", "num1");
