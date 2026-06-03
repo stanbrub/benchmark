@@ -183,12 +183,11 @@ final public class TrainTestRunner {
         train_ugp_times = [(time.perf_counter_ns(), 0, 0)]
 
         def train_ugp_update(update, is_replay):
-            inc_size = 0
+            ugp_cycle_cost = 0
             if autotune:
-                m = source_filter.getClass().getDeclaredMethod('getSizeIncrement', [])
-                m.setAccessible(True)
-                inc_size = m.invoke(source_filter, [])
-            train_ugp_times.append((time.perf_counter_ns(), ${mainTable}.size, inc_size))
+                ug = update.table.update_graph.j_update_graph
+                ugp_cycle_cost = System.nanoTime() - ug.cycleStartNanoTime()
+            train_ugp_times.append((time.perf_counter_ns(), ${mainTable}.size, ugp_cycle_cost))
         """;
 
     static final String stopUgpQuery = """
@@ -201,12 +200,12 @@ final public class TrainTestRunner {
                 mono_curr = train_ugp_times[i][0]
                 size_prev = train_ugp_times[i - 1][1]
                 size_curr = train_ugp_times[i][1]
-                inc_size = train_ugp_times[i][2]
+                ugp_cycle_cost = train_ugp_times[i][2]
                 delta_ns = mono_curr - mono_prev
                 wall_clock_ns = train_wall_epoch_ns + (mono_curr - mono_start)
                 delta_rows = max(0, size_curr - size_prev)
-                inc_rows = max(0, inc_size)
-                ugp_rows.append([wall_clock_ns, delta_ns, delta_rows, inc_rows])
+                ugp_cycle_cost = max(0, ugp_cycle_cost)
+                ugp_rows.append([wall_clock_ns, delta_ns, delta_rows, ugp_cycle_cost])
         
             ugp_events = new_table([
                 string_col("origin", ["deephaven-engine"] * len(ugp_rows)),
@@ -217,16 +216,16 @@ final public class TrainTestRunner {
                 double_col("value", [float(r[2]) for r in ugp_rows]),
             ])
             
-            ugp_inc_events = new_table([
+            ugp_cycle_events = new_table([
                 string_col("origin", ["deephaven-engine"] * len(ugp_rows)),
-                string_col("type", ["ugp.delta"] * len(ugp_rows)),
+                string_col("type", ["ugp.cycle.cost"] * len(ugp_rows)),
                 long_col("start_ns", [r[0] for r in ugp_rows]),
-                long_col("duration_ns", [r[1] for r in ugp_rows]),
-                string_col("name", ["autotune_rows"] * len(ugp_rows)),
-                double_col("value", [float(r[3]) for r in ugp_rows]),
+                long_col("duration_ns", [r[3] for r in ugp_rows]),
+                string_col("name", ["duration_rows"] * len(ugp_rows)),
+                double_col("value", [float(r[2]) for r in ugp_rows]),
             ])
         
-            standard_events = merge([standard_events, ugp_events, ugp_inc_events])
+            standard_events = merge([standard_events, ugp_events, ugp_cycle_events])
         
         ss_log = perfmon.server_state_log().ungroup(["IntervalUGPCyclesTimeMicros"]).snapshot()
         if ss_log.size > 0:
