@@ -69,7 +69,7 @@ final public class TrainTestRunner {
         var baseRowCount = delegate.getGeneratedRowCount();
         delegate.useCachedSource(false);
         delegate.useLocalParquet(true);
-        delegate.setRowFactor((int)(maxRowFactor * incReleaseFactor));
+        delegate.setRowFactor(maxRowFactor);
         delegate.tables(tableNames);
         delegate.setScaleFactors(isStatic ? 1 : 0, isStatic ? 0 : 1);
         delegate.setIncReleaseFilter(incCycleFactor, (long)(incReleaseRowCount * incReleaseFactor));
@@ -77,7 +77,7 @@ final public class TrainTestRunner {
         var headQuery = """
         ${mainTable} = ${mainTable}.head(${trainRowCount})
         loaded_tbl_size = ${mainTable}.size
-        """.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * rowFactor)));
+        """.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * rowFactor * incReleaseFactor)));
 
         delegate.addSetupQuery(headQuery);
         setupQueries.forEach(delegate::addSetupQuery);
