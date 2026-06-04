@@ -16,7 +16,7 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 final public class TrainTestRunner {
     static final int maxRowFactor = 850;
     static final float incCycleFactor = 0.90f;
-    static final float incReleaseFactor = 1.0f;
+    static final double incReleaseFactor = 0.20f;
     final Object testInst;
     final List<String> setupQueries = new ArrayList<>();
     final List<String> teardownQueries = new ArrayList<>();
@@ -69,7 +69,7 @@ final public class TrainTestRunner {
         var baseRowCount = delegate.getGeneratedRowCount();
         delegate.useCachedSource(false);
         delegate.useLocalParquet(true);
-        delegate.setRowFactor(maxRowFactor);
+        delegate.setRowFactor((int)(maxRowFactor * incReleaseFactor));
         delegate.tables(tableNames);
         delegate.setScaleFactors(isStatic ? 1 : 0, isStatic ? 0 : 1);
         delegate.setIncReleaseFilter(incCycleFactor, (long)(incReleaseRowCount * incReleaseFactor));
