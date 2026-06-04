@@ -16,7 +16,7 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 final public class TrainTestRunner {
     static final int maxRowFactor = 850;
     static final float incCycleFactor = 0.90f;
-    static final float incReleaseFactor = 0.60f;
+    static final float incReleaseFactor = 0.80f;
     final Object testInst;
     final List<String> setupQueries = new ArrayList<>();
     final List<String> teardownQueries = new ArrayList<>();
