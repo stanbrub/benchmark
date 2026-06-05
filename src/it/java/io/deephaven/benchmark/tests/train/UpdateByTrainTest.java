@@ -33,6 +33,7 @@ public class UpdateByTrainTest {
     }
 
     @Test
+    @Disabled
     void mixedComboNoGroups() {
         setup(21.8, 17);
         runner.addSetupQuery(noGroups);
@@ -42,7 +43,7 @@ public class UpdateByTrainTest {
 
     @Test
     void rollingCombo2Groups() {
-        setup(5.8, 4.2);
+        setup(9, 4.5);
         runner.addSetupQuery(group10K);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1','key2'])

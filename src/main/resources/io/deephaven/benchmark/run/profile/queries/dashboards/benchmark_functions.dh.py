@@ -125,7 +125,7 @@ def convert_metric(table):
         
 # Do any conversions of type or column name needed from benchmark-events.csv
 def convert_event(table):
-    return table.view(['benchmark_name','origin','start','duration','name','value=(double)value'])
+    return table.view(['benchmark_name','origin','type','start','duration','name','value=(double)value'])
         
 # Do any conversions of type or column name needed from benchmark-platform.csv
 def convert_platform(table):
@@ -158,6 +158,11 @@ def empty_bench_platform():
     return input_table({'origin':dht.string,'name':dht.string,'value':dht.string,
         'set_id':dht.string,'run_id':dht.string})
         
+def empty_bench_events():
+    return input_table({'benchmark_name':dht.string,'origin':dht.string,'type':dht.string,
+        'start':dht.string,'duration':dht.string,'name':dht.string,'value':dht.float64,
+        'set_id':dht.string,'run_id':dht.string})
+
 def empty_bench_metrics():
     return input_table({'benchmark_name':dht.string,'origin':dht.string,'timestamp':dht.int64,
         'name':dht.string,'value':dht.float64,'note':dht.string, 'set_id':dht.string,

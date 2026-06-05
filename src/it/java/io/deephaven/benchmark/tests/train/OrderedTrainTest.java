@@ -26,6 +26,7 @@ public class OrderedTrainTest {
     }
 
     @Test
+    @Disabled
     void ordered0Groups() {
         setup(145, 18);
         var q = "timed.agg_by(aggs)";
@@ -34,7 +35,7 @@ public class OrderedTrainTest {
 
     @Test
     void ordered2Groups() {
-        setup(22, 4.2);
+        setup(30, 5.7);
         var q = "timed.agg_by(aggs, by=['key1', 'key2'])";
         runner.test("Ordered- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "key3", "key4", "num1", "num2");
     }

@@ -25,6 +25,7 @@ public class AggByTrainTest {
     }
 
     @Test
+    @Disabled
     void aggBy0Groups() {
         setup(572, 286);
         var q = "timed.agg_by(aggs)";
