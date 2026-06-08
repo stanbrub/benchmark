@@ -1,6 +1,6 @@
 services:
   deephaven:
-    image: ghcr.io/stanbrub/server:jvm25
+    image: ghcr.io/stanbrub/server:jvm17
     ports:
       - "${DEEPHAVEN_PORT:-10000}:10000"
     volumes:
