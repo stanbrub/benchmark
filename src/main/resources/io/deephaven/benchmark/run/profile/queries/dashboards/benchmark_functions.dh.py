@@ -125,8 +125,8 @@ def convert_metric(table):
         
 # Do any conversions of type or column name needed from benchmark-events.csv
 def convert_event(table):
-    return table.view(['benchmark_name','origin','start','duration','name','value=(double)value'])
-        
+    return table.view(['benchmark_name','origin','type','start','duration','name','value=(double)value'])
+
 # Do any conversions of type or column name needed from benchmark-platform.csv
 def convert_platform(table):
     return table.view(['origin','name','value'])
