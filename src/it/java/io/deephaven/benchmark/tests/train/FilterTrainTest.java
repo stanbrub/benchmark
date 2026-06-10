@@ -35,7 +35,7 @@ public class FilterTrainTest {
     @Test
     void filter3Cols() {
         runner.setIncReleaseRowCount(3468549);
-        setup(248, 248);
+        setup(620, 620);
         var q = """
         timed.where_in(where_filter, cols=['key1 = set1', 'key2 = set2', 'key3 = set3']) \
             .where(filters=["key1 = '1'", 'inRange(num1, 0, 100)', 'key3 in -2, -1, 0, 1, 2'])
