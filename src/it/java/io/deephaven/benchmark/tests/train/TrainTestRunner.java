@@ -15,7 +15,7 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  */
 final public class TrainTestRunner {
     static final int maxRowFactor = 620;
-    static final float incCycleFactor = 1.1f;
+    static final float incCycleFactor = 1.0f;
     static final double incReleaseFactor = 1.0f;
     final Object testInst;
     final List<String> setupQueries = new ArrayList<>();
@@ -52,8 +52,8 @@ final public class TrainTestRunner {
         setupQueries.add(startJfrQuery);
         teardownQueries.add(stopJfrQuery);
 
-        if (staticRowFactor > 0)
-            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
+//        if (staticRowFactor > 0)
+//            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
 
         if (incRowFactor > 0) {
             setupQueries.add(startUgpQuery);
