@@ -32,7 +32,7 @@ final public class TrainTestRunner {
     public void tables(double staticRowFactor, double incRowFactor, String... names) {
         if (Math.max(staticRowFactor, incRowFactor) > maxRowFactor)
             throw new IllegalArgumentException("Row factors cannot be greater than " + maxRowFactor);
-        this.staticRowFactor = 0; // staticRowFactor;
+        this.staticRowFactor = staticRowFactor;
         this.incRowFactor = incRowFactor;
         tableNames = names;
     }
@@ -52,8 +52,8 @@ final public class TrainTestRunner {
         setupQueries.add(startJfrQuery);
         teardownQueries.add(stopJfrQuery);
 
-//        if (staticRowFactor > 0)
-//            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
+        if (staticRowFactor > 0)
+            test(name, maxExpectedRowCount, operation, staticRowFactor, true, loadColumns);
 
         if (incRowFactor > 0) {
             setupQueries.add(startUgpQuery);
