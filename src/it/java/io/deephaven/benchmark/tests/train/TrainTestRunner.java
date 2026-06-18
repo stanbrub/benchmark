@@ -15,7 +15,7 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  */
 final public class TrainTestRunner {
     static final int maxRowFactor = 620;
-    static final float incCycleFactor = 1.0f;
+    static final float incCycleFactor = 0.80f;
     static final double incReleaseFactor = 1.0f;
     final Object testInst;
     final List<String> setupQueries = new ArrayList<>();
@@ -32,7 +32,7 @@ final public class TrainTestRunner {
     public void tables(double staticRowFactor, double incRowFactor, String... names) {
         if (Math.max(staticRowFactor, incRowFactor) > maxRowFactor)
             throw new IllegalArgumentException("Row factors cannot be greater than " + maxRowFactor);
-        this.staticRowFactor = staticRowFactor;
+        this.staticRowFactor = 0;  // staticRowFactor;
         this.incRowFactor = incRowFactor;
         tableNames = names;
     }

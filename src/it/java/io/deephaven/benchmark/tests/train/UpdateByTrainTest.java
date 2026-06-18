@@ -43,7 +43,7 @@ public class UpdateByTrainTest {
 
     @Test
     void rollingCombo2Groups() {
-        setup(9, 4.5);  // 0.2 for 100ms, 4.5 for 1s
+        setup(9, 0.2);  // 0.2 for 100ms, 4.5 for 1s
         runner.addSetupQuery(group10K);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1','key2'])
