@@ -73,7 +73,7 @@ The following charts show summaries of JVM 25 for 100ms running at an autotune t
 <table><tr>
 <td><img src="./inc-j25-100ms-p80.summary.png" alt="GC Summary 100ms p80"></td>
 <td><img src="./inc-j25-100ms-p90.summary.png" alt="GC Summary 100ms p90"></td>
-<td><img src="./inc-j25-100ms-p80.summary.png" alt="GC Summary 100ms p100"></td>
+<td><img src="./inc-j25-100ms-p100.summary.png" alt="GC Summary 100ms p100"></td>
 </tr></table>
 
 ## Test Setup
