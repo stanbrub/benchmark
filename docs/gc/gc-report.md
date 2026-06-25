@@ -62,10 +62,19 @@ The following chart shows throughput for JVM 25 with 1s UGP cycles.
 ![Ticking Throughput for JVM 25 1s](./inc-j25-1s.throughput.png)
 
 The following charts show summaries of JVM 17 and JVM 25 with three factors organized according to their ranks for the benchmarks overall. For example, the values in the "jitter" column are the geometric means for each "gc_type" set when compare to every other set in the table. This gives a ranking of each column that can provide a quicker comparison than a dozen individual tables.
-![GC Summary for JVM 17 1s](./inc-j17-1s.summary.png) ![GC Summary for JVM 25 1s](./inc-j25-1s.summary.png)
+
+<table><tr>
+<td><img src="./inc-j17-1s.summary.png" alt="GC Summary for JVM 17 1s"></td>
+<td><img src="./inc-j25-1s.summary.png" alt="GC Summary for JVM 25 1s"></td>
+</tr></table>
 
 The following charts show summaries of JVM 25 for 100ms running at an autotune target of 80%, 90%, and 100%
-![GC Summary 100ms p80](./inc-j25-100ms-p80.summary.png) ![GC Summary 100ms p90](./inc-j25-100ms-p90.summary.png) ![GC Summary 100ms p100](./inc-j25-100ms-p80.summary.png)
+
+<table><tr>
+<td><img src="./inc-j25-100ms-p80.summary.png" alt="GC Summary 100ms p80"></td>
+<td><img src="./inc-j25-100ms-p90.summary.png" alt="GC Summary 100ms p90"></td>
+<td><img src="./inc-j25-100ms-p80.summary.png" alt="GC Summary 100ms p100"></td>
+</tr></table>
 
 ## Test Setup
 
