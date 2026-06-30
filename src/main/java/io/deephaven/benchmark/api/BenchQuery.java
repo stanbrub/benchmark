@@ -107,8 +107,13 @@ final public class BenchQuery implements Closeable {
             return;
 
         if (!conn.getUsedVariableNames().isEmpty()) {
-            String logic = String.join("=None; ", conn.getUsedVariableNames()) + "=None\n";
-            executeBarrageQuery(logic);
+            StringBuilder sb = new StringBuilder();
+            sb.append("from deephaven.execution_context import get_exec_ctx\n");
+            sb.append("_qs = get_exec_ctx().j_exec_ctx.getQueryScope()\n");
+            for (String name : conn.getUsedVariableNames()) {
+                sb.append("_qs.putParam('").append(name).append("', None)\n");
+            }
+            executeBarrageQuery(sb.toString());
         }
     }
 

@@ -113,7 +113,7 @@ What about `-XX:+UseLargePages`? These have not been tested but could provide si
 
 ### What are Compact Headers?
 
-The `-XX:+UseCompactObjectHeaders` options cuts the Java Object header in half (16 to 8 bytes) to reduce object footprint and improve cache utilization. Systems that use lots of small objects can benefit with better throughput. Minimal testing for Deephaven showed no change in performance, but it the option will be a default in JVM 26+.
+The `-XX:+UseCompactObjectHeaders` option cuts the Java Object header in half (16 to 8 bytes) to reduce object footprint and improve cache utilization. Systems that use lots of small objects can benefit with better throughput. Minimal testing for Deephaven showed no significant change in performance, but the option will be a default in JVM 26+.
 
 ## Needed for Further Investigation
 
@@ -126,6 +126,7 @@ In order to improve investigations like this one, we need much more information 
 - Type of hardware and containerization
 - Java heap and cpu thread count typically used
 - Where the data typically comes from. DHE live tables? Kafka? Parquet?
+- What JVM options have already been tried in the field
 
 
 

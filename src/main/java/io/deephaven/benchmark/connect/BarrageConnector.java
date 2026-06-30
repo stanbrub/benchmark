@@ -182,12 +182,8 @@ class BarrageConnector implements Connector {
         if (isClosed.get())
             return;
         isClosed.set(true);
-        subscriptions.keySet().forEach(t -> {
-            closeSubscription(t);
-        });
-        snapshots.keySet().forEach(t -> {
-            closeSubscription(t);
-        });
+        new ArrayList<>(subscriptions.keySet()).forEach(this::closeSubscription);
+        new ArrayList<>(snapshots.keySet()).forEach(this::closeSnapshot);
         variableNames.clear();
 
         try {
@@ -224,6 +220,16 @@ class BarrageConnector implements Connector {
                 subscription.handle.close();
         } catch (Exception ex) {
             Log.info("Failed to close handle for subscription: %s", tableName);
+        }
+    }
+
+    private void closeSnapshot(String tableName) {
+        try {
+            var snapshot = snapshots.remove(tableName);
+            if (snapshot != null)
+                snapshot.handle.close();
+        } catch (Exception ex) {
+            Log.info("Failed to close handle for snapshot: %s", tableName);
         }
     }
 
