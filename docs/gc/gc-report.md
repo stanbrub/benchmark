@@ -4,22 +4,20 @@ This report provides some insight into how various Deephaven CE operations behav
 
 We are covering only JVM 17 and JVM 25. This presents an interesting challenge, because GC options have changed dramatically in the four years in between. For example, ZGC generational didn't exist in JVM 17, while ZGC non-generational doesn't exist in JVM 25. The approach taken here was to use the options that will likely be the defaults in JVM 25+ and then try to use the nearest approximation in JVM 17.
 
-One other thing to note is that, judging by recent jdk release notes, the strategy for GCs going forward is to make GCs more self-tuning. Since the GC's top priority is keeping the application running, the GC can override user-supplied settings if it needs to. The JVM options used for this effort are intentionally minimal and tend to rely more on defaults.
+One other thing to note is that, judging by recent JDK release notes, the strategy for GCs going forward is to make GCs more self-tuning. Since the GC's top priority is keeping the application running, the GC can override user-supplied settings if it needs to. The JVM options used for this effort are intentionally minimal and tend to rely more on defaults.
 
 ## TL;DR
 
 Here are some highlights from the data:
-- For best Static throughput, use G1 or Parallel
-- For best Ticking throughput, use G1, but expect higher jitter
-- For lowest jitter, use Shenandoah (though it's lower throughput than G1)
-- For best combination of Ticking throughput and jitter, use Shenandoah Huge Pages
-- ZGC struggles with Deephaven cycles, especially Filters, with higher jitter and lower throughput
-- For a boost to throughput on >= 8G heap with low jitter regression, use huge memory pages (THP)
-- No difference in advice between 1sec and 100ms cycles
+- For best Static throughput, use G1 or G1 THP. (Others degrade by 4% to 22%) 
+- For best Ticking throughput, use G1, but expect higher jitter. (5% to 12% more)
+- For lowest jitter, use Shenandoah, though it's lower throughput than G1. (9% to 15% less)
+- For best 100ms cycle throughput-jitter combo, use Shenandoah THP (3rd-5th best throughput, best jitter)
+- For best 1sec cycle combo of throughput and jitter, use G1 THP (best throughput, 3rd best jitter)
 
 ## The Benchmarks
 
-The benchmarks used for this effort are not the nightly benchmarks, which run single operations typically for 8-10 seconds. Instead a longer running and smaller benchmark set is used that covers categories of operations. This set typically runs for 1.5 mins to 2 mins. The idea is to use few benchmarks to cover much of the operational code base. These are referred to as "Training Benchmarks".
+The benchmarks used for this effort are not the nightly benchmarks, which run single operations typically for 8-10 seconds. Instead a longer running and smaller benchmark set is used that covers categories of operations. This set typically runs for 1.5 mins to 2 mins, lazily reading from a large parquet file. The idea is to use few benchmarks to cover much of the operational code base. These are referred to as "Training Benchmarks".
 
 - AggBy: Runs multiple mathematical operations like avg, std, var, min, max, etc
 - Filter: Runs `where_in` and `where` filters
@@ -34,7 +32,7 @@ The set names for the various runs use a naming convention like `<gc-type>_<cycl
 - gc-type: `g1gc`, `shen`, `zgc`, `para`
 - cycle-time: `1000` (1sec), `100` (100ms)
 - autotune-load: `p80`, `p90`, `p100`, `p110` (Percentage throughput targets)
-- extra: `huge` (THP)
+- extra: `huge` (Transparent Huge Pages)
 
 ## Supporting Evidence for TL;DR
 
@@ -42,6 +40,12 @@ What follows are charts showing the results of many benchmarks runs using variou
 - Throughput: Starting with rows/sec, a normalized fraction starting from 1. So 1.20 would be 20% faster than 1.0.
 - Jitter: Starting with Coefficient of Variation, a normalized fraction starting from 1. So 1.04 would be 4% more jitter than 1.0.
 - On Budget: A percentage a cycles that finished on or below the cycle time (e.g. 1000ms or 100ms)
+
+## Overall Rankings
+
+Overall ranking can show the distance between the overall throughput, jitter, or on-budget metrics for each GC for the same set of configuration. For example, on JVM 25 for Static data, ZGC is 16% slower than G1.
+
+![All GC Rankings](./all-gc-rankings.png)
 
 ### Static Data Throughput
 
