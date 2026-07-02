@@ -4,7 +4,7 @@
 # format strings, and do calculations. The data for creating tables is downloaded and cached from 
 # either the Deephaven Benchmark GCloud bucket or from NFS on one of Deephaven's demos servers.
 #
-# Requirements: Deephaven 0.36.1 or greater
+# Requirements: Deephaven 41.3 or greater
 
 import os, re, jpy
 from deephaven import read_csv, merge, agg, empty_table, input_table, dtypes as dht
@@ -183,26 +183,74 @@ def load_bench_platform(storage_uri, category='adhoc', actor_filter=None, set_fi
     run_ids = get_run_paths(storage_uri, category, actor_filter, set_filter, 100)
     return merge_run_tables(storage_uri, run_ids, category, 'benchmark-platform.csv', convert_platform)
 
-# Load all benchmark-results.csv data collected from the given storage, category, and filters by set
-# Sets contain one or more runs for each benchmark. This function loads the median run by rate for each benchmark
-def load_bench_result_sets(storage_uri, category='adhoc', actor_filter=None, set_filter=None):
-    bench_results = load_bench_results(storage_uri,category,actor_filter,set_filter)
+# Compute result sets from raw bench results
+def compute_result_sets(bench_results):
     bench_results_sets = bench_results.sort(['benchmark_name','origin','set_id','op_rate']) \
         .group_by(['benchmark_name','origin','set_id']) \
         .view(['benchmark_name','origin','timestamp=(long)mid_item(timestamp)','test_duration=(double)mid_item(test_duration)',
             'set_op_rates=op_rate','op_duration=(double)mid_item(op_duration)','op_rate=(long)mid_item(op_rate)',
             'row_count=(long)mid_item(row_count)','variability=(float)rstd(set_op_rates)','set_id',
             'run_id=(String)mid_item(run_id)','set_count=count(set_op_rates)'])
-    # Attach columns for specified metrics and platform properties
-    #local_platform_props = []
-    #local_metric_props = []
-    #bench_results_sets = add_platform_values(bench_results_sets, ['deephaven.version'] + platform_props, local_platform_props)
-    #bench_results_sets = add_metric_values(bench_results_sets, metric_props, local_metric_props)
     return bench_results_sets, bench_results
+
+# Load all benchmark-results.csv data collected from the given storage, category, and filters by set
+# Sets contain one or more runs for each benchmark. This function loads the median run by rate for each benchmark
+def load_bench_result_sets(storage_uri, category='adhoc', actor_filter=None, set_filter=None):
+    bench_results = load_bench_results(storage_uri,category,actor_filter,set_filter)
+    return compute_result_sets(bench_results)
     
+# Check for a pulled-up consolidated file (produced by pullup.py)
+def find_pullup_file(storage_uri, category, actor, table_name):
+    csv_name = f'benchmark-{table_name}'
+    # Always check local cache first
+    local_root = re.sub('^file:/+', '/', storage_uri)
+    if local_root.startswith('http'):
+        local_root = re.sub('^http.*/deephaven-benchmark', '/data/deephaven-benchmark', local_root)
+    pullup_dir = os.path.join(local_root, category, actor)
+    for ext in ['.parquet', '.csv.gz']:
+        path = os.path.join(pullup_dir, csv_name + ext)
+        if os.path.exists(path):
+            return path
+    # Try to download from remote if storage_uri is HTTP
+    if storage_uri.startswith('http'):
+        pullup_base = f'{storage_uri}/{category}/{actor}/{csv_name}'
+        for ext in ['.parquet', '.csv.gz']:
+            uri = pullup_base + ext
+            try:
+                out_path = re.sub('^http.*/deephaven-benchmark/', '/data/deephaven-benchmark/', uri)
+                os.makedirs(os.path.dirname(out_path), mode=0o777, exist_ok=True)
+                if not os.path.exists(out_path):
+                    urlretrieve(uri, out_path)
+                    print('Cache', uri)
+                return out_path
+            except Exception:
+                continue
+    return None
+
+# Read a pulled-up file (parquet or csv.gz)
+def read_pullup_file(path):
+    if path.endswith('.parquet'):
+        from deephaven.parquet import read as pq_read
+        return pq_read(path)
+    return read_csv(path)
+
 def load_table_or_empty(table_name, storage_uri, category='adhoc', actor_filter='', set_filter=''):
     actor = actor_filter.strip(); prefix = set_filter.strip()
     if actor and prefix:
+        pullup_path = find_pullup_file(storage_uri, category, actor, table_name)
+        if pullup_path:
+            print(f'Pullup {pullup_path}')
+            tbl = read_pullup_file(pullup_path)
+            if table_name == 'result_sets':
+                results_path = find_pullup_file(storage_uri, category, actor, 'results')
+                results_tbl = read_pullup_file(results_path) if results_path else tbl
+                return tbl, results_tbl
+            return tbl
+        if table_name == 'result_sets':
+            results_path = find_pullup_file(storage_uri, category, actor, 'results')
+            if results_path:
+                print(f'Pullup {results_path} (computing result_sets)')
+                return compute_result_sets(read_pullup_file(results_path))
         return globals()[f'load_bench_{table_name}'](storage_uri, category, actor, prefix)
     return globals()[f'empty_bench_{table_name}']()
 

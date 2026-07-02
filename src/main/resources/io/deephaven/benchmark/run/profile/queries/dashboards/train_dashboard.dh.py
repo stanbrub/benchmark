@@ -8,7 +8,7 @@
 # ruff: noqa: F821
 from urllib.request import urlopen; import os
 from deephaven import ui
-from deephaven.ui import use_memo, use_state
+from deephaven.ui import use_memo, use_state, use_ref
 from deephaven.execution_context import get_exec_ctx
 from deephaven import pandas as dhpd
 import deephaven.plot.express as dx
@@ -22,13 +22,13 @@ COLORS = [
     "#FF97FF", "#FECB52",
 ]
 
-root = 'file:///data' if os.path.exists('/data/deephaven-benchmark') else 'https://storage.googleapis.com'
-with urlopen(f'{root}/deephaven-benchmark/benchmark_functions.dh.py') as r:
+root = 'file:///nfs' if os.path.exists('/nfs/deephaven-benchmark') else 'https://storage.googleapis.com'
+with urlopen(f'{root}/deephaven-benchmark/benchmark_functions2.dh.py') as r:
     exec(r.read().decode(), globals(), locals())
     storage_uri = f'{root}/deephaven-benchmark'
 
 # These globals are set by the dashboard component on each render
-actor = "Final-gc-report"
+actor = "gc-fun"
 static_inc_filter = 'Inc'
 benchmark_filter = "*"
 cycle_budget_ms = 100
@@ -42,11 +42,11 @@ bench_events = None
 gc_metrics = None
 
 # Load raw tables once at module level (just table handles; data stays on server)
-_raw_rs, _raw_br = load_table_or_empty('result_sets', storage_uri, 'adhoc', actor, prefix)
+_raw_rs, _raw_br = load_table_or_empty('result_sets', storage_uri, 'demo', actor, prefix)
 _raw_rs = _raw_rs.where("origin = `deephaven-engine`")
 _raw_br = _raw_br.where("origin = `deephaven-engine`")
-_raw_bm = load_table_or_empty('metrics', storage_uri, 'adhoc', actor, prefix)
-_raw_be = load_table_or_empty('events', storage_uri, 'adhoc', actor, prefix)
+_raw_bm = load_table_or_empty('metrics', storage_uri, 'demo', actor, prefix)
+_raw_be = load_table_or_empty('events', storage_uri, 'demo', actor, prefix)
 
 def filter_benchmarks(table):
     if not benchmark_filter: return table
@@ -243,7 +243,7 @@ def _compute_rank(t):
 
 
 @ui.component
-def gc_dashboard():
+def gc_bench_summary_dashboard():
     # --- Filter state ---
     static_inc_val, set_static_inc = use_state("Inc")
     cycle_budget_str, set_cycle_budget = use_state("100")
@@ -331,19 +331,19 @@ def gc_dashboard():
         try:
             t_summary = _rename(get_summary_table())
         except Exception:
-            t_summary = _empty("No summary data for this filter combination")
+            t_summary = _empty("No data")
 
         try:
             t_throughput = add_summary_rows(_rename(get_throughput_table()), higher_is_better=True)
         except Exception as e:
             import traceback; traceback.print_exc()
-            t_throughput = _empty(f"Throughput error: {e}")
+            t_throughput = _empty("No data")
 
         try:
             t_jitter = add_summary_rows(_rename(get_jitter_table()), higher_is_better=False)
         except Exception as e:
             import traceback; traceback.print_exc()
-            t_jitter = _empty(f"Jitter error: {e}")
+            t_jitter = _empty("No data")
 
         try:
             t_on_budget = _rename(get_cycle_onbudget_table())
@@ -352,7 +352,7 @@ def gc_dashboard():
             t_on_budget = t_on_budget.format_columns([f"{c} = Decimal(`0.00'%'`)" for c in cc_cols])
         except Exception as e:
             import traceback; traceback.print_exc()
-            t_on_budget = _empty(f"On-budget error: {e}")
+            t_on_budget = _empty("No data")
 
         return t_summary, t_throughput, t_jitter, t_on_budget
 
@@ -439,26 +439,21 @@ def gc_dashboard():
 
 
 @ui.component
-def gc_distribution_dashboard():
-    # --- Filter state (uncommitted until Apply) ---
-    static_inc_val, set_static_inc = use_state("Inc")
-    cycle_budget_str, set_cycle_budget = use_state("100")
-    autotune_val, set_autotune = use_state("100")
-    jvm_val, set_jvm = use_state("25")
-    selected_bench, set_selected_bench = use_state(None)
-
-    # Applied state — everything (including benchmark) only takes effect on Apply
+def gc_throughput_dashboard():
+    # Applied state — only this triggers re-render (on form submit)
     applied, set_applied = use_state({
         "static_inc": "Inc",
         "cycle_budget": "100", "autotune": "100", "jvm": "25",
         "benchmark": None,
     })
 
-    def handle_apply():
+    def handle_submit(data):
         set_applied({
-            "static_inc": static_inc_val,
-            "cycle_budget": cycle_budget_str, "autotune": autotune_val, "jvm": jvm_val,
-            "benchmark": selected_bench,
+            "static_inc": "Inc",
+            "cycle_budget": data.get("cycle_budget", "100"),
+            "autotune": data.get("autotune", "100"),
+            "jvm": data.get("jvm", "25"),
+            "benchmark": data.get("benchmark", None),
         })
 
     a_cycle = applied["cycle_budget"]
@@ -543,7 +538,7 @@ def gc_distribution_dashboard():
                     f'gc_type=({_replace_expr}).isEmpty() ? set_id : {_replace_expr}']) \
                 .sort("duration_offset")
 
-            # --- GC pause events ---
+            # --- GC activity events ---
             gc_raw = _raw_be.where(['type = `jdk.GarbageCollection`']) \
                 .where_in(median_runs, cols=['benchmark_name', 'set_id', 'run_id'])
             min_starts_gc = gc_raw.agg_by([agg.min_("min_start = start")], by=["benchmark_name", "set_id", "run_id"])
@@ -561,47 +556,44 @@ def gc_distribution_dashboard():
 
     cdf_table, ccdf_table, tput_table, gc_table = use_memo(compute_distribution, [applied])
 
-    # --- Controls: Benchmark first, then filters, then Apply ---
-    controls = ui.flex(
-        ui.picker(
-            *all_benchmarks,
-            label="Benchmark",
-            selected_key=selected_bench if selected_bench else (all_benchmarks[0] if all_benchmarks else None),
-            on_selection_change=set_selected_bench,
-        ) if all_benchmarks else ui.text("No benchmarks"),
-        ui.picker(
-            "Static", "Inc",
-            label="Static/Inc",
-            selected_key=static_inc_val,
-            on_selection_change=set_static_inc,
+    # --- Controls: wrapped in ui.form so pickers don't make server calls until Apply ---
+    controls = ui.form(
+        ui.flex(
+            ui.picker(
+                *all_benchmarks,
+                label="Benchmark",
+                name="benchmark",
+                default_selected_key=all_benchmarks[0] if all_benchmarks else None,
+            ) if all_benchmarks else ui.text("No benchmarks"),
+            ui.picker(
+                "100", "1000",
+                label="Cycle Budget (ms)",
+                name="cycle_budget",
+                default_selected_key="100",
+            ),
+            ui.picker(
+                "80", "90", "100", "110",
+                label="Autotune %",
+                name="autotune",
+                default_selected_key="100",
+            ),
+            ui.picker(
+                "17", "25",
+                label="JVM Version",
+                name="jvm",
+                default_selected_key="25",
+            ),
+            ui.button("Apply", type="submit", variant="accent"),
+            direction="row",
+            gap="size-200",
+            align_items="end",
         ),
-        ui.picker(
-            "100", "1000",
-            label="Cycle Budget (ms)",
-            selected_key=cycle_budget_str,
-            on_selection_change=set_cycle_budget,
-        ),
-        ui.picker(
-            "80", "90", "100", "110",
-            label="Autotune %",
-            selected_key=autotune_val,
-            on_selection_change=set_autotune,
-        ),
-        ui.picker(
-            "17", "25",
-            label="JVM Version",
-            selected_key=jvm_val,
-            on_selection_change=set_jvm,
-        ),
-        ui.button("Apply", on_press=handle_apply, variant="accent"),
-        direction="row",
-        gap="size-200",
-        align_items="end",
+        on_submit=handle_submit,
         flex_grow=0,
         flex_shrink=0,
     )
 
-    # Plots — two columns: left = CDF/CCDF, right = throughput/GC time series
+    # --- Plots ---
     has_data = cdf_table is not None and ccdf_table is not None
     if has_data:
         gc_types = sorted(dhpd.to_pandas(
@@ -636,7 +628,6 @@ def gc_distribution_dashboard():
         )
         left_col = ui.flex(cdf_plot, ccdf_plot, direction="column", flex_grow=1, gap="size-200")
 
-        # Right column: throughput + GC scatter
         if tput_table is not None and gc_table is not None:
             def make_throughput_updater(fig):
                 fig.update_traces(line=dict(width=1))
@@ -655,7 +646,7 @@ def gc_distribution_dashboard():
                     marker=dict(size=2),
                 )
                 fig.update_layout(
-                    title=dict(text="GC Pauses", font=dict(size=14)),
+                    title=dict(text="GC Activity", font=dict(size=14)),
                     legend=dict(yanchor="bottom", y=0, xanchor="left", x=1.02),
                     margin=dict(t=40, b=40, l=60, r=10),
                     xaxis=dict(title="Elapsed Time (s)"),
@@ -692,5 +683,284 @@ def gc_distribution_dashboard():
     )
 
 
-gc_dash = gc_dashboard()
-gc_dist = gc_distribution_dashboard()
+@ui.component
+def gc_rankings_dashboard():
+    import math
+    import pandas as pd
+    from deephaven import new_table
+    from deephaven.column import string_col
+
+    def compute_rankings():
+        global actor, static_inc_filter, benchmark_filter, cycle_budget_ms, autotune_pct, jvm_version
+        global setid_filter, bench_result_sets, bench_results, bench_metrics, bench_events, gc_metrics
+
+        si_options = ["Static", "Inc"]
+        budget_options = ["100", "1000"]
+        autotune_options = ["80", "90", "100", "110"]
+        jvm_options = ["17", "25"]
+
+        tput_rows = []
+        jitter_rows = []
+        budget_rows = []
+
+        for si in si_options:
+            for budget in budget_options:
+                for auto in autotune_options:
+                    for jvm in jvm_options:
+                        # Set globals for this combination
+                        static_inc_filter = si
+                        benchmark_filter = "*"
+                        cycle_budget_ms = int(budget)
+                        autotune_pct = auto
+                        jvm_version = jvm
+                        setid_filter = f'*_{budget}_p{auto}_j{jvm}*'
+
+                        settings_label = f"{si}_{budget}_p{auto}_j{jvm}"
+
+                        rs = _raw_rs.sort(['set_id'])
+                        br = _raw_br.sort(['set_id'])
+                        bm = _raw_bm
+                        be = _raw_be
+                        rs, br, bm, be = [filter_benchmarks(t) for t in [rs, br, bm, be]]
+                        bench_result_sets = rs
+                        bench_results = br
+                        bench_metrics = bm
+                        bench_events = be
+                        gc_metrics = rs.join(bm, ['benchmark_name','origin','set_id'], ['name','value']).sort(['set_id'])
+
+                        suffix = f"_{budget}_p{auto}_j{jvm}"
+
+                        import re as _re
+                        def _gc_name(col):
+                            name = col.replace(suffix, '')
+                            name = _re.sub(rf'[\s_-]*{_re.escape(si)}[\s_-]*', '_', name)
+                            name = _re.sub(r'_+', '_', name)
+                            name = name.strip('_')
+                            return name
+
+                        def _visible_cols(tbl):
+                            return [c.name for c in tbl.columns if c.name != 'benchmark_name' and '__TABLE_STYLE_FORMAT' not in c.name]
+
+                        def _geo_mean(df, col):
+                            vals = df[col].dropna().values.astype(float)
+                            vals = vals[vals > 0]
+                            return float(np.exp(np.log(vals).mean())) if len(vals) > 0 else float('nan')
+
+                        def _rank_row(gc_means, settings, higher_is_better):
+                            # Sort GCs: best first
+                            valid = [(gc, v) for gc, v in gc_means.items() if not math.isnan(v)]
+                            if not valid:
+                                return None
+                            valid.sort(key=lambda x: x[1], reverse=higher_is_better)
+                            best_val = valid[0][1]
+                            row = {"Settings": settings}
+                            for i, (gc, val) in enumerate(valid):
+                                rank_col = f"{i+1}"
+                                if i == 0:
+                                    row[rank_col] = gc
+                                else:
+                                    if best_val != 0:
+                                        pct = ((val - best_val) / best_val) * 100.0
+                                        row[rank_col] = f"{gc} ({pct:+.0f}%)"
+                                    else:
+                                        row[rank_col] = gc
+                            return row
+
+                        # Throughput
+                        try:
+                            tbl = get_throughput_table()
+                            cols = _visible_cols(tbl)
+                            df = dhpd.to_pandas(tbl.view(['benchmark_name'] + cols))
+                            gc_means = {_gc_name(c): _geo_mean(df, c) for c in cols}
+                            r = _rank_row(gc_means, settings_label, higher_is_better=True)
+                            if r:
+                                tput_rows.append(r)
+                        except Exception:
+                            pass
+
+                        # Jitter (lower is better)
+                        try:
+                            tbl = get_jitter_table()
+                            cols = _visible_cols(tbl)
+                            df = dhpd.to_pandas(tbl.view(['benchmark_name'] + cols))
+                            gc_means = {_gc_name(c): _geo_mean(df, c) for c in cols}
+                            r = _rank_row(gc_means, settings_label, higher_is_better=False)
+                            if r:
+                                jitter_rows.append(r)
+                        except Exception:
+                            pass
+
+                        # On-budget (higher is better, use mean)
+                        try:
+                            tbl = get_cycle_onbudget_table()
+                            cols = _visible_cols(tbl)
+                            df = dhpd.to_pandas(tbl.view(['benchmark_name'] + cols))
+                            gc_means = {_gc_name(c): float(df[c].dropna().mean()) for c in cols}
+                            r = _rank_row(gc_means, settings_label, higher_is_better=True)
+                            if r:
+                                budget_rows.append(r)
+                        except Exception:
+                            pass
+
+        def _build_table(rows, label):
+            if not rows:
+                return new_table([string_col("Settings", [f"No {label} data"])])
+            max_rank = max(len(r) - 1 for r in rows)
+            settings_vals = [r.get("Settings", "") for r in rows]
+            columns = [string_col("Settings", settings_vals)]
+            for i in range(max_rank):
+                columns.append(string_col(f"r{i+1}", [r.get(str(i+1), "") for r in rows]))
+            return new_table(columns)
+
+        t_tput = _build_table(tput_rows, "throughput")
+        t_jitter = _build_table(jitter_rows, "jitter")
+        t_budget = _build_table(budget_rows, "on-budget")
+        return t_tput, t_jitter, t_budget
+
+    tput_rank, jitter_rank, budget_rank = use_memo(compute_rankings, [])
+
+    return ui.flex(
+        ui.flex(
+            ui.heading("Throughput Rankings (GEO MEAN, higher is better)", level=4),
+            ui.table(tput_rank),
+            direction="column", flex_grow=1,
+        ),
+        ui.flex(
+            ui.heading("Jitter Rankings (GEO MEAN, lower is better)", level=4),
+            ui.table(jitter_rank),
+            direction="column", flex_grow=1,
+        ),
+        ui.flex(
+            ui.heading("On-Budget Rankings (MEAN, higher is better)", level=4),
+            ui.table(budget_rank),
+            direction="column", flex_grow=1,
+        ),
+        direction="column",
+        flex_grow=1,
+        gap="size-200",
+        UNSAFE_style={"height": "100%", "overflow": "auto"},
+    )
+
+@ui.component
+def gc_extras_dashboard():
+    import math
+    from deephaven import new_table
+    from deephaven.column import string_col, long_col, double_col
+
+    def compute_extras():
+        global actor, static_inc_filter, benchmark_filter, cycle_budget_ms, autotune_pct, jvm_version
+        global setid_filter, bench_result_sets, bench_results, bench_metrics, bench_events, gc_metrics
+
+        # Configurations to compare (all p100_j25)
+        configs = [
+            ("Static_1000", "Static", "1000"),
+            ("Inc_1000", "Inc", "1000"),
+            ("Inc_100", "Inc", "100"),
+        ]
+
+        import re as _re
+
+        def _strip_si(name):
+            """Remove Static/Inc from benchmark name to create a common key."""
+            name = _re.sub(r'(?i)\b(Static|Inc)\b', '', name)
+            name = _re.sub(r'_+', '_', name).strip('_')
+            name = _re.sub(r'\s*-\s*$', '', name)
+            return name
+
+        # Collect per-benchmark GEO MEAN throughput for each config
+        config_data = {}  # config_label -> {common_key: geo_mean_throughput}
+        for label, si, budget in configs:
+            static_inc_filter = si
+            benchmark_filter = "*"
+            cycle_budget_ms = int(budget)
+            autotune_pct = "100"
+            jvm_version = "25"
+            setid_filter = f'*_{budget}_p100_j25*'
+
+            rs = _raw_rs.sort(['set_id'])
+            br = _raw_br.sort(['set_id'])
+            bm = _raw_bm
+            be = _raw_be
+            rs, br, bm, be = [filter_benchmarks(t) for t in [rs, br, bm, be]]
+            bench_result_sets = rs
+            bench_results = br
+            bench_metrics = bm
+            bench_events = be
+            gc_metrics = rs.join(bm, ['benchmark_name','origin','set_id'], ['name','value']).sort(['set_id'])
+
+            try:
+                df = dhpd.to_pandas(
+                    bench_result_sets.view(['benchmark_name', 'op_rate'])
+                        .where(['!isNull(op_rate)', 'op_rate > 0'])
+                )
+                bench_means = {}
+                for bname, grp in df.groupby('benchmark_name'):
+                    key = _strip_si(bname)
+                    vals = grp['op_rate'].values.astype(float)
+                    if len(vals) > 0:
+                        bench_means[key] = float(np.exp(np.log(vals).mean()))
+                config_data[label] = bench_means
+            except Exception:
+                config_data[label] = {}
+
+        # Build table using common benchmark keys
+        baseline_label = "Static_1000"
+        baseline = config_data.get(baseline_label, {})
+        all_keys = sorted(baseline.keys())
+
+        if not all_keys:
+            return new_table([string_col("benchmark_name", ["No data"])])
+
+        bench_names = []
+        baseline_vals = []
+        inc_1000_vals = []
+        inc_100_vals = []
+
+        for key in all_keys:
+            base_val = baseline.get(key, float('nan'))
+            bench_names.append(key)
+            baseline_vals.append(base_val)
+
+            # Inc_1000 % diff
+            inc1000 = config_data.get("Inc_1000", {}).get(key, float('nan'))
+            if not math.isnan(base_val) and base_val > 0 and not math.isnan(inc1000):
+                inc_1000_vals.append(((inc1000 - base_val) / base_val) * 100.0)
+            else:
+                inc_1000_vals.append(float('nan'))
+
+            # Inc_100 % diff
+            inc100 = config_data.get("Inc_100", {}).get(key, float('nan'))
+            if not math.isnan(base_val) and base_val > 0 and not math.isnan(inc100):
+                inc_100_vals.append(((inc100 - base_val) / base_val) * 100.0)
+            else:
+                inc_100_vals.append(float('nan'))
+
+        t = new_table([
+            string_col("benchmark_name", bench_names),
+            long_col("Static_1000", [int(round(v)) if not math.isnan(v) else 0 for v in baseline_vals]),
+            double_col("Inc_1000", [round(v, 1) if not math.isnan(v) else float('nan') for v in inc_1000_vals]),
+            double_col("Inc_100", [round(v, 1) if not math.isnan(v) else float('nan') for v in inc_100_vals]),
+        ]).format_columns([
+            "Inc_1000 = Decimal(`0.0'%'`)",
+            "Inc_100 = Decimal(`0.0'%'`)",
+        ])
+        return t
+
+    extras_table = use_memo(compute_extras, [])
+
+    return ui.flex(
+        ui.flex(
+            ui.heading("Throughput Comparison — GEO MEAN across GCs (p100, j25)", level=4),
+            ui.table(extras_table),
+            direction="column", flex_grow=1,
+        ),
+        direction="column",
+        flex_grow=1,
+        gap="size-200",
+        UNSAFE_style={"height": "100%", "overflow": "auto"},
+    )
+
+gc_rankings = gc_rankings_dashboard()
+gc_bench_summary = gc_bench_summary_dashboard()
+gc_throughput = gc_throughput_dashboard()
+gc_extras = gc_extras_dashboard()
