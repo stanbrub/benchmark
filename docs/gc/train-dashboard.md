@@ -20,7 +20,7 @@ services:
 
 ## Running the Training Dashboard
 
-The following is a code snippet that runs the dashboard and data from the demo directory in the benchmarking GCloud bucket. It will cache the parquet files locally and use them to make the dashboards. (The "nfs" part is for detecting if we are running on a Deephaven Demo server, which doesn't have HTTP access.)
+The following is a code snippet that runs the dashboard and data from the demo directory in the benchmarking GCloud bucket. It will cache the parquet files locally and use them to make the dashboards. (The "nfs" part is for detecting if we are running on a Deephaven Demo server, which doesn't have HTTP access.) Copy the snippet into a DHC Python Code Studio.
 
 ```
 from urllib.request import urlopen; import os
