@@ -18,7 +18,7 @@ services:
       - "START_OPTS=-Xmx24G -Ddeephaven.console.type=python -DAuthHandlers=io.deephaven.auth.AnonymousAuthenticationHandler"
 ```
 
-## Running the Train Dashboard
+## Running the Training Dashboard
 
 The following is a code snippet that runs the dashboard and data from the demo directory in the benchmarking GCloud bucket. It will cache the parquet files locally and use them to make the dashboards. (The "nfs" part is for detecting if we are running on a Deephaven Demo server, which doesn't have HTTP access.)
 
