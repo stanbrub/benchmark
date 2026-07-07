@@ -12,12 +12,12 @@ Here are some highlights from the data:
 - For best Static throughput, use G1 or G1 THP. (Others degrade by 4% to 22%)
 - For best Ticking throughput, use G1, but expect higher jitter. (5% to 12% more jitter)
 - For lowest jitter, use Shenandoah, though lower throughput than G1. (9% to 15% less throughput)
-- For best 100ms cycle throughput-jitter combo, use Shenandoah THP (3rd-5th best throughput, best jitter)
-- For best 1sec cycle combo of throughput and jitter, use G1 THP (best throughput, 3rd best jitter)
+- For best 100ms cycle throughput-jitter compromise, use Shenandoah THP (3rd-5th best throughput, best jitter)
+- For best 1sec cycle throughput-jitter compromise, use G1 THP (best throughput, 3rd best jitter)
 
 ## The Benchmarks
 
-The benchmarks used for this effort are not the nightly benchmarks, which run single operations typically for 8-10 seconds. Instead a longer running and smaller benchmark set is used that covers categories of operations. This set typically runs for 1.5 to 2 mins, lazily reading from a large parquet file. The idea is to use few benchmarks to cover much of the operational code base. These are referred to as "Training Benchmarks".
+The benchmarks used for this effort are not the nightly benchmarks, which run single operations typically for 8 seconds. Instead a longer running and smaller benchmark set is used that covers categories of operations. This set typically runs for 1.5 to 2 mins, lazily reading from a large parquet file. The idea is to use few benchmarks to cover much of the operational code base. These are referred to as "Training Benchmarks".
 
 - AggBy: Runs multiple mathematical operations like avg, std, var, min, max, etc
 - Filter: Runs `where_in` and `where` filters
@@ -148,4 +148,5 @@ In order to improve investigations like this one, we need much more information 
 - Java heap and CPU thread count typically used
 - Where the data typically comes from. DHE live tables? Kafka? Parquet?
 - What JVM options have already been tried in the field?
+- What queries are running all day vs frequent/short on a schedule
 
