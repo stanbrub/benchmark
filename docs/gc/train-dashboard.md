@@ -4,7 +4,7 @@ The training dashboard can be used to view the data collected from the GC effort
 
 ## Docker Compose Setup
 
-The following is an example docker compose file.
+The following is an example `docker-compose.yml` file.
 ```
 services:
   deephaven:
