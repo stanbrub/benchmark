@@ -4,9 +4,6 @@
 # - Reads a .props config from .github/matrix/ that defines common values and matrix axes
 # - Generates all combinations and calls remote-benchmarks.yml for each
 # - Continues on failure (fail-fast: false)
-#
-# NOTE: This workflow must be merged to the default branch (main) before it will
-# appear in the GitHub Actions UI under "Run workflow".
 
 name: Matrix Benchmarks (Existing Server)
 

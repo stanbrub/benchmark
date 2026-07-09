@@ -1,0 +1,12 @@
+# Example: Compare GC configurations across the same workload
+# Common values: key=value
+# Matrix axes: key=val1|val2|val3 (pipe-separated, generates all combinations)
+# scale_row_count is in millions (auto-scaled to actual)
+
+docker_image=edge
+test_package=io.deephaven.benchmark.tests.standard
+test_class_list=Where,Avg*
+test_iterations=1
+scale_row_count=10
+distribution=random
+config_options=-Xmx24g|-Xmx24g -XX:+UseZGC|-Xmx24g -XX:+UseShenandoahGC
