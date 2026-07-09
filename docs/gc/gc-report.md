@@ -150,3 +150,8 @@ In order to improve investigations like this one, we need much more information 
 - What JVM options have already been tried in the field?
 - What queries are running all day vs frequent/short on a schedule
 
+
+- Get some Tail information
+- Run benchmarks with smaller heaps until failed then 25% of that
+  - G1 and Shenandoah
+- Try collecting PyObjects
