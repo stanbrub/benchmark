@@ -8,6 +8,7 @@ set -o pipefail
 # Clear all build artifacts and data on the remote server to prepare for a fresh setup
 
 GIT_DIR=${HOME}/git
+RUN_DIR=${HOME}/run
 DEEPHAVEN_DIR=${HOME}/deephaven
 
 title () { echo; echo $1; }
@@ -27,6 +28,9 @@ if command -v docker &>/dev/null; then
   title "-- Pruning Docker Volumes --"
   sudo docker system prune --volumes --force
 fi
+
+title "-- Removing Run Directory --"
+sudo rm -rf ${RUN_DIR}
 
 title "-- Removing Deephaven Directory --"
 sudo rm -rf ${DEEPHAVEN_DIR}

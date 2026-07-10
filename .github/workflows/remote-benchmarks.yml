@@ -76,10 +76,10 @@ jobs:
         sudo chmod +x ${SD}/*
         ${SD}/setup-ssh-local.sh ${HOST} "${{secrets.BENCHMARK_KEY}}"
 
-    - name: Clear Remote Server
+    - name: Clear Remote Test Server
       if: ${{ env.RUN_TYPE != 'adhoc' }}
       run: |
-        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-server-remote
+        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-test-server-remote
 
     - name: Run Remote Test Server Setup
       run: |

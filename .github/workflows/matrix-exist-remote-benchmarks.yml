@@ -43,7 +43,7 @@ jobs:
       run: |
         sudo chmod +x ${SD}/*
         ${SD}/setup-ssh-local.sh ${HOST} "${{ secrets.BENCHMARK_KEY }}"
-        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-server-remote
+        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-test-server-remote
 
   run-benchmarks:
     needs: [generate-matrix, clear-server]
