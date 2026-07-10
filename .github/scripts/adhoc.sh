@@ -27,6 +27,7 @@ rm -f ${OUTPUT_NAME}; touch ${OUTPUT_NAME}
 # Get the label part of an image/branch name
 # ex. edge@sha256:15ab331629805076cdf5ed6666186c6b578298ab493a980779338d153214640e
 # ex. user123:1111-my-pull-request
+# ex. ghcr.io/stanbrub/server:jvm25
 # ex. 0.36.0 or edge
 getSetLabel() {
   PREFIX="$1"
@@ -53,11 +54,11 @@ deleteMetal() {
     RESP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: Bearer ${TOKEN}" "https://api.phoenixnap.com/bmc/v1/servers/${DEVICE_ID}")
     CURL_EXIT=$?
     if (( ${CURL_EXIT} != 0 )); then
-        echo "Failed deleting server ${DEVICE_NAME} with exit code ${CURL_EXIT}"
+        echo "::error::Failed deleting server ${DEVICE_NAME} with exit code ${CURL_EXIT}"
         exit 1
     fi
     if (( ${RESP_CODE} != 404 && (${RESP_CODE} < 200 || ${RESP_CODE} >= 300) )); then
-        echo "Failed deleting server ${DEVICE_NAME} with http code ${RESP_CODE}"
+        echo "::error::Failed deleting server ${DEVICE_NAME} with http code ${RESP_CODE}"
         exit 1
     fi
     echo "Successfully deleted server ${DEVICE_NAME}"
@@ -121,7 +122,7 @@ if [[ ${ACTION} == "deploy-metal" ]]; then
   IP_ADDRESS=$(jq -r '.publicIpAddresses[0] // empty' <<< "${RESPONSE}")
   DEVICE_ID=$(jq -r '.id // empty' <<< "${RESPONSE}")
   if [[ -z "$IP_ADDRESS" || -z "$DEVICE_ID" ]]; then
-    echo "Failed Getting IP Address and Device ID"
+    echo "::error::Failed Getting IP Address and Device ID"
     exit 1
   else
     echo "Got Address ${IP_ADDRESS} and Device Id ${DEVICE_ID}"
@@ -144,7 +145,7 @@ if [[ ${ACTION} == "deploy-metal" ]]; then
   
   DURATION=$(($(date +%s) - ${BEGIN_SECS}))
   if [[ ${STATUS} -eq 0 ]]; then
-    echo "Failed to provision device ${ACTOR} after ${DURATION} seconds"
+    echo "::error::Failed to provision device ${ACTOR} after ${DURATION} seconds"
     echo "Last provision attempt status: ${SERVER_STATUS}"
     exit 1
   fi

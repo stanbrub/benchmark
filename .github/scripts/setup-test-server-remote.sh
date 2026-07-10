@@ -40,7 +40,7 @@ done
 
 DURATION=$(($(date +%s) - ${BEGIN_SECS}))
 if [[ $STATUS -eq 0 ]]; then
-  echo "Failed to gain APT lock after ${DURATION} seconds"
+  echo "::error::Failed to gain APT lock after ${DURATION} seconds"
   exit 1
 fi
 
@@ -109,30 +109,16 @@ else
   sudo usermod -aG docker ${USER}
 fi
 
-title "-- Removing Git Benchmark Repositories --"
-sudo rm -rf ${GIT_DIR}
-mkdir -p ${GIT_DIR}
-
-title "-- Clone Git Benchmark Repository ${GIT_REPO} --"
-cd ${GIT_DIR}
-git clone https://github.com/${GIT_REPO}.git
-cd benchmark
-
-title "-- Clone Git Benchmark Branch ${GIT_BRANCH} --"
+title "-- Setting Up Git Benchmark Repository --"
+if [ ! -d "${GIT_DIR}/benchmark" ]; then
+  mkdir -p ${GIT_DIR}
+  cd ${GIT_DIR}
+  git clone https://github.com/${GIT_REPO}.git
+fi
+cd ${GIT_DIR}/benchmark
+git fetch origin
 git checkout ${GIT_BRANCH}
-
-title "-- Stopping Docker Containers --"
-sudo docker ps -q | xargs --no-run-if-empty -n 1 sudo docker kill
-
-title "-- Removing Docker Containers --"
-sudo docker ps -a -q | xargs --no-run-if-empty -n 1 sudo docker rm --force
-
-title "-- Removing Docker Images --"
-sudo docker images -a -q | xargs --no-run-if-empty -n 1 sudo docker rmi --force
-
-title "-- Pruning Docker Volumes --"
-sudo docker system prune --volumes --force
-sudo rm -rf ${DEEPHAVEN_DIR}
+git pull origin ${GIT_BRANCH} 2>/dev/null || true
 
 title "-- Staging Docker Resources --"
 mkdir -p ${DEEPHAVEN_DIR}/data

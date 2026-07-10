@@ -39,8 +39,7 @@ final public class StandardTestRunner {
     private int incFactor = 1;
     private boolean useCachedSource = true;
     private boolean useLocalParquet = false;
-    private float incCycleFactor = 1.0f;
-    private long incReleaseRowCount = 1000000;
+    private float incLoadTarget = 1.0f;
 
     public StandardTestRunner(Object testInst) {
         this.testInst = testInst;
@@ -185,12 +184,10 @@ final public class StandardTestRunner {
      * Set the incremental release filter to use for the incremental test. By default, this is an auto-tuning release
      * filter with a target cycle factor of 1.0f.
      * 
-     * @param cycleFactor if isAutoTune is true, the target cycle factor, otherwise ignored
-     * @param releaseRowsCount if isAutoTune is true, ignored, otherwise the number of rows to release per cycle
+     * @param cycleFactor the autotune load target to use
      */
-    public void setIncReleaseFilter(float cycleFactor, long releaseRowCount) {
-        this.incCycleFactor = cycleFactor;
-        this.incReleaseRowCount = releaseRowCount;
+    public void setIncLoadTarget(float loadTarget) {
+        this.incLoadTarget = loadTarget;
     }
 
     /**
@@ -325,15 +322,11 @@ final public class StandardTestRunner {
         loaded_tbl_size = ${mainTable}.size
         ${setupQueries}
         
-        isat = System.getProperty('train.autotune', 'true').lower() == 'true' or ${incReleaseRowCount} <= 0
-        filter_name = 'AutoTuningIncrementalReleaseFilter' if isat else 'IncrementalReleaseFilter'
-        autotune = jpy.get_type(f'io.deephaven.engine.table.impl.select.{filter_name}')
-        print("******* ISAT:",isat, "FILTER:", filter_name)
-        
-        source_filter = autotune(0,1000000,${incCycleFactor},True) if isat else autotune(0,${incReleaseRowCount})
+        autotune = jpy.get_type(f'io.deephaven.engine.table.impl.select.AutoTuningIncrementalReleaseFilter')
+        source_filter = autotune(0,1000000,${incLoadTarget},True)
         ${mainTable} = ${mainTable}.where(source_filter)
         if right: 
-            right_filter = autotune(0,1010000,${incCycleFactor},True) if isat else autotune(0,${incReleaseRowCount})
+            right_filter = autotune(0,1010000,${incLoadTarget},True)
             right = right.where(right_filter)
         
         ${preOpQueries}
@@ -383,8 +376,7 @@ final public class StandardTestRunner {
         query = query.replace("${teardownQueries}", String.join("\n", teardownQueries));
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
-        query = query.replace("${incCycleFactor}", "" + incCycleFactor);
-        query = query.replace("${incReleaseRowCount}", "" + incReleaseRowCount);
+        query = query.replace("${incLoadTarget}", "" + incLoadTarget);
         query = query.replace("${mainTable}", mainTable);
         return query;
     }

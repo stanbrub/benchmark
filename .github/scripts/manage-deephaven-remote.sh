@@ -37,18 +37,14 @@ fi
 echo "CONFIG_OPTS=${CONFIG_OPTS}" > .env
 echo "ENV_DEEPHAVEN_HOST_OS_DIR=${DEEPHAVEN_DIR}" >> .env
 
-IS_BRANCH="false"
-if [[ ${DOCKER_IMG} == *"@sha"*":"* ]]; then
-  IS_BRANCH="false"
+if [[ ${DOCKER_IMG} == ghcr.io/* ]]; then
+  echo "DOCKER_IMG=${DOCKER_IMG}" >> .env
+  docker compose pull
 elif [[ ${DOCKER_IMG} == *":"* ]]; then
-  IS_BRANCH="true"
-fi
-
-if [[ ${IS_BRANCH} == "false" ]]; then
+  echo "DOCKER_IMG=deephaven/server:benchmark-local" >> .env
+else
   echo "DOCKER_IMG=ghcr.io/deephaven/server:${DOCKER_IMG}" >> .env
   docker compose pull
-else 
-  echo "DOCKER_IMG=deephaven/server:benchmark-local" >> .env
 fi
 
 if [[ ${DIRECTIVE} == 'start' ]]; then

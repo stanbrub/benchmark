@@ -1,8 +1,8 @@
 # Copyright (c) 2026-2026 Deephaven Data Labs and Patent Pending
 
 # Run benchmark combinations on an already provisioned system using a matrix config file
-# - Reads a .props config from .github/matrix/ that defines common values and matrix axes
-# - Generates all combinations and calls remote-benchmarks.yml for each
+# - Runs a script from .github/matrix/ that outputs TSV (header + data rows)
+# - Converts TSV to matrix combinations and calls remote-benchmarks.yml for each
 # - Continues on failure (fail-fast: false)
 
 name: Matrix Benchmarks (Existing Server)
@@ -11,14 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       matrix_file:
-        description: 'Matrix config file name from .github/matrix/ (e.g. gc-comparison.props)'
+        description: 'Matrix Profile'
         required: true
-        type: string
-      max_combinations:
-        description: 'Max allowed combinations (safety limit)'
-        required: true
-        default: '50'
-        type: string
+        type: choice
+        options:
+        - gc-train-1000-100.sh
+        - gc-train-heap-fail.sh
 
 jobs:
   generate-matrix:
@@ -31,12 +29,24 @@ jobs:
     - name: Build Matrix Combinations
       id: build-matrix
       run: |
-        .github/scripts/build-matrix.sh \
-          ".github/matrix/${{ inputs.matrix_file }}" \
-          "${{ inputs.max_combinations }}"
+        .github/scripts/build-matrix.sh ".github/matrix/${{ inputs.matrix_file }}"
+
+  clear-server:
+    runs-on: ubuntu-24.04
+    env:
+      SD: .github/scripts
+      HOST: ${{ secrets.BENCHMARK_HOST }}
+      USER: ${{ secrets.BENCHMARK_USER }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Clear Remote Server
+      run: |
+        sudo chmod +x ${SD}/*
+        ${SD}/setup-ssh-local.sh ${HOST} "${{ secrets.BENCHMARK_KEY }}"
+        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-server-remote
 
   run-benchmarks:
-    needs: generate-matrix
+    needs: [generate-matrix, clear-server]
     strategy:
       fail-fast: false
       max-parallel: 1

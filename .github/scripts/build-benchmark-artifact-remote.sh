@@ -21,6 +21,11 @@ fi
 
 title () { echo; echo $1; }
 
+if [ -f "${RUN_DIR}/standard-tests.jar" ]; then
+  echo "Benchmark artifact already built. Skipping."
+  exit 0
+fi
+
 title "- Building Remote Benchmark Artifact on ${HOST} -"
 
 title "-- Building and Verifying --"

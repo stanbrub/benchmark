@@ -14,15 +14,16 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
  * versions and GC types.
  */
 final public class TrainTestRunner {
+    static public final int cycleMillis =
+            Integer.valueOf(System.getProperty("PeriodicUpdateGraph.targetCycleDurationMillis", "1000"));
+    static final float incLoadTarget = Float.valueOf(System.getProperty("train.incLoadTarget", "1.0"));
+    static final String staticInc = String.valueOf(System.getProperty("train.staticInc", "Static+Inc"));
     static final int maxRowFactor = 620;
-    static final float incCycleFactor = 0.90f;
-    static final double incReleaseFactor = 1.0f;
     final Object testInst;
     final List<String> setupQueries = new ArrayList<>();
     final List<String> teardownQueries = new ArrayList<>();
     private double staticRowFactor = 1;
     private double incRowFactor = 1;
-    private long incReleaseRowCount = 0;
     private String[] tableNames = null;
 
     TrainTestRunner(Object testInst) {
@@ -32,17 +33,13 @@ final public class TrainTestRunner {
     public void tables(double staticRowFactor, double incRowFactor, String... names) {
         if (Math.max(staticRowFactor, incRowFactor) > maxRowFactor)
             throw new IllegalArgumentException("Row factors cannot be greater than " + maxRowFactor);
-        this.staticRowFactor = 0;  // staticRowFactor;
-        this.incRowFactor = incRowFactor;
+        this.staticRowFactor = staticInc.contains("Static") ? staticRowFactor : 0;
+        this.incRowFactor = staticInc.contains("Inc") ? incRowFactor : 0;
         tableNames = names;
     }
 
     public void addSetupQuery(String query) {
         setupQueries.add(query);
-    }
-
-    public void setIncReleaseRowCount(long incReleaseRowCount) {
-        this.incReleaseRowCount = incReleaseRowCount;
     }
 
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
@@ -72,12 +69,12 @@ final public class TrainTestRunner {
         delegate.setRowFactor(maxRowFactor);
         delegate.tables(tableNames);
         delegate.setScaleFactors(isStatic ? 1 : 0, isStatic ? 0 : 1);
-        delegate.setIncReleaseFilter(incCycleFactor, (long) (incReleaseRowCount * incReleaseFactor));
+        delegate.setIncLoadTarget(incLoadTarget);
 
         var headQuery = """
         ${mainTable} = ${mainTable}.head(${trainRowCount})
         loaded_tbl_size = ${mainTable}.size
-        """.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * rowFactor * incReleaseFactor)));
+        """.replace("${trainRowCount}", String.valueOf((long) (baseRowCount * rowFactor)));
 
         delegate.addSetupQuery(headQuery);
         setupQueries.forEach(delegate::addSetupQuery);

@@ -26,14 +26,6 @@ public class OrderedTrainTest {
     }
 
     @Test
-    @Disabled
-    void ordered0Groups() {
-        setup(145, 18);
-        var q = "timed.agg_by(aggs)";
-        runner.test("Ordered- No Groups", 100, q, "key3", "key4", "num1", "num2");
-    }
-
-    @Test
     void ordered2Groups() {
         setup(30, 5.7);
         var q = "timed.agg_by(aggs, by=['key1', 'key2'])";

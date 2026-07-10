@@ -34,18 +34,5 @@ public class FormulaTrainTest {
         var q = "timed.view(['New1 = (float)((num2 + num1) / 2)', 'New2 = (float)(num1 + num2)']).sum_by()";
         runner.test("Formula- Inline 2 Calcs", 1, q, "num1", "num2");
     }
-    
-    @Test
-    @Disabled
-    void formulaDate() {
-        setup(3, 3);
-        var q = """
-        timed.view([
-            'New1 = parseDuration(`PT4H52M14S`).toHours()', 
-            'New1 = parseInstant(`2023-05-31T04:52:14.001 ET`).getEpochSecond()'
-        ]).sum_by()
-        """;
-        runner.test("Formula- Inline 2 Dates", 1, q, "num1", "num2");
-    }
 
 }

@@ -25,6 +25,11 @@ fi
 
 title () { echo; echo $1; }
 
+if docker image inspect deephaven/server:benchmark-local &>/dev/null 2>&1; then
+  echo "Docker image already built. Skipping."
+  exit 0
+fi
+
 title "- Setting up Remote Docker Image on ${HOST} -"
 
 title "-- Building Deephaven Docker Image --"

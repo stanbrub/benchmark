@@ -28,6 +28,12 @@ fi
 
 title () { echo; echo $1; }
 
+DEEPHAVEN_VERSION_FILE=${GIT_DIR}/deephaven-core/build/version
+if [ -f "${DEEPHAVEN_VERSION_FILE}" ]; then
+  echo "Server distribution already built. Skipping."
+  exit 0
+fi
+
 OWNER=$(sed 's/'"${BRANCH_DELIM}"'.*//g' <<< "${DOCKER_IMG}")
 BRANCH_NAME=$(sed 's/.*'"${BRANCH_DELIM}"'//g' <<< "${DOCKER_IMG}")
 echo "OWNER: ${OWNER}"
@@ -35,16 +41,19 @@ echo "BRANCH: ${BRANCH_NAME}"
 
 title "-- Cloning deephaven-core --"
 cd ${GIT_DIR}
-rm -rf deephaven-core
-# Do not use --single-branch here, because it does not allow checkout by commit hash 
-git clone https://github.com/${OWNER}/deephaven-core.git
+if [ ! -d "deephaven-core" ]; then
+  # Do not use --single-branch here, because it does not allow checkout by commit hash 
+  git clone https://github.com/${OWNER}/deephaven-core.git
+fi
 cd deephaven-core
+git fetch origin
 git checkout ${BRANCH_NAME}
 
 title "-- Cloning deephaven-server-docker --"
 cd ${GIT_DIR}
-rm -rf deephaven-server-docker
-git clone -b main --single-branch https://github.com/deephaven/deephaven-server-docker.git
+if [ ! -d "deephaven-server-docker" ]; then
+  git clone -b main --single-branch https://github.com/deephaven/deephaven-server-docker.git
+fi
 
 title "-- Assembling Python Deephaven Core Server --"
 cd ${GIT_DIR}/deephaven-core
