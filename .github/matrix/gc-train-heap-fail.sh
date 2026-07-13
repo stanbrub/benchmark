@@ -13,7 +13,7 @@ MAX_HEAP=48
 MIN_HEAP=16
 
 BASE="-XX:+UseStringDeduplication -XX:+UseCompactObjectHeaders -DServerStateTracker.reportIntervalMillis=1000"
-CYCLE="-DPeriodicUpdateGraph.targetCycleDurationMillis=1000 -Dtrain.incLoadTarget=1.00 -Dtrain.staticInc Static+Inc"
+CYCLE="-DPeriodicUpdateGraph.targetCycleDurationMillis=1000 -Dtrain.incLoadTarget=1.00 -Dtrain.staticInc=Static+Inc"
 
 declare -A GCS=(
   [g1gc]="-XX:+UseG1GC"

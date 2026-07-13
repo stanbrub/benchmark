@@ -22,7 +22,7 @@ R="$IMG\t$PKG\t$CLS\t$ITERS\t$ROWS\t$DIST"
 
 # emit <label> <gc> <cycle_ms> <inc_cycle_factor> — outputs regular and _huge variants
 run() {
-  local opts="$2 $BASE -DPeriodicUpdateGraph.targetCycleDurationMillis=$3 -Dtrain.incLoadTarget=$4 -Dtrain.staticInc $5"
+  local opts="$2 $BASE -DPeriodicUpdateGraph.targetCycleDurationMillis=$3 -Dtrain.incLoadTarget=$4 -Dtrain.staticInc=$5"
   echo -e "$1\t$R\t$opts"
   echo -e "${1}_huge\t$R\t$opts $HUGE"
 }
