@@ -7,7 +7,7 @@ IMG=ghcr.io/stanbrub/server:jvm25
 PKG=io.deephaven.benchmark.tests.train
 CLS='*Train'
 ITERS=1
-ROWS=100000
+ROWSM=1
 DIST=random
 
 BASE="-Xms48g -Xmx48g -XX:+UseStringDeduplication -XX:+UseCompactObjectHeaders -DServerStateTracker.reportIntervalMillis=1000"
@@ -18,7 +18,7 @@ ZGC="-XX:-UseG1GC -XX:+UseZGC"
 SHEN="-XX:-UseG1GC -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational"
 PARA="-XX:-UseG1GC -XX:+UseParallelGC"
 
-R="$IMG\t$PKG\t$CLS\t$ITERS\t$ROWS\t$DIST"
+R="$IMG\t$PKG\t$CLS\t$ITERS\t$ROWSM\t$DIST"
 
 # emit <label> <gc> <cycle_ms> <inc_cycle_factor> — outputs regular and _huge variants
 run() {

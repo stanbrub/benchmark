@@ -7,7 +7,7 @@ IMG=ghcr.io/stanbrub/server:jvm25
 PKG=io.deephaven.benchmark.tests.train
 CLS='*Train'
 ITERS=1
-ROWS=100000
+ROWSM=1
 DIST=random
 MAX_HEAP=48
 MIN_HEAP=16
@@ -23,9 +23,9 @@ declare -A GCS=(
 )
 
 for gc in g1gc zgc shen para; do
-  for h in $(seq ${MAX_HEAP} -1 ${MIN_HEAP}); do
+  for h in $(seq ${MAX_HEAP} -2 ${MIN_HEAP}); do
     opts="${GCS[$gc]} -Xms${h}g -Xmx${h}g $BASE $CYCLE"
-    echo -e "gc_${gc}_1000_h${h}_j25\t$IMG\t$PKG\t$CLS\t$ITERS\t$ROWS\t$DIST\t$opts"
+    echo -e "gc_${gc}_1000_h${h}_j25\t$IMG\t$PKG\t$CLS\t$ITERS\t$ROWSM\t$DIST\t$opts"
   done
 done
 
