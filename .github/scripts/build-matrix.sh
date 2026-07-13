@@ -54,6 +54,8 @@ echo "Matrix combinations: ${COUNT}"
 MATRIX_OUT=$(echo "$RESULT" | jq -c .)
 if [[ -n "$GITHUB_OUTPUT" ]]; then
   echo "matrix=${MATRIX_OUT}" >> "$GITHUB_OUTPUT"
+  echo "combo_count=${COUNT}" >> "$GITHUB_OUTPUT"
+  echo "### Matrix: ${COUNT} combinations" >> "$GITHUB_STEP_SUMMARY"
 else
   echo "matrix=${MATRIX_OUT}"
 fi

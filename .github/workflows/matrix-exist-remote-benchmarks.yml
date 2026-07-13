@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.build-matrix.outputs.matrix }}
+      combo_count: ${{ steps.build-matrix.outputs.combo_count }}
     steps:
     - uses: actions/checkout@v4
 
