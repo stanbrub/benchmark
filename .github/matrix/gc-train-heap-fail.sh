@@ -1,7 +1,7 @@
 # Sweep heap size from 48g to 4g to find failure points per GC and test class
 # TSV columns: run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
-EXPECTED_COMBOS=132
+EXPECTED_COMBOS=68
 
 IMG=ghcr.io/stanbrub/server:jvm25
 PKG=io.deephaven.benchmark.tests.train
