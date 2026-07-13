@@ -44,7 +44,7 @@ RESULT=$(echo "$TSV" | jq -Rsc '
 ')
 
 COUNT=$(echo "$RESULT" | jq 'length')
-EXPECTED=$(grep -m1 '^EXPECTED_COMBOS=' "$FILE" | cut -d= -f2)
+EXPECTED=$(grep -m1 '^EXPECTED_COMBOS=' "$FILE" | cut -d= -f2 || true)
 
 if [[ -n "$EXPECTED" && "$COUNT" -ne "$EXPECTED" ]]; then
   echo "::error::Expected ${EXPECTED} combinations but got ${COUNT}. Update EXPECTED_COMBOS in ${FILE}."; exit 1
