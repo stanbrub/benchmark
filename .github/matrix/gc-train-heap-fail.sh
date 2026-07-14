@@ -5,7 +5,7 @@
 IMG=ghcr.io/stanbrub/server:jvm25
 PKG=io.deephaven.benchmark.tests.train
 ITERS=1
-ROWSM=1
+ROWSM=10
 DIST=random
 STEP=4
 MODE=Static  # Static+Inc
