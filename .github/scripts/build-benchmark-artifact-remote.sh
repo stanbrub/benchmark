@@ -21,6 +21,8 @@ fi
 
 title () { echo; echo $1; }
 
+rm -rf ${RUN_DIR}/results ${RUN_DIR}/logs
+
 if [ -f "${RUN_DIR}/standard-tests.jar" ]; then
   echo "Benchmark artifact already built. Skipping."
   exit 0
