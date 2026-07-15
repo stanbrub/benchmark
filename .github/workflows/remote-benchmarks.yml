@@ -185,6 +185,7 @@ jobs:
         path: ${{env.RUN_TYPE}}
         destination: deephaven-benchmark
         process_gcloudignore: false
+        gzip: false
     - name: Publish Slack Notification Tables
       if: ${{ env.RUN_TYPE != 'adhoc' }}
       run: |
