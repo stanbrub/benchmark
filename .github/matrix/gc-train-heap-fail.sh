@@ -42,8 +42,8 @@ COMBOS=(				# Failure Success
   "OrderedTrain      shen    4   6"	#      2G      3G
   "OrderedTrain      para    4   6"	#      2G      3G
   "UpdateByTrain     g1gc   16  18"	#     14G     15G
-  "UpdateByTrain     zgc    16  18"	#     15G     16G
-  "UpdateByTrain     shen   18  19"	#     16G     17G
+  "UpdateByTrain     zgc    17  19"	#     15G     16G
+  "UpdateByTrain     shen   18  20"	#     16G     17G
   "UpdateByTrain     para   21  23"	#     19G     20G
 )
 
