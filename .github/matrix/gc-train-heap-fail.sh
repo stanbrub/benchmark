@@ -23,7 +23,7 @@ declare -A GCS=(
 COMBOS=(				# Failure Success
 #  "FilterTrain       g1gc  21  21"	#     20G     21G
 #  "FilterTrain       zgc     2  2"	#      1G      2G
-#  "FilterTrain      shen   15  15"	#     14G     15G
+  "FilterTrain      shen   15  16"	#     14G     15G
 #  "FilterTrain       para    4  4"	#      3G      4G
 #  "FormulaTrain      g1gc    1  1"	#              1G
 #  "FormulaTrain      zgc     1  1"	#              1G
@@ -35,7 +35,7 @@ COMBOS=(				# Failure Success
 #  "NaturalJoinTrain  para  20  20"	#     19G     20G
 #  "AggByTrain        g1gc    1  1"	#              1G
 #  "AggByTrain        zgc     1  1"	#              1G
-  "AggByTrain        shen    4  4"	#      3G      4G
+#  "AggByTrain        shen    4  4"	#      3G      4G
 #  "AggByTrain        para  17  17"	#     16G     17G
 #  "OrderedTrain      g1gc    3  3"	#      2G      3G
 #  "OrderedTrain      zgc     3  3"	#      2G      3G
