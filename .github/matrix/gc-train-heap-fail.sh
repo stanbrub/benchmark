@@ -35,7 +35,7 @@ COMBOS=(				# Failure Success
 #  "NaturalJoinTrain  para  20  20"	#     19G     20G
 #  "AggByTrain        g1gc    1  1"	#              1G
 #  "AggByTrain        zgc     1  1"	#              1G
-  "AggByTrain        shen    3  3"	#      2G      3G
+  "AggByTrain        shen    4  4"	#      3G      4G
 #  "AggByTrain        para  17  17"	#     16G     17G
 #  "OrderedTrain      g1gc    3  3"	#      2G      3G
 #  "OrderedTrain      zgc     3  3"	#      2G      3G
