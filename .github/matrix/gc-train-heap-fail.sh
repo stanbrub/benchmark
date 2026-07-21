@@ -8,10 +8,9 @@ ITERS=1
 ROWSM=10
 DIST=random
 STEP=1
-MODE=Static  # Static+Inc
 
 BASE="-XX:+AlwaysPreTouch -XX:+UseTransparentHugePages -XX:+UseStringDeduplication -XX:+UseCompactObjectHeaders -DServerStateTracker.reportIntervalMillis=1000"
-CYCLE="-DPeriodicUpdateGraph.targetCycleDurationMillis=1000 -Dtrain.incLoadTarget=1.00 -Dtrain.staticInc=${MODE}"
+CYCLE="-DPeriodicUpdateGraph.targetCycleDurationMillis=1000 -Dtrain.incLoadTarget=1.00"
 
 declare -A GCS=(
   [g1gc]="-XX:+UseG1GC"
