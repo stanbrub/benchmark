@@ -34,8 +34,7 @@ public class UpdateByTrainTest {
 
     @Test
     void rollingCombo2Groups() {
-        if(TrainTestRunner.cycleMillis <= 200) setup(9, 0.2);
-        else setup(9, 4.5);
+        setup(9, 4.5);  // setup(9, 0.2);  // Use for short cycle (<=200ms)
         runner.addSetupQuery(group10K);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1','key2'])

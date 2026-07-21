@@ -84,6 +84,7 @@ class Snippets {
         from deephaven import new_table
         from deephaven.column import string_col, long_col, double_col
         System = jpy.get_type('java.lang.System')
+        bench_inc_load_target = float(System.getProperty('bench.incLoadTarget', '1.0'))
         def bench_api_metrics_init():
             global bench_api_metrics, standard_events
             bench_api_metrics = []

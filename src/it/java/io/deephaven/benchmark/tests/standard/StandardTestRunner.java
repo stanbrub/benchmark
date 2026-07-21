@@ -39,7 +39,6 @@ final public class StandardTestRunner {
     private int incFactor = 1;
     private boolean useCachedSource = true;
     private boolean useLocalParquet = false;
-    private float incLoadTarget = 1.0f;
 
     public StandardTestRunner(Object testInst) {
         this.testInst = testInst;
@@ -181,16 +180,6 @@ final public class StandardTestRunner {
     }
 
     /**
-     * Set the incremental release filter to use for the incremental test. By default, this is an auto-tuning release
-     * filter with a target cycle factor of 1.0f.
-     * 
-     * @param cycleFactor the autotune load target to use
-     */
-    public void setIncLoadTarget(float loadTarget) {
-        this.incLoadTarget = loadTarget;
-    }
-
-    /**
      * Run a single operation test through the Bench API with no upper bound expected on the resulting row count
      * 
      * @see #test(String, long, String, String...)
@@ -323,10 +312,10 @@ final public class StandardTestRunner {
         ${setupQueries}
         
         autotune = jpy.get_type(f'io.deephaven.engine.table.impl.select.AutoTuningIncrementalReleaseFilter')
-        source_filter = autotune(0,1000000,${incLoadTarget},True)
+        source_filter = autotune(0,1000000,bench_inc_load_target,True)
         ${mainTable} = ${mainTable}.where(source_filter)
         if right: 
-            right_filter = autotune(0,1010000,${incLoadTarget},True)
+            right_filter = autotune(0,1010000,bench_inc_load_target,True)
             right = right.where(right_filter)
         
         ${preOpQueries}
@@ -376,7 +365,6 @@ final public class StandardTestRunner {
         query = query.replace("${teardownQueries}", String.join("\n", teardownQueries));
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
-        query = query.replace("${incLoadTarget}", "" + incLoadTarget);
         query = query.replace("${mainTable}", mainTable);
         return query;
     }
