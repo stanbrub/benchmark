@@ -36,7 +36,7 @@ COMBOS=(				# Failure Success
 #  "NaturalJoinTrain  para  20  20"	#     19G     20G
 #  "AggByTrain        g1gc    1  1"	#              1G
 #  "AggByTrain        zgc     1  1"	#              1G
-#  "AggByTrain        shen    3  3"	#      2G      3G
+  "AggByTrain        shen    3  3"	#      2G      3G
 #  "AggByTrain        para  17  17"	#     16G     17G
 #  "OrderedTrain      g1gc    3  3"	#      2G      3G
 #  "OrderedTrain      zgc     3  3"	#      2G      3G
@@ -45,7 +45,7 @@ COMBOS=(				# Failure Success
 #  "UpdateByTrain     g1gc  15  15"	#     14G     15G
 #  "UpdateByTrain     zgc   16  16"	#     15G     16G
 #  "UpdateByTrain     shen  17  17"	#     16G     17G
-  "UpdateByTrain     para  20  20"	#     19G     20G
+#  "UpdateByTrain     para  20  20"	#     19G     20G
 )
 
 for combo in "${COMBOS[@]}"; do
