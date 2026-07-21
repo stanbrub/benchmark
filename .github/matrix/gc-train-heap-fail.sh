@@ -22,30 +22,30 @@ declare -A GCS=(
 
 # Per-class, per-GC heap ranges: "class  gc  min  max"
 COMBOS=(				# Failure Success
-  "FilterTrain       g1gc  21  21"	#     20G     21G
-  "FilterTrain       zgc     2  2"	#      1G      2G
-  "FilterTrain      shen   14  14"	#     13G     14G
-  "FilterTrain       para    4  4"	#      3G      4G
-  "FormulaTrain      g1gc    1  1"	#              1G
-  "FormulaTrain      zgc     1  1"	#              1G
-  "FormulaTrain      shen    4  4"	#      3G      4G
-  "FormulaTrain      para    1  1"	#              1G
-  "NaturalJoinTrain  g1gc  17  17"	#     16G     17G
-  "NaturalJoinTrain  zgc   16  16"	#     15G     16G
-  "NaturalJoinTrain  shen  18  18"	#     17G     18G
-  "NaturalJoinTrain  para  20  20"	#     19G     20G
-  "AggByTrain        g1gc    1  1"	#              1G
-  "AggByTrain        zgc     1  1"	#              1G
-  "AggByTrain        shen    1  1"	#              1G
-  "AggByTrain        para  17  17"	#     16G     17G
-  "OrderedTrain      g1gc    3  3"	#      2G      3G
-  "OrderedTrain      zgc     3  3"	#      2G      3G
-  "OrderedTrain      shen    3  3"	#      2G      3G
-  "OrderedTrain      para    3  3"	#      2G      3G
-  "UpdateByTrain     g1gc  15  15"	#     14G     15G
-  "UpdateByTrain     zgc   16  16"	#     15G     16G
-  "UpdateByTrain     shen  17  17"	#     16G     17G
-  "UpdateByTrain     para  19  19"	#     18G     19G
+#  "FilterTrain       g1gc  21  21"	#     20G     21G
+#  "FilterTrain       zgc     2  2"	#      1G      2G
+  "FilterTrain      shen   15  15"	#     14G     15G
+#  "FilterTrain       para    4  4"	#      3G      4G
+#  "FormulaTrain      g1gc    1  1"	#              1G
+#  "FormulaTrain      zgc     1  1"	#              1G
+#  "FormulaTrain      shen    4  4"	#      3G      4G
+#  "FormulaTrain      para    1  1"	#              1G
+#  "NaturalJoinTrain  g1gc  17  17"	#     16G     17G
+#  "NaturalJoinTrain  zgc   16  16"	#     15G     16G
+#  "NaturalJoinTrain  shen  18  18"	#     17G     18G
+#  "NaturalJoinTrain  para  20  20"	#     19G     20G
+#  "AggByTrain        g1gc    1  1"	#              1G
+#  "AggByTrain        zgc     1  1"	#              1G
+  "AggByTrain        shen    2  2"	#      1G      2G
+#  "AggByTrain        para  17  17"	#     16G     17G
+#  "OrderedTrain      g1gc    3  3"	#      2G      3G
+#  "OrderedTrain      zgc     3  3"	#      2G      3G
+#  "OrderedTrain      shen    3  3"	#      2G      3G
+#  "OrderedTrain      para    3  3"	#      2G      3G
+#  "UpdateByTrain     g1gc  15  15"	#     14G     15G
+#  "UpdateByTrain     zgc   16  16"	#     15G     16G
+#  "UpdateByTrain     shen  17  17"	#     16G     17G
+  "UpdateByTrain     para  20  20"	#     19G     20G
 )
 
 for combo in "${COMBOS[@]}"; do
