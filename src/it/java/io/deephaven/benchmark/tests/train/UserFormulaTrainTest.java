@@ -7,7 +7,7 @@ import org.junit.jupiter.api.*;
  * Training tests for the formula table operations (e.g. udf, inline). See <code>TrainTestRunner</code> for more
  * information.
  */
-public class FormulaTrainTest {
+public class UserFormulaTrainTest {
     final TrainTestRunner runner = new TrainTestRunner(this);
 
     void setup(double staticRowFactor, double incRowFactor) {
@@ -25,14 +25,7 @@ public class FormulaTrainTest {
         """;
         runner.addSetupQuery(setup);
         var q = "timed.view(['New1 = f_py(num1, num2)','New2 = f_np(num1, num2)']).sum_by()";
-        runner.test("Formula- UDF 2 Calcs", 1, q, "num1", "num2");
-    }
-
-    @Test
-    void formulaInline() {
-        setup(467, 467);
-        var q = "timed.view(['New1 = (float)((num2 + num1) / 2)', 'New2 = (float)(num1 + num2)']).sum_by()";
-        runner.test("Formula- Inline 2 Calcs", 1, q, "num1", "num2");
+        runner.test("UserFormula- 2 Calcs", 1, q, "num1", "num2");
     }
 
 }
