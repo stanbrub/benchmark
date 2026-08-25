@@ -5,7 +5,7 @@ set -o pipefail
 set -o nounset
 set -f
 
-# Copyright (c) 2023-2024 Deephaven Data Labs and Patent Pending
+# Copyright (c) 2023-2026 Deephaven Data Labs and Patent Pending
 
 # Executes a local script on a remote server while storing output relative to the 
 # local working directory. Also, this script wraps arguments provided for the
@@ -26,4 +26,19 @@ for i in ${@:5}; do
   args+=("'"$i"'")
 done
 
-ssh -o 'ServerAliveInterval 60' ${USER}@${HOST} 'bash -s' -- "${args[@]}" < ${SCRIPT_DIR}/${SCRIPT_NAME}.sh |& tee logs/${SCRIPT_NAME}.log
+MAX_RETRIES=5
+RETRY_DELAY=15
+for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
+  if ssh -o 'ConnectTimeout 10' ${USER}@${HOST} true; then
+    break
+  fi
+  if [[ $attempt -lt $MAX_RETRIES ]]; then
+    echo "SSH connection attempt $attempt failed. Retrying in ${RETRY_DELAY}s..."
+    sleep $RETRY_DELAY
+  else
+    echo "SSH connection failed after $MAX_RETRIES attempts"
+    exit 1
+  fi
+done
+
+ssh -o 'ConnectTimeout 10' -o 'ServerAliveInterval 60' ${USER}@${HOST} 'bash -s' -- "${args[@]}" < ${SCRIPT_DIR}/${SCRIPT_NAME}.sh |& tee logs/${SCRIPT_NAME}.log
