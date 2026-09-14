@@ -19,6 +19,7 @@ on:
         - gc-train-heap-fail.sh
         - regression-rerun.sh
         - join-regression-rerun.sh
+        - udf-regression-rerun.sh
 
 jobs:
   generate-matrix:
