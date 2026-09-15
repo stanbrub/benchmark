@@ -17,6 +17,7 @@ fi
 HOST=`hostname`
 GIT_DIR=${HOME}/git
 DEEPHAVEN_DIR=${HOME}/deephaven
+DEEPHAVEN_TAG_FILE=${GIT_DIR}/benchmark-tag
 DOCKER_IMG=$1
 BRANCH_DELIM=":"
 BUILD_JAVA=temurin-17-jdk-amd64
@@ -33,8 +34,6 @@ BRANCH_NAME=$(sed 's/.*'"${BRANCH_DELIM}"'//g' <<< "${DOCKER_IMG}")
 echo "OWNER: ${OWNER}"
 echo "BRANCH: ${BRANCH_NAME}"
 
-DEEPHAVEN_TAG_FILE=${GIT_DIR}/deephaven-core/build/benchmark-tag
-
 # Tag local images per owner/ref so each ref builds once and is reused. A constant tag made every
 # matrix row after the first reuse the first row's image.
 REF_SLUG=$(echo "${OWNER}-${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g' | cut -c1-100)
@@ -42,7 +41,6 @@ DOCKER_TAG=benchmark-${REF_SLUG}
 echo "DOCKER TAG: ${DOCKER_TAG}"
 
 # Later steps read the tag from here. Written before any exit below.
-mkdir -p $(dirname ${DEEPHAVEN_TAG_FILE})
 echo "${DOCKER_TAG}" > ${DEEPHAVEN_TAG_FILE}
 
 # Check the image, not build/version, so a new ref always rebuilds.

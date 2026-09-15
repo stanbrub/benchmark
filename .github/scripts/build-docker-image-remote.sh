@@ -21,7 +21,7 @@ fi
 title () { echo; echo $1; }
 
 # Per-ref tag written by build-server-distribution-remote.sh.
-DEEPHAVEN_TAG_FILE=${GIT_DIR}/deephaven-core/build/benchmark-tag
+DEEPHAVEN_TAG_FILE=${GIT_DIR}/benchmark-tag
 DOCKER_TAG=$(cat ${DEEPHAVEN_TAG_FILE})
 echo "DOCKER TAG: ${DOCKER_TAG}"
 

@@ -43,7 +43,7 @@ if [[ ${DOCKER_IMG} == ghcr.io/* ]]; then
   docker compose pull
 elif [[ ${DOCKER_IMG} == *":"* ]]; then
   # Locally built from <owner>:<ref>, under the per-ref tag recorded by the distribution build.
-  LOCAL_TAG=$(cat ${GIT_DIR}/deephaven-core/build/benchmark-tag)
+  LOCAL_TAG=$(cat ${GIT_DIR}/benchmark-tag)
   echo "DOCKER_IMG=deephaven/server:${LOCAL_TAG}" >> .env
 else
   echo "DOCKER_IMG=ghcr.io/deephaven/server:${DOCKER_IMG}" >> .env
