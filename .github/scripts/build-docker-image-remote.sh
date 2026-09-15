@@ -51,5 +51,14 @@ export TAG=${DOCKER_TAG}
 
 echo "DEEPHAVEN_VERSION: ${DEEPHAVEN_VERSION}"
 echo "DEEPHAVEN_CORE_WHEEL: ${DEEPHAVEN_CORE_WHEEL}"
-docker buildx bake -f server.hcl
+
+# Reset leftover bake state, keeping images so refs and gradle base images stay reusable.
+title "-- Resetting Docker Build State --"
+docker container prune --force
+docker network prune --force
+docker volume prune --force
+docker builder prune --force
+
+# plain progress so a frontend failure reports something more than "exit code: 1"
+BUILDKIT_PROGRESS=plain docker buildx bake -f server.hcl
 
