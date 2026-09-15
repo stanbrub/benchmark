@@ -29,7 +29,7 @@ services:
     - PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
     - --pandaproxy-addr 0.0.0.0:8082
     - --advertise-pandaproxy-addr redpanda:8082
-    image: redpandadata/redpanda:v25.2.5
+    image: redpandadata/redpanda:v25.2.14@sha256:b53a3a981be7536c2b5240efa13d7284e760ed01911627f3533e628117e427e2
     ports:
     - 8081:8081
     - 8082:8082
@@ -39,7 +39,7 @@ services:
   minio-server:
     security_opt:
     - apparmor:unconfined
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     command: server /minio --console-address ":9001"
     hostname: minio
     environment:
@@ -67,7 +67,7 @@ services:
   minio-bucket:
     security_opt:
     - apparmor:unconfined
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     depends_on:
       - minio-server
     entrypoint: >
