@@ -78,8 +78,11 @@
 # bare hash would NOT work: with no colon it is treated as a tag and becomes
 # ghcr.io/deephaven/server:<hash>, and no such tags exist -- both endpoints return HTTP 404.
 #
-# The updateBy classes are the positive control: the fix's large gain must appear at src_dh23630 and
-# persist through src_top. If it does not, the wrong code is being measured.
+# RollingGroupTick is the positive control, not a comparison: the fix's +43.7% must appear at
+# src_dh23630 and persist through src_top. If it does not, the wrong code is being measured. This is
+# what exposed the first attempt at this matrix, where all five rows silently ran one build and the
+# UDF numbers looked like a clean "no regression anywhere" result. RollingMaxTick and RollingSumTick
+# were dropped as redundant for that purpose -- they cost ~300 s/iter for no extra assurance.
 #
 # COST. Five source builds. clear-test-server-remote wipes ${GIT_DIR} and every docker image between
 # combinations, so each row does its own full clone, gradle assemble and py-server wheel build -- the
@@ -113,14 +116,14 @@ SRC_TOP=deephaven:c50cd7f2fc02b819376a80e8767dff76c0624aa2
 # 09-11 had three edge pushes; the 06:49Z one is tagged 42.5/latest and the 18:26Z one is hours after
 # the run, so neither is what that nightly measured.
 
-# 37 benchmarks: UserFormula 13 (~359 s/iter, measured), plus three updateBy classes at 8 each
-# (~154 s/iter each). ~13.7 min per iteration -> ~41 min of benchmarking per row at ITERS=3.
+# 21 benchmarks: UserFormula 13 (~359 s/iter, measured) plus RollingGroupTick 8 (~160 s/iter).
+# ~8.7 min per iteration -> ~26 min of benchmarking per row at ITERS=3, on top of a build per row.
 #
 # Do NOT write the "Test" suffix. ConsoleLauncherUtil.formatConsoleWildcards rewrites this list into
 # ^.*[.](entry1|entry2|...)Test.*$ -- it appends Test itself, so "UserFormulaTest" would compile to
-# (UserFormulaTest.*)Test.*$ and match nothing, silently. Verified: these four entries resolve to
-# exactly UserFormulaTest, RollingGroupTickTest, RollingMaxTickTest, RollingSumTickTest.
-CLASSES='UserFormula,RollingGroupTick,RollingMaxTick,RollingSumTick'
+# (UserFormulaTest.*)Test.*$ and match nothing, silently. Verified: these two entries resolve to
+# exactly UserFormulaTest and RollingGroupTickTest.
+CLASSES='UserFormula,RollingGroupTick'
 
 # JFR per engine JVM. The engine restarts once per benchmark, so each benchmark gets its own
 # recording; %t makes the names unique (%p is always 1 in the container). Distinct prefix per row
