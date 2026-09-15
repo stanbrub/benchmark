@@ -61,11 +61,6 @@ APT::Periodic::Update-Package-Lists "0";
 APT::Periodic::Unattended-Upgrade "0";
 EOF
 
-title "-- Disable AppArmor --"
-sudo systemctl disable --now apparmor 2>/dev/null || true
-sudo systemctl mask apparmor 2>/dev/null || true
-sudo aa-teardown 2>/dev/null || true
-
 title "-- Disabling ASLR for Current Session --"
 sudo sysctl -w kernel.randomize_va_space=0 >/dev/null
 
@@ -113,6 +108,12 @@ else
   sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   sudo usermod -aG docker ${USER}
 fi
+
+# Containers lacking apparmor:unconfined fail to start if docker-default is not loaded, so make
+# sure dockerd has loaded it. Benchmark containers stay unconfined via the compose files.
+title "-- Reloading Docker AppArmor Profile --"
+sudo systemctl restart docker
+sudo aa-status 2>/dev/null | grep -q docker-default && echo "docker-default loaded" || echo "docker-default NOT loaded"
 
 title "-- Setting Up Git Benchmark Repository --"
 if [ ! -d "${GIT_DIR}/benchmark" ]; then
