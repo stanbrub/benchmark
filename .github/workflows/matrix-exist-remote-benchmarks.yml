@@ -21,6 +21,7 @@ on:
         - join-regression-rerun.sh
         - udf-regression-rerun.sh
         - udf-image-ab.sh
+        - udf-os-isolate.sh
 
 jobs:
   generate-matrix:
