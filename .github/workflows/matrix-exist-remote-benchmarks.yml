@@ -20,6 +20,7 @@ on:
         - regression-rerun.sh
         - join-regression-rerun.sh
         - udf-regression-rerun.sh
+        - udf-image-ab.sh
 
 jobs:
   generate-matrix:
