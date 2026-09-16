@@ -22,6 +22,7 @@ on:
         - udf-regression-rerun.sh
         - udf-image-ab.sh
         - udf-os-isolate.sh
+        - updateby-dh23676-rerun.sh
 
 jobs:
   generate-matrix:
