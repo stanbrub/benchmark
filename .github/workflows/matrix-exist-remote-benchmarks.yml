@@ -23,6 +23,7 @@ on:
         - udf-image-ab.sh
         - udf-os-isolate.sh
         - updateby-dh23676-rerun.sh
+        - udf-bisect-nojfr.sh
 
 jobs:
   generate-matrix:
