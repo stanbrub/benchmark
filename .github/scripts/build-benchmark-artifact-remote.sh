@@ -21,10 +21,18 @@ fi
 
 title () { echo; echo $1; }
 
+rm -rf ${RUN_DIR}/results ${RUN_DIR}/logs
+
+if [ -f "${RUN_DIR}/standard-tests.jar" ]; then
+  echo "Benchmark artifact already built. Skipping."
+  exit 0
+fi
+
 title "- Building Remote Benchmark Artifact on ${HOST} -"
 
 title "-- Building and Verifying --"
 cd ${GIT_DIR}
+sleep 10  # Some JVM command lines start DH slower than others
 mvn verify
 
 title "-- Cleanup After Build  --"
