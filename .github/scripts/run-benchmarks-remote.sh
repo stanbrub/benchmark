@@ -35,15 +35,40 @@ fi
 
 title () { echo; echo $1; }
 
+# Save the image digest and revision where the engine can read them, since it cannot inspect its own image
+write_image_props () {
+  local props=${DEEPHAVEN_DIR}/data/deephaven-image.properties
+  local ref="" digest="" revision=""
+  mkdir -p ${DEEPHAVEN_DIR}/data
+  rm -f ${props}
+  ref=$(docker compose config --images deephaven 2>/dev/null | head -1) || true
+  if [[ -n ${ref} ]]; then
+    digest=$(docker image inspect --format '{{if .RepoDigests}}{{index .RepoDigests 0}}{{end}}' "${ref}" 2>/dev/null) || true
+    revision=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "${ref}" 2>/dev/null) || true
+  fi
+  if [[ ${digest} == *"@"* ]]; then
+    ref=${ref%@*}@${digest#*@}
+  fi
+  if [[ ${revision} == "<no value>" ]]; then
+    revision=""
+  fi
+  echo "docker.image.digest=${ref}" > ${props}
+  echo "docker.image.revision=${revision}" >> ${props}
+  cat ${props}
+}
+
 title "- Running Remote Benchmark Artifact on ${HOST} -"
 
 cd ${DEEPHAVEN_DIR};
+
+title "-- Recording Deephaven Image Identity --"
+write_image_props
 
 title "-- Running Benchmarks --"
 set +f
 cd ${RUN_DIR}
 cat ${RUN_TYPE}-scale-benchmark.properties | sed 's|${baseRowCount}|'"${ROW_COUNT}|g" | sed 's|${baseDistrib}|'"${DISTRIB}|g" | sed 's|${userHome}|'"${HOME}|g" > scale-benchmark.properties
-JAVA_OPTS=$(echo -Dbenchmark.profile=scale-benchmark.properties -jar deephaven-benchmark-*-standalone.jar -cp standard-tests.jar)
+JAVA_OPTS=$(echo -Xmx4g -Dbenchmark.profile=scale-benchmark.properties -jar deephaven-benchmark-*-standalone.jar -cp standard-tests.jar)
 set -f
 
 if [ "${TAG_NAME}" = "Any" ]; then

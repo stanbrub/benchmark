@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2025 Deephaven Data Labs and Patent Pending */
+/* Copyright (c) 2022-2026 Deephaven Data Labs and Patent Pending */
 package io.deephaven.benchmark.api;
 
 import java.io.BufferedWriter;
@@ -180,7 +180,7 @@ public class BenchPlatform {
         def bench_api_add_proc_args(name, proctype, len_name, includes=(), excludes=()):
             prockeys = []
             for i in range(int(bench_api_get_proc_info(proctype,len_name))):
-                value = bench_api_get_proc_info('runtime-mx.jvm-args',str(i))
+                value = bench_api_get_proc_info(proctype,str(i))
                 if(value.startswith(includes) and not value.startswith(excludes)):
                     prockeys.append(str(i))
             bench_api_add_proc_info(name, proctype, prockeys)
@@ -195,12 +195,26 @@ public class BenchPlatform {
         bench_api_add_proc_info('java.version','runtime-mx.sys-props',['java.vendor.version'])
         bench_api_add_proc_info('java.max.heap','memory-mx.heap',['max'])
         bench_api_add_platform('java.available.processors',Runtime.getRuntime().availableProcessors())
-        bench_api_add_proc_args('java.xx.args','runtime-mx.jvm-args','len',('-XX'),('-XX:CompilerDirectivesFile=','-XX:+UnlockD'))
+        bench_api_add_proc_args('java.xx.args','runtime-mx.jvm-args','len',('-XX'),('-XX:CompilerDirectivesFile=',
+            '-XX:+UnlockD'))
+        bench_api_add_proc_args('java.d.args','runtime-mx.jvm-args','len',('-D'),('-Dauthentication','-DAuthHandlers',
+            '-Ddeephaven.console'))
         dhInst = jpy.get_type('io.deephaven.engine.exceptions.ArgumentException')()
         deephaven_version = dhInst.getClass().getPackage().getImplementationVersion()
         bench_api_add_platform('deephaven.version', deephaven_version)
-        python_version = '.'.join([str(sys.version_info.major), str(sys.version_info.minor), str(sys.version_info.micro)])
+        python_version = '.'.join([str(sys.version_info.major), str(sys.version_info.minor),
+            str(sys.version_info.micro)])
         bench_api_add_platform('python.version', python_version)
+        bench_api_add_platform('python.build', ' '.join(sys.version.split()))
+        bench_api_add_platform('libc.version', os.popen('ldd --version 2>/dev/null').readline().strip())
+        
+        # Docker image identity saved to the mounted data dir before the engine started
+        image_props = '/data/deephaven-image.properties'
+        if os.path.exists(image_props):
+            for line in open(image_props):
+                name, sep, value = line.partition('=')
+                if sep:
+                    bench_api_add_platform(name, value)
         
         # Java Dependency Versions
         classpath = bench_api_get_proc_info('runtime-mx.sys-props','java.class.path')
