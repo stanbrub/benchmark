@@ -15,7 +15,8 @@ Not all secrets are required for each workflow. In the following table, each sec
 | Variable                   | Description                                                           | Shared (Ask Admin) | Optional |
 | -------------------------- | --------------------------------------------------------------------- | ------------------ | -------- |
 | BENCHMARK_GCLOUD           | The GCloud Service Account Key (credentials) in JSON format           | Yes                | No       |
-| BENCHMARK_HOST             | The host ip for an existing (non-auto-provisioned) server             | No                 | No       |
+| BENCHMARK_HOST_NIGHT       | Host ip of the always-on server used by adhoc-existing and nightly    | No                 | No       |
+| BENCHMARK_HOST_MATRIX      | Host ip of the always-on server used by compare, release, and matrix  | No                 | No       |
 | BENCHMARK_USER             | The "run as" user for running benchmarks on the server                | No                 | No       |
 | BENCHMARK_KEY              | A private key used by SSH corresponding to a public key on the server | No                 | No       |
 | BENCHMARK_METAL_AUTH_TOKEN | The key/secret required to access the bare metal provider API         | Yes                | No       |

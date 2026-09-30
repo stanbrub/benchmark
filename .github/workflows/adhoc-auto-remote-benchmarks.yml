@@ -111,26 +111,12 @@ jobs:
       scale_row_count: ${{ needs.setup-benchmark-system.outputs.test_row_count }}
       distribution: ${{ inputs.distribution }}
       test_device_addr: ${{ needs.setup-benchmark-system.outputs.metal_ip_addr }}
+      clear_server: true
       config_options: "<default>"
     secrets: inherit
 
-  clear-between-runs:
-    needs: [setup-benchmark-system, process-adhoc-benchmarks-1]
-    runs-on: ubuntu-24.04
-    env:
-      SD: .github/scripts
-      HOST: ${{ needs.setup-benchmark-system.outputs.metal_ip_addr }}
-      USER: ${{ secrets.BENCHMARK_USER }}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Clear Remote Test Server
-      run: |
-        sudo chmod +x ${SD}/*
-        ${SD}/setup-ssh-local.sh ${HOST} "${{ secrets.BENCHMARK_KEY }}"
-        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-test-server-remote
-
   process-adhoc-benchmarks-2:
-    needs: [setup-benchmark-system, clear-between-runs]
+    needs: [setup-benchmark-system, process-adhoc-benchmarks-1]
     uses: ./.github/workflows/remote-benchmarks.yml
     with:
       run_type: adhoc
@@ -142,6 +128,7 @@ jobs:
       scale_row_count: ${{ needs.setup-benchmark-system.outputs.test_row_count }}
       distribution: ${{ inputs.distribution }}
       test_device_addr: ${{ needs.setup-benchmark-system.outputs.metal_ip_addr }}
+      clear_server: true
       config_options: "<default>"
     secrets: inherit
 

@@ -4,6 +4,11 @@
 # - This workflow is reusable with run_type set to release or nightly
 # - Scripts ending in "-local" run on the github runner
 # - Scripts ending in "-remote" run are executed on the remote test server through ssh
+# - test_device_addr picks the server: <default> is BENCHMARK_HOST_NIGHT (adhoc-existing, nightly),
+#   <matrix> is BENCHMARK_HOST_MATRIX (compare, release, matrix), anything else is used as an ip
+# - Since the concurrency group is test_device_addr, the two always-on servers do not block each other
+# - Clearing a server must happen here rather than in a calling workflow, since only this workflow holds
+#   the concurrency group. A caller that clears on its own can wipe a run already in progress.
 
 name: Benchmark Test on Docker Deephaven
 
@@ -35,14 +40,22 @@ on:
         required: true
         type: string
       test_device_addr:
+        description: 'Server ip, or <default> for the nightly host, or <matrix> for the matrix host'
         required: true
         type: string
+      clear_server:
+        description: 'Wipe artifacts, containers, images, and data before setup'
+        required: true
+        type: boolean
       config_options:
         required: true
         type: string
         
 env:
-  HOST: "${{ inputs.test_device_addr == '<default>' && secrets.BENCHMARK_HOST || inputs.test_device_addr }}"
+  HOST: >-
+    ${{ inputs.test_device_addr == '<default>' && secrets.BENCHMARK_HOST_NIGHT
+    || inputs.test_device_addr == '<matrix>' && secrets.BENCHMARK_HOST_MATRIX
+    || inputs.test_device_addr }}
 
 concurrency:
   group: ${{ inputs.test_device_addr }}
@@ -77,7 +90,7 @@ jobs:
         ${SD}/setup-ssh-local.sh ${HOST} "${{secrets.BENCHMARK_KEY}}"
 
     - name: Clear Remote Test Server
-      if: ${{ env.RUN_TYPE != 'adhoc' }}
+      if: ${{ inputs.clear_server }}
       run: |
         ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-test-server-remote
 

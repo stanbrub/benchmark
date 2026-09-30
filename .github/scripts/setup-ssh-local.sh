@@ -17,6 +17,11 @@ if [[ $# != 2 ]]; then
   exit 1
 fi
 
+if [[ "${HOST}" == "<"*">" ]]; then
+  echo "$0: Host '${HOST}' was not resolved. Is the matching BENCHMARK_HOST_* secret set?"
+  exit 1
+fi
+
 mkdir -p logs
 mkdir -p results
 mkdir -p ~/.ssh/

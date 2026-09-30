@@ -33,22 +33,8 @@ jobs:
       run: |
         .github/scripts/build-matrix.sh ".github/matrix/${{ inputs.matrix_file }}"
 
-  clear-server:
-    runs-on: ubuntu-24.04
-    env:
-      SD: .github/scripts
-      HOST: ${{ secrets.BENCHMARK_HOST }}
-      USER: ${{ secrets.BENCHMARK_USER }}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Clear Remote Server
-      run: |
-        sudo chmod +x ${SD}/*
-        ${SD}/setup-ssh-local.sh ${HOST} "${{ secrets.BENCHMARK_KEY }}"
-        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-test-server-remote
-
   run-benchmarks:
-    needs: [generate-matrix, clear-server]
+    needs: generate-matrix
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -64,6 +50,7 @@ jobs:
       test_iterations: ${{ matrix.test_iterations }}
       scale_row_count: ${{ matrix.scale_row_count }}
       distribution: ${{ matrix.distribution }}
-      test_device_addr: "<default>"
+      test_device_addr: "<matrix>"
+      clear_server: ${{ strategy.job-index == 0 }}
       config_options: ${{ matrix.config_options }}
     secrets: inherit
