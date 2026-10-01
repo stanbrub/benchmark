@@ -214,7 +214,7 @@ jobs:
     - name: Archive Results
       uses: actions/upload-artifact@v4
       with:
-        name: Benchmarks and Logs for Set ${{steps.fetch-results.outputs.SET_LABEL}}
+        name: Benchmarks and Logs for Set ${{steps.fetch-results.outputs.SET_LABEL}} ${{steps.fetch-results.outputs.RUN_ID}}
         path: |
           ${{env.RUN_TYPE}}/**/*
           logs/**/*

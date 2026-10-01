@@ -62,6 +62,9 @@ mkdir -p ${DEST_DIR}
 rm -rf ${DEST_DIR}
 mv results/ ${DEST_DIR}/
 
+# Rows of a matrix share a set, so name artifacts after a run that only this fetch produced
+echo "RUN_ID=$(basename $(ls -d ${DEST_DIR}/run-* | head -1))" | tee -a ${OUTPUT_NAME}
+
 # For now remove any unwanted summaries before uploading to GCloud
 rm -f ${DEST_DIR}/*.csv
 
