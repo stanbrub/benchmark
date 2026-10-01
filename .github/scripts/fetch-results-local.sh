@@ -10,8 +10,8 @@ set -o nounset
 # compresses the runs before upload. Writes an output file with the 
 # SET_LABEL that was used for the set directory name
 
-if [[ $# != 7 ]]; then
-  echo "$0: Missing host, user, run type, script dir, actor, docker img, or run label arguments"
+if [[ $# != 6 ]]; then
+  echo "$0: Missing host, user, script dir, run type, actor, or run label arguments"
   exit 1
 fi
 
@@ -21,31 +21,40 @@ SCRIPT_DIR=$3
 RUN_TYPE=$4
 ACTOR=$5
 SET_LABEL=${6:-$(echo -n "set-"; ${SCRIPT_DIR}/base.sh $(date +%s%03N) 62)}
-DOCKER_IMG=$7
 RUN_DIR=/home/${USER}/run
 OUTPUT_NAME=fetch-results-local.out
 
 rm -f ${OUTPUT_NAME}; touch ${OUTPUT_NAME}
+
+# Pull results from the benchmark server (Before labelling, since <version> reads the platform csv)
+scp -r ${USER}@${HOST}:${RUN_DIR}/results .
+scp -r ${USER}@${HOST}:${RUN_DIR}/logs .
+scp -r ${USER}@${HOST}:${RUN_DIR}/*.jar .
 
 # Get the date for the Set Label, since Github Workflows don't have 'with: ${{github.date}}'
 if [ "${SET_LABEL}" = "<date>" ]; then
   SET_LABEL=$(date '+%Y-%m-%d')
 fi
 
-# Get the version for the Set Label, since Github Workflows don't have 'with: ${{github.date}}'
+# Get the Set Label from the engine-reported version (edge has none), 99 in last place for snapshots
 if [ "${SET_LABEL}" = "<version>" ]; then
-  vers=${DOCKER_IMG}
-  major=$(printf '%02d\n' $(echo ${vers} | cut -d "." -f 1))
-  minor=$(printf '%03d\n' $(echo ${vers} | cut -d "." -f 2))
-  patch=$(printf '%02d\n' $(echo ${vers} | cut -d "." -f 3))
+  PLATFORM_CSV=results/platform-summary-results.csv
+  # Match the engine only. The test-runner reports Unknown unless run from a release jar
+  vers=$(awk -F, '$2=="deephaven-engine" && $3=="deephaven.version" {print $4; exit}' ${PLATFORM_CSV})
+  # Empty would pad to a valid-looking 00.000.00, so fail instead
+  : "${vers:?no deephaven-engine deephaven.version found in ${PLATFORM_CSV}}"
+  base=${vers%-SNAPSHOT}
+  major=$(printf '%02d\n' $(echo ${base} | cut -d "." -f 1))
+  minor=$(printf '%03d\n' $(echo ${base} | cut -d "." -f 2))
+  if [ "${base}" = "${vers}" ]; then
+    patch=$(printf '%02d\n' $(echo ${base} | cut -d "." -f 3))
+  else
+    patch=99
+  fi
   SET_LABEL="${major}.${minor}.${patch}"
+  echo "Engine reported ${vers}, using set label ${SET_LABEL}"
 fi
 echo "SET_LABEL=${SET_LABEL}" | tee -a ${OUTPUT_NAME}
-
-# Pull results from the benchmark server
-scp -r ${USER}@${HOST}:${RUN_DIR}/results .
-scp -r ${USER}@${HOST}:${RUN_DIR}/logs .
-scp -r ${USER}@${HOST}:${RUN_DIR}/*.jar .
 
 # Move the results into the destination directory
 DEST_DIR=${RUN_TYPE}/${ACTOR}/${SET_LABEL}

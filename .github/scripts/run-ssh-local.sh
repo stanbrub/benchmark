@@ -41,8 +41,7 @@ for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
   fi
 done
 
-# Keep the server address out of the log file, which is uploaded as a public artifact. Github masks
-# secrets in the live log stream but not in files, and ssh names the host in its connection errors.
+# Redact the host from the log file, since artifacts are public and Github masks only the live log
 HOST_PATTERN=$(printf '%s' "${HOST}" | sed 's/[^a-zA-Z0-9-]/\\&/g')
 
 ssh -o 'ConnectTimeout 10' -o 'ServerAliveInterval 60' ${USER}@${HOST} 'bash -s' -- "${args[@]}" < ${SCRIPT_DIR}/${SCRIPT_NAME}.sh |& sed -u "s/${HOST_PATTERN}/<redacted-host>/g" | tee logs/${SCRIPT_NAME}.log

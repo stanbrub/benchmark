@@ -29,10 +29,11 @@
 # Class lists omit the Test suffix: ConsoleLauncherUtil appends it, so 'UserFormulaTest' matches
 # nothing and the run reports zero benchmarks rather than failing.
 #
-# TSV columns: run_label, docker_image, test_package, test_class_list,
+# TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
 EXPECTED_COMBOS=5
 
+RTYP='adhoc'
 PKG=io.deephaven.benchmark.tests.standard
 CLASSES='UserFormula'
 DIST=random
@@ -49,7 +50,7 @@ jfr_opts() {
 TOP=deephaven:c50cd7f2fc02b819376a80e8767dff76c0624aa2
 
 # $3 is config_options, defaulting to a JFR recording named after the row
-row() { echo -e "$1\t$2\t$PKG\t$CLASSES\t$ITERS\t$ROWSM\t$DIST\t${3:-$(jfr_opts "$1")}"; }
+row() { echo -e "$RTYP\t$1\t$2\t$PKG\t$CLASSES\t$ITERS\t$ROWSM\t$DIST\t${3:-$(jfr_opts "$1")}"; }
 
 row anchor_img_0911 "$ANCHOR"
 row src_base deephaven:9fa9e83c55ccb2e9ddedd61d1ba59d2d8da68c85

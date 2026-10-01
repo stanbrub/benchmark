@@ -4,11 +4,8 @@
 # - This workflow is reusable with run_type set to release or nightly
 # - Scripts ending in "-local" run on the github runner
 # - Scripts ending in "-remote" run are executed on the remote test server through ssh
-# - test_device_addr picks the server: <default> is BENCHMARK_HOST_NIGHT (adhoc-existing, nightly),
-#   <matrix> is BENCHMARK_HOST_MATRIX (compare, release, matrix), anything else is used as an ip
-# - Since the concurrency group is test_device_addr, the two always-on servers do not block each other
-# - Clearing a server must happen here rather than in a calling workflow, since only this workflow holds
-#   the concurrency group. A caller that clears on its own can wipe a run already in progress.
+# - test_device_addr selects both the server (<default>|<matrix>|ip) and the concurrency group
+# - Clearing runs here, not in callers, so it cannot wipe a run holding the concurrency group
 
 name: Benchmark Test on Docker Deephaven
 
@@ -181,7 +178,7 @@ jobs:
     - name: Fetch Benchmark Results and Prepare for Upload
       id: fetch-results
       run: |
-        ${SD}/fetch-results-local.sh ${HOST} ${USER} ${SD} ${RUN_TYPE} "${ACTOR}" "${RUN_LABEL}" "${DOCKER_IMG}"
+        ${SD}/fetch-results-local.sh ${HOST} ${USER} ${SD} ${RUN_TYPE} "${ACTOR}" "${RUN_LABEL}"
         cat fetch-results-local.out >> "$GITHUB_OUTPUT"
 
     - name: Authorize GCloud Credentials

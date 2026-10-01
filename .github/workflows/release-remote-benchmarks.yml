@@ -2,7 +2,8 @@
 
 # Run benchmarks on a remote system according to the release defined 
 # in resources/release-benchmark-docker-compose.yml
-# - Calls the reusable worflow remote-benchmarks.yml
+# - Runs the rows in matrix/release.sh, passing the requested image in as IMG
+# - Each row is a full pass that publishes before the next starts, so a failed row costs one pass
 
 name: Release Benchmark Test on Docker Deephaven
 
@@ -10,35 +11,54 @@ on:
   workflow_dispatch:
     inputs:
      docker_image:
-       description: 'Docker Image Name'
+       description: 'Docker Image Name (a release version, or edge for a pre-release run)'
        required: true
-       default: '0.36.0'
+       default: '42.0'
        type: string
 
 jobs:
-  validate-inputs:
+  generate-matrix:
     runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
     steps:
+    - uses: actions/checkout@v4
+
     - name: Validate Docker Image Version
       run: |
-        if ! [[ "${{ inputs.docker_image }}" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then
-          echo "::error::docker_image '${{ inputs.docker_image }}' is not a valid version (expected numeric format like 0.36.0 or 42.4)"
+        IMG="${{ inputs.docker_image }}"
+        if [[ "${IMG}" == "edge" ]]; then
+          echo "Pre-release run. The set label comes from the version the engine reports"
+        elif ! [[ "${IMG}" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then
+          echo "::error::docker_image '${IMG}' is not a release version (expected numeric format like 0.36.0 or 42.4) or 'edge'"
           exit 1
         fi
 
-  process-release-benchmarks:
-    needs: validate-inputs
+    - name: Build Matrix Combinations
+      id: build-matrix
+      env:
+        IMG: ${{ inputs.docker_image }}
+      run: |
+        .github/scripts/build-matrix.sh ".github/matrix/release.sh"
+
+  run-benchmarks:
+    needs: generate-matrix
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     uses: ./.github/workflows/remote-benchmarks.yml
     with:
-      run_type: release
-      docker_image: ${{ inputs.docker_image }}
-      run_label: "<version>"
-      test_package: "io.deephaven.benchmark.tests.standard"
-      test_class_list: "*"
-      test_iterations: 5
-      scale_row_count: 10000000
-      distribution: random
+      run_type: ${{ matrix.run_type }}
+      docker_image: ${{ matrix.docker_image }}
+      run_label: ${{ matrix.run_label }}
+      test_package: ${{ matrix.test_package }}
+      test_class_list: ${{ matrix.test_class_list }}
+      test_iterations: ${{ matrix.test_iterations }}
+      scale_row_count: ${{ matrix.scale_row_count }}
+      distribution: ${{ matrix.distribution }}
       test_device_addr: "<matrix>"
-      clear_server: true
-      config_options: "<default>"
+      clear_server: ${{ strategy.job-index == 0 }}
+      config_options: ${{ matrix.config_options }}
     secrets: inherit

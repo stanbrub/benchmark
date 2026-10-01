@@ -7,8 +7,9 @@ set -o pipefail
 
 # Runs a matrix script and converts its TSV output to a JSON matrix for GitHub Actions.
 # The matrix script outputs tab-separated rows with fields:
-#   run_label, docker_image, test_package, test_class_list,
+#   run_type, run_label, docker_image, test_package, test_class_list,
 #   test_iterations, scale_row_count, distribution, config_options
+# Every field is required, so a new field means updating every matrix script.
 # Scale_row_count is in millions and auto-scaled to actual.
 # Test_iterations is auto-forced to odd.
 #
@@ -28,8 +29,25 @@ fi
 
 TSV=$(bash "$FILE")
 
+BAD_FIELDS=$(echo "$TSV" | awk -F'\t' 'NF>0 && NF!=9 {print "  line "NR": "NF" fields"}')
+if [[ -n "${BAD_FIELDS}" ]]; then
+  echo "::error::Every row needs 9 tab-separated fields in ${FILE}"; echo "${BAD_FIELDS}"; exit 1
+fi
+
+BAD_TYPES=$(echo "$TSV" | awk -F'\t' 'NF>0 && $1 !~ /^(adhoc|release|compare)$/ {print "  line "NR": "$1}')
+if [[ -n "${BAD_TYPES}" ]]; then
+  echo "::error::run_type must be adhoc, release, or compare in ${FILE}"; echo "${BAD_TYPES}"; exit 1
+fi
+
+# Rows sharing a run_type and run_label land in one set, and queries report the middle run by rate
+BAD_PARITY=$(echo "$TSV" | awk -F'\t' 'NF>0 {c[$1"/"$2]++} END {for (k in c) if (c[k]>1 && c[k]%2==0) print "  "k": "c[k]" rows"}')
+if [[ -n "${BAD_PARITY}" ]]; then
+  echo "::error::Rows per set must be odd so the reported median is a real run. Add or remove a row in ${FILE}"
+  echo "${BAD_PARITY}"; exit 1
+fi
+
 RESULT=$(echo "$TSV" | jq -Rsc '
-  ["run_label","docker_image","test_package","test_class_list",
+  ["run_type","run_label","docker_image","test_package","test_class_list",
    "test_iterations","scale_row_count","distribution","config_options"] as $h |
   split("\n") | map(select(length > 0)) |
   [.[] | split("\t") | [range(length) as $i | {($h[$i]): .[$i]}] | add |
