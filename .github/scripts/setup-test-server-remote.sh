@@ -26,14 +26,13 @@ title () { echo; echo $1; }
 
 title "- Setting Up Remote Benchmark Testing on ${HOST} -"
 
-# Keep new automatic updates from starting, but let any in-flight one finish. These services use
-# KillMode=process, so stopping them would orphan the dpkg child holding the lock rather than end it
+# Mask to keep new updates from starting, but never stop a running one. apt-daily.service leaves
+# KillMode at the control-group default, so stopping it would signal the apt child holding the lock
 title "-- Disabling Automatic Updates --"
 # "disabled" on arrival means cloud-init already handled it, "enabled" means it did not run
 echo "apt timers on arrival: $(systemctl is-enabled apt-daily.timer apt-daily-upgrade.timer 2>&1 | tr '\n' ' ')"
 sudo systemctl disable --now apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
 sudo systemctl mask unattended-upgrades.service apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
-sudo systemctl stop --no-block apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
 sudo tee /etc/apt/apt.conf.d/10periodic >/dev/null <<EOF
 APT::Periodic::Enable "0";
 EOF
