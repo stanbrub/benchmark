@@ -5,9 +5,9 @@
 # the end, and a failure part way through would lose the whole run. Rows are independent, so a failed
 # row costs one pass instead of all of them.
 #
-# Row count is the sample count. With test_iterations at 1, a release row runs as two jobs, !Iterate
-# then Iterate, which together cover the suite exactly once. So 7 rows means n=7 for all 666
-# benchmarks, where the nightly scheme gives n=1 to the 562 untagged ones and n=5 to the 104 tagged.
+# Row count is the sample count. Release ignores the Iterate tag, so a row at test_iterations 1 is a
+# single job over every class, and 7 rows means n=7 for all 666 benchmarks. Nightly keeps the tag
+# split for its time budget, which leaves its 562 untagged benchmarks at n=1 and 104 tagged at n=5.
 #
 # Keep the row count odd. Queries report the middle run by rate and carry that run's id, so an even
 # count has no real middle and the reported numbers stop matching a run that happened.
@@ -20,19 +20,22 @@
 #
 # TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
-EXPECTED_COMBOS=7
+# TEMPORARY test values for verifying the workflow. A real release run uses
+# EXPECTED_COMBOS=7, CLS='*', PASSES=7. WhereTest is tagged and AvgByTest is not,
+# so both the !Iterate and Iterate jobs in a row have benchmarks to run
+EXPECTED_COMBOS=3
 
 RTYP='release'
 LABEL='<version>'
 IMG=${IMG:-edge}
 PKG=io.deephaven.benchmark.tests.standard
-CLS='*'
+CLS='Where,AvgBy'
 ITERS=1
 ROWSM=10
 DIST=random
 OPTS='<default>'
 
-PASSES=7
+PASSES=3
 
 for i in $(seq ${PASSES}); do
   echo -e "$RTYP\t$LABEL\t$IMG\t$PKG\t$CLS\t$ITERS\t$ROWSM\t$DIST\t$OPTS"
