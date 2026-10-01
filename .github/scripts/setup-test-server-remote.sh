@@ -26,33 +26,14 @@ title () { echo; echo $1; }
 
 title "- Setting Up Remote Benchmark Testing on ${HOST} -"
 
-title "-- Waiting for APT to be Free --"
-BEGIN_SECS=$(date +%s)
-STATUS=0
-for i in {1..60}; do
-  if ! sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 && ! sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 \
-      && ! sudo fuser /var/lib/apt/lists/lock-frontend >/dev/null 2>&1; then
-    STATUS=1
-    break
-  fi
-  sleep 10
-done
-
-DURATION=$(($(date +%s) - ${BEGIN_SECS}))
-if [[ $STATUS -eq 0 ]]; then
-  echo "::error::Failed to gain APT lock after ${DURATION} seconds"
-  exit 1
-fi
-
+# Keep new automatic updates from starting, but let any in-flight one finish. These services use
+# KillMode=process, so stopping them would orphan the dpkg child holding the lock rather than end it
 title "-- Disabling Automatic Updates --"
-sudo systemctl stop unattended-upgrades.service 2>/dev/null || true
-sudo systemctl stop apt-daily.service 2>/dev/null || true
-sudo systemctl stop apt-daily-upgrade.service 2>/dev/null || true
-sudo systemctl disable --now apt-daily.timer 2>/dev/null || true
-sudo systemctl disable --now apt-daily-upgrade.timer 2>/dev/null || true
-sudo systemctl mask unattended-upgrades.service 2>/dev/null || true
-sudo systemctl mask apt-daily.service 2>/dev/null || true
-sudo systemctl mask apt-daily-upgrade.service 2>/dev/null || true
+# "disabled" on arrival means cloud-init already handled it, "enabled" means it did not run
+echo "apt timers on arrival: $(systemctl is-enabled apt-daily.timer apt-daily-upgrade.timer 2>&1 | tr '\n' ' ')"
+sudo systemctl disable --now apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+sudo systemctl mask unattended-upgrades.service apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+sudo systemctl stop --no-block apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
 sudo tee /etc/apt/apt.conf.d/10periodic >/dev/null <<EOF
 APT::Periodic::Enable "0";
 EOF
@@ -60,6 +41,33 @@ sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null <<EOF
 APT::Periodic::Update-Package-Lists "0";
 APT::Periodic::Unattended-Upgrade "0";
 EOF
+
+# A first boot upgrade can outlast ten minutes, so wait long enough to let it finish on its own
+title "-- Waiting for APT to be Free --"
+BEGIN_SECS=$(date +%s)
+STATUS=0
+for i in {1..120}; do
+  if ! sudo fuser /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1; then
+    STATUS=1
+    break
+  fi
+  if (( i % 6 == 0 )); then
+    echo "Still waiting after $(($(date +%s) - ${BEGIN_SECS}))s. Holding the lock:"
+    sudo fuser -v /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock 2>&1 | head -5 || true
+  fi
+  sleep 10
+done
+
+DURATION=$(($(date +%s) - ${BEGIN_SECS}))
+if [[ $STATUS -eq 0 ]]; then
+  echo "::error::Failed to gain APT lock after ${DURATION} seconds"
+  ps -eo pid,etimes,cmd | grep -E 'apt|dpkg|unattended' | grep -v grep || true
+  exit 1
+fi
+
+# An interrupted upgrade leaves dpkg needing a repair before any install will work
+title "-- Repairing Any Interrupted Package Transaction --"
+sudo dpkg --configure -a || true
 
 title "-- Disabling ASLR for Current Session --"
 sudo sysctl -w kernel.randomize_va_space=0 >/dev/null
