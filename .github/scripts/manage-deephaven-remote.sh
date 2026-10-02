@@ -38,16 +38,26 @@ fi
 echo "CONFIG_OPTS=${CONFIG_OPTS}" > .env
 echo "ENV_DEEPHAVEN_HOST_OS_DIR=${DEEPHAVEN_DIR}" >> .env
 
+# Reuse a pulled image the same way a built one is reused. A clear wipes images, so the first run
+# after it pulls, and later rows of a long matrix cannot drift onto a newly published tag
+pull_if_absent () {
+  if docker image inspect "$1" &>/dev/null 2>&1; then
+    echo "Image $1 already pulled. Skipping pull."
+  else
+    docker compose pull
+  fi
+}
+
 if [[ ${DOCKER_IMG} == ghcr.io/* ]]; then
   echo "DOCKER_IMG=${DOCKER_IMG}" >> .env
-  docker compose pull
+  pull_if_absent "${DOCKER_IMG}"
 elif [[ ${DOCKER_IMG} == *":"* ]]; then
   # Locally built from <owner>:<ref>, under the per-ref tag recorded by the distribution build.
   LOCAL_TAG=$(cat ${GIT_DIR}/benchmark-tag)
   echo "DOCKER_IMG=deephaven/server:${LOCAL_TAG}" >> .env
 else
   echo "DOCKER_IMG=ghcr.io/deephaven/server:${DOCKER_IMG}" >> .env
-  docker compose pull
+  pull_if_absent "ghcr.io/deephaven/server:${DOCKER_IMG}"
 fi
 
 if [[ ${DIRECTIVE} == 'start' ]]; then
