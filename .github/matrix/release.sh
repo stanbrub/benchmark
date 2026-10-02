@@ -20,19 +20,21 @@
 #
 # TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
-EXPECTED_COMBOS=7
+# TEMPORARY test values for verifying the workflow. A real release run uses
+# EXPECTED_COMBOS=7, CLS='*', PASSES=7
+EXPECTED_COMBOS=3
 
 RTYP='release'
 LABEL='<version>'
 IMG=${IMG:-edge}
 PKG=io.deephaven.benchmark.tests.standard
-CLS='*'
+CLS='Where,AvgBy'
 ITERS=1
 ROWSM=10
 DIST=random
 OPTS='<default>'
 
-PASSES=7
+PASSES=3
 
 for i in $(seq ${PASSES}); do
   echo -e "$RTYP\t$LABEL\t$IMG\t$PKG\t$CLS\t$ITERS\t$ROWSM\t$DIST\t$OPTS"
