@@ -1,9 +1,8 @@
 # Copyright (c) 2023-2024 Deephaven Data Labs and Patent Pending
 
-# Run comparison (competitive) benchmarks on a remote system 
-# according to the release defined in resources/release-benchmark-docker-compose.yml
-# in resources/release-benchmark-docker-compose.yml
-# - Calls the reusable worflow remote-benchmarks.yml
+# Run comparison (competitive) benchmarks on a remote system, measuring Deephaven against DuckDB,
+# Flink, Pandas, and PyArrow, which the tests run as python inside the Deephaven container
+# - Calls the reusable workflow remote-benchmarks.yml
 
 name: Compare Benchmark Test on Docker Deephaven
 

@@ -2,7 +2,7 @@
 
 # Provision a server and run benchmarks on that system, cleaning up after
 # - Deploys a new server on the fly
-# - Calls the reusable worflow remote-benchmarks.yml to run and upload benchmarks
+# - Calls the reusable workflow remote-benchmarks.yml to run and upload benchmarks
 # - Runs a comparison between two images/branches
 # - Deletes the server on success or failure
 
