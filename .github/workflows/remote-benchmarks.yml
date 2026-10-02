@@ -1,7 +1,7 @@
 # Copyright (c) 2023-2024 Deephaven Data Labs and Patent Pending
 
 # Run benchmarks on a remote system for the release the project is using
-# - This workflow is reusable with run_type set to release or nightly
+# - This workflow is reusable with run_type set to nightly, release, compare, or adhoc
 # - Scripts ending in "-local" run on the github runner
 # - Scripts ending in "-remote" run are executed on the remote test server through ssh
 # - test_device_addr selects both the server (<default>|<matrix>|ip) and the concurrency group

@@ -34,6 +34,7 @@ if [[ -n "${BAD_FIELDS}" ]]; then
   echo "::error::Every row needs 9 tab-separated fields in ${FILE}"; echo "${BAD_FIELDS}"; exit 1
 fi
 
+# Nightly is excluded on purpose, since a matrix run would collide with that day's real nightly set
 BAD_TYPES=$(echo "$TSV" | awk -F'\t' 'NF>0 && $1 !~ /^(adhoc|release|compare)$/ {print "  line "NR": "$1}')
 if [[ -n "${BAD_TYPES}" ]]; then
   echo "::error::run_type must be adhoc, release, or compare in ${FILE}"; echo "${BAD_TYPES}"; exit 1
