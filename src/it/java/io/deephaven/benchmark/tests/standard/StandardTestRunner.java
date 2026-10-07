@@ -37,6 +37,7 @@ final public class StandardTestRunner {
     private int rowCountFactor = 1;
     private int staticFactor = 1;
     private int incFactor = 1;
+    private long initialSize = 0;
     private boolean useCachedSource = true;
     private boolean useLocalParquet = false;
 
@@ -180,6 +181,16 @@ final public class StandardTestRunner {
     }
 
     /**
+     * Set how many main-table rows are released before the incremental operation is built (default 0). Useful when an
+     * operation makes choices at construction from its input. The initial rows are included in the measured time.
+     * 
+     * @param initialSize the number of main-table rows released before the operation is built
+     */
+    public void setInitialSize(long initialSize) {
+        this.initialSize = initialSize;
+    }
+
+    /**
      * Run a single operation test through the Bench API with no upper bound expected on the resulting row count
      * 
      * @see #test(String, long, String, String...)
@@ -313,7 +324,7 @@ final public class StandardTestRunner {
         ${setupQueries}
         
         autotune = jpy.get_type(f'io.deephaven.engine.table.impl.select.AutoTuningIncrementalReleaseFilter')
-        source_filter = autotune(0,1000000,bench_inc_load_target,True)
+        source_filter = autotune(${initialSize},1000000,bench_inc_load_target,True)
         ${mainTable} = ${mainTable}.where(source_filter)
         if right: 
             right_filter = autotune(0,1010000,bench_inc_load_target,True)
@@ -366,6 +377,7 @@ final public class StandardTestRunner {
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
         query = query.replace("${mainTable}", mainTable);
+        query = query.replace("${initialSize}", "" + initialSize);
         return query;
     }
 
