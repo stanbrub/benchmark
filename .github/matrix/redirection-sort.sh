@@ -1,7 +1,9 @@
 # DH-23829 (redirection hash maps): before vs after, plain and with JFR
 #
-# before: parent of part 1.5, the first DH-23829 change to production code (part 1 is JMH only)
-# after:  part 21-25, the last DH-23829 commit
+# before: 09-30 nightly edge image, GIT_REVISION 9939e3495e (before all DH-23829)
+# after:  10-04 nightly edge image, GIT_REVISION ed8213c46a (part 21-25, the last DH-23829 commit)
+# Published images, since commits before the mypy 2.4.0 fix (8fb7f0d475) no longer build. Other
+# commits between them include DH-23853 and DH-23886 (broad ticking paths).
 # Plain rows give the rates. JFR rows reuse the same images and are for profiling and memory only,
 # since JFR can shift rates. Details: studies/2026-10-05_redirection-hashmaps/FINDINGS.md
 #
@@ -17,8 +19,8 @@ DIST=random
 ROWSM=10
 PLAIN='<default>'
 
-BEFORE=deephaven:78483756db40f1f6cbc6e4547e2c288ea57cdced
-AFTER=deephaven:ed8213c46aaf0d6714d22da26876e482db1cfab8
+BEFORE=ghcr.io/deephaven/server@sha256:42be1a6ea2325339878b258b3d0313f5188fcd98233ba8dd8fb2c30b1c64c024
+AFTER=ghcr.io/deephaven/server@sha256:a06a5ee774b8eb0b9c9db29fd338d1d1ae0de27b9c4d274070a29ccb3331068b
 
 # Needs docker.compose.stop.timeout > 0 (adhoc has 30) so the recording flushes
 jfr_opts() {
