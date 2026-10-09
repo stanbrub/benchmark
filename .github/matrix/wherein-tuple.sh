@@ -12,7 +12,8 @@
 # - Alloc rows: JFR with the TLAB events, which are not throttled like ObjectAllocationSample, so
 #   allocation totals compare across builds. They roughly double the runtime, so their rates don't count.
 # Differences from the GC study rows: no -XX:+UseCompactObjectHeaders (JDK 21), so objects are larger
-# than with JDK 25. If the base fails at this heap, raise HEAP.
+# than with JDK 25. At 24G both builds sat at a full heap after GC and the PR alloc row ran out of
+# heap, so the training rows use the GC study's 48G.
 # The PR also lowers QueryTable.dataIndexForWhereThreshold, which Parquet location pushdown shares, so
 # the chained .where() could change as well as the where_in.
 #
@@ -31,7 +32,8 @@ EXPECTED_COMBOS=6
 RTYP='adhoc'
 ROWSM=10
 DIST=random
-HEAP=24
+# Training rows only; the standard rows keep the default 24G
+TRAIN_HEAP=48
 
 BASE=deephaven:5a02aaccfa7689d918ef510705cc627b7da35826
 PR=cpwright:90fba051512f39619994f337dbab4d238be37449
@@ -42,7 +44,7 @@ STD_PKG=io.deephaven.benchmark.tests.standard
 # Suffix-free: 'Where' matches only WhereTest
 STD_CLASSES='WhereIn,WhereNotIn,Where'
 
-OPTS="-XX:+UseG1GC -Xms${HEAP}g -Xmx${HEAP}g -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages -XX:+UseStringDeduplication -DServerStateTracker.reportIntervalMillis=1000 -DPeriodicUpdateGraph.targetCycleDurationMillis=1000 -Dbench.incLoadTarget=1.00"
+OPTS="-XX:+UseG1GC -Xms${TRAIN_HEAP}g -Xmx${TRAIN_HEAP}g -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages -XX:+UseStringDeduplication -DServerStateTracker.reportIntervalMillis=1000 -DPeriodicUpdateGraph.targetCycleDurationMillis=1000 -Dbench.incLoadTarget=1.00"
 PLAIN='<default>'
 
 # Needs docker.compose.stop.timeout > 0 (adhoc has 30) so the recording flushes
