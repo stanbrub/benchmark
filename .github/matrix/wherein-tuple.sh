@@ -27,7 +27,7 @@
 #
 # TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
-EXPECTED_COMBOS=6
+EXPECTED_COMBOS=2
 
 RTYP='adhoc'
 ROWSM=10
@@ -55,9 +55,10 @@ alloc_opts() {
 # label, image, package, classes, test_iterations, config_options
 row() { echo -e "$RTYP\t$1\t$2\t$3\t$4\t$5\t$ROWSM\t$DIST\t$6"; }
 
-row train_base_g1       "$BASE" $TRAIN_PKG "$TRAIN_CLASSES" 3 "$OPTS"
-row train_pr_g1         "$PR"   $TRAIN_PKG "$TRAIN_CLASSES" 3 "$OPTS"
-row train_base_g1_alloc "$BASE" $TRAIN_PKG "$TRAIN_CLASSES" 1 "$(alloc_opts train_base_g1_alloc)"
-row train_pr_g1_alloc   "$PR"   $TRAIN_PKG "$TRAIN_CLASSES" 1 "$(alloc_opts train_pr_g1_alloc)"
+# Training rows completed in run 37867086400 before GitHub cancelled it; rerunning the standard rows only
+# row train_base_g1       "$BASE" $TRAIN_PKG "$TRAIN_CLASSES" 3 "$OPTS"
+# row train_pr_g1         "$PR"   $TRAIN_PKG "$TRAIN_CLASSES" 3 "$OPTS"
+# row train_base_g1_alloc "$BASE" $TRAIN_PKG "$TRAIN_CLASSES" 1 "$(alloc_opts train_base_g1_alloc)"
+# row train_pr_g1_alloc   "$PR"   $TRAIN_PKG "$TRAIN_CLASSES" 1 "$(alloc_opts train_pr_g1_alloc)"
 row wherein_base        "$BASE" $STD_PKG   "$STD_CLASSES"   5 "$PLAIN"
 row wherein_pr          "$PR"   $STD_PKG   "$STD_CLASSES"   5 "$PLAIN"
