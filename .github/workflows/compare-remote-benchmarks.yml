@@ -1,9 +1,8 @@
 # Copyright (c) 2023-2024 Deephaven Data Labs and Patent Pending
 
-# Run comparison (competitive) benchmarks on a remote system 
-# according to the release defined in resources/release-benchmark-docker-compose.yml
-# in resources/release-benchmark-docker-compose.yml
-# - Calls the reusable worflow remote-benchmarks.yml
+# Run comparison (competitive) benchmarks on a remote system, measuring Deephaven against DuckDB,
+# Flink, Pandas, and PyArrow, which the tests run as python inside the Deephaven container
+# - Calls the reusable workflow remote-benchmarks.yml
 
 name: Compare Benchmark Test on Docker Deephaven
 
@@ -11,13 +10,28 @@ on:
   workflow_dispatch:
     inputs:
      docker_image:
-       description: 'Docker Image Name'
+       description: 'Docker Image (release version or "edge" for pre-release)'
        required: true
-       default: '0.36.0'
+       default: '42.0'
        type: string
 
 jobs:
+  validate-inputs:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Validate Docker Image Version
+      env:
+        IMG: ${{ inputs.docker_image }}
+      run: |
+        if [[ "${IMG}" == "edge" ]]; then
+          echo "Pre-release run. The set label comes from the version the engine reports"
+        elif ! [[ "${IMG}" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then
+          echo "::error::docker_image '${IMG}' is not a release version (expected numeric format like 42.4 or 42.4.1) or 'edge'"
+          exit 1
+        fi
+
   process-compare-benchmarks:
+    needs: validate-inputs
     uses: ./.github/workflows/remote-benchmarks.yml
     with:
       run_type: compare
@@ -28,6 +42,7 @@ jobs:
       test_iterations: 5
       scale_row_count: 70000000
       distribution: random
-      test_device_addr: "<default>"
+      test_device_addr: "<matrix>"
+      clear_server: true
       config_options: "<default>"
     secrets: inherit

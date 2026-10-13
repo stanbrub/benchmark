@@ -2,7 +2,7 @@
 
 # Provision a server and run benchmarks on that system, cleaning up after
 # - Deploys a new server on the fly
-# - Calls the reusable worflow remote-benchmarks.yml to run and upload benchmarks
+# - Calls the reusable workflow remote-benchmarks.yml to run and upload benchmarks
 # - Runs a comparison between two images/branches
 # - Deletes the server on success or failure
 
@@ -14,12 +14,12 @@ on:
       docker_image_1:
         description: 'Deephaven Image or Core Branch'
         required: true
-        default: '0.35.0'
+        default: '42.0'
         type: string
       docker_image_2:
         description: 'Deephaven Image or Core Branch'
         required: true
-        default: '0.36.0'
+        default: 'edge'
         type: string
       set_label_prefix:
         description: 'Set Label Prefix'
@@ -74,14 +74,21 @@ jobs:
     - uses: actions/checkout@v4
     - name: Make Set Labels
       id: make-labels 
+      env:
+        LABEL_PREFIX: ${{ inputs.set_label_prefix }}
+        IMAGE_1: ${{ inputs.docker_image_1 }}
+        IMAGE_2: ${{ inputs.docker_image_2 }}
       run: |
-        ${SD}/adhoc.sh make-labels ${{ inputs.set_label_prefix }} ${{ inputs.docker_image_1 }} ${{ inputs.docker_image_2 }}
+        ${SD}/adhoc.sh make-labels "${LABEL_PREFIX}" "${IMAGE_1}" "${IMAGE_2}"
         cat adhoc-make-labels.out >> "$GITHUB_OUTPUT"
 
     - name: Scale Input Numbers
       id: scale-nums
+      env:
+        ROW_COUNT: ${{ inputs.scale_row_count }}
+        ITERATIONS: ${{ inputs.test_iterations }}
       run: |
-        ${SD}/adhoc.sh scale-nums ${{ inputs.scale_row_count }} ${{ inputs.test_iterations }}
+        ${SD}/adhoc.sh scale-nums "${ROW_COUNT}" "${ITERATIONS}"
         cat adhoc-scale-nums.out >> "$GITHUB_OUTPUT"
 
     - name: Deploy Bare Metal
@@ -111,26 +118,12 @@ jobs:
       scale_row_count: ${{ needs.setup-benchmark-system.outputs.test_row_count }}
       distribution: ${{ inputs.distribution }}
       test_device_addr: ${{ needs.setup-benchmark-system.outputs.metal_ip_addr }}
+      clear_server: true
       config_options: "<default>"
     secrets: inherit
 
-  clear-between-runs:
-    needs: [setup-benchmark-system, process-adhoc-benchmarks-1]
-    runs-on: ubuntu-24.04
-    env:
-      SD: .github/scripts
-      HOST: ${{ needs.setup-benchmark-system.outputs.metal_ip_addr }}
-      USER: ${{ secrets.BENCHMARK_USER }}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Clear Remote Test Server
-      run: |
-        sudo chmod +x ${SD}/*
-        ${SD}/setup-ssh-local.sh ${HOST} "${{ secrets.BENCHMARK_KEY }}"
-        ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} clear-test-server-remote
-
   process-adhoc-benchmarks-2:
-    needs: [setup-benchmark-system, clear-between-runs]
+    needs: [setup-benchmark-system, process-adhoc-benchmarks-1]
     uses: ./.github/workflows/remote-benchmarks.yml
     with:
       run_type: adhoc
@@ -142,6 +135,7 @@ jobs:
       scale_row_count: ${{ needs.setup-benchmark-system.outputs.test_row_count }}
       distribution: ${{ inputs.distribution }}
       test_device_addr: ${{ needs.setup-benchmark-system.outputs.metal_ip_addr }}
+      clear_server: true
       config_options: "<default>"
     secrets: inherit
 

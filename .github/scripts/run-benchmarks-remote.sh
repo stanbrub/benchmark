@@ -11,6 +11,8 @@ set -f
 # - If TAG_NAME is "Any", run all tests
 # - If TAG_NAME starts with "!", run all tests except the named tag
 # - Otherwise, run tests marked with the tag name
+# Every form is limited to the classes matching TEST_PATTERN. The name filter (-n) and the tag
+# filters (-t/-T) are independent and intersect, so a short run can narrow both at once.
 # Note: Assumes the deephaven-benchmark-*.jar artifact has been built and placed
 
 if [[ $# != 6 ]]; then
@@ -76,7 +78,7 @@ if [ "${TAG_NAME}" = "Any" ]; then
 elif [[ "${TAG_NAME}" = !* ]]; then
   java ${JAVA_OPTS} -p ${TEST_PACKAGE} -n "${TEST_PATTERN}" -T "${TAG_NAME:1}"
 else
-  java ${JAVA_OPTS} -p ${TEST_PACKAGE} -t "${TAG_NAME}"
+  java ${JAVA_OPTS} -p ${TEST_PACKAGE} -n "${TEST_PATTERN}" -t "${TAG_NAME}"
 fi
 
 title "-- Getting Docker Logs --"
