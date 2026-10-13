@@ -1,7 +1,8 @@
 # Sweep heap size to find failure points per GC and test class
-# TSV columns: run_label, docker_image, test_package, test_class_list,
+# TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
 
+RTYP='adhoc'
 IMG=ghcr.io/stanbrub/server:jvm25
 PKG=io.deephaven.benchmark.tests.train
 ITERS=1
@@ -51,7 +52,7 @@ for combo in "${COMBOS[@]}"; do
   read -r cls gc min_heap max_heap <<< "$combo"
   for h in $(seq ${max_heap} -${STEP} ${min_heap}); do
     opts="${GCS[$gc]} -Xms${h}g -Xmx${h}g $BASE $CYCLE"
-    echo -e "gc_${gc}_${cls}_h${h}_j25\t$IMG\t$PKG\t*${cls}\t$ITERS\t$ROWSM\t$DIST\t$opts"
+    echo -e "$RTYP\tgc_${gc}_${cls}_h${h}_j25\t$IMG\t$PKG\t*${cls}\t$ITERS\t$ROWSM\t$DIST\t$opts"
   done
 done
 

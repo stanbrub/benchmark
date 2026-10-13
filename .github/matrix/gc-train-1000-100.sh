@@ -1,8 +1,9 @@
 # Compare GC configurations across cycle times and profiles
-# TSV columns: run_label, docker_image, test_package, test_class_list,
+# TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
 EXPECTED_COMBOS=32
 
+RTYP='adhoc'
 IMG=ghcr.io/stanbrub/server:jvm25
 PKG=io.deephaven.benchmark.tests.train
 CLS='*Train'
@@ -23,11 +24,12 @@ R="$IMG\t$PKG\t$CLS\t$ITERS\t$ROWSM\t$DIST"
 # emit <label> <gc> <cycle_ms> <inc_load_target> — outputs regular and _huge variants
 run() {
   local opts="$2 $BASE -DPeriodicUpdateGraph.targetCycleDurationMillis=$3 -Dbench.incLoadTarget=$4"
-  echo -e "$1\t$R\t$opts"
-  echo -e "${1}_huge\t$R\t$opts $HUGE"
+  echo -e "$RTYP\t$1\t$R\t$opts"
+  echo -e "$RTYP\t${1}_huge\t$R\t$opts $HUGE"
 }
 
-# 1000ms cycle
+# 1000ms cycle/adhoc
+
 run gc_g1gc_1000_p100_j25  "$G1"   1000  1.00
 run gc_zgc_1000_p100_j25   "$ZGC"  1000  1.00
 run gc_shen_1000_p100_j25  "$SHEN" 1000  1.00

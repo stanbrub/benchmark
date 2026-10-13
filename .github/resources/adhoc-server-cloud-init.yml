@@ -1,0 +1,12 @@
+#cloud-config
+
+# Keep the apt timers from firing on a freshly provisioned server. Both ship with Persistent=true, so
+# a new box treats their schedule as missed and runs them at a random offset after boot. When that
+# offset lands in the first few minutes it collides with benchmark setup and holds the dpkg lock.
+#
+# bootcmd runs in the cloud-init local stage, well before timers.target, so the timers never fire.
+# Do not add a users: block here. The server is provisioned with installDefaultSshKeys, and a users:
+# list that omits "- default" replaces the provisioned key and locks the run out of its own server.
+bootcmd:
+  - systemctl disable --now apt-daily.timer apt-daily-upgrade.timer
+  - systemctl mask apt-daily.service apt-daily-upgrade.service unattended-upgrades.service

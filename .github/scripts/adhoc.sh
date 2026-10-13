@@ -67,13 +67,14 @@ deleteMetal() {
 
 # Make set labels from a prefix and image/branch names
 if [[ ${ACTION} == "make-labels" ]]; then
-  PREFIX=$2
-  IMAGE1=$3
-  IMAGE2=$4
+  PREFIX="$2"
+  IMAGE1="$3"
+  IMAGE2="$4"
   echo "Making Labels: ${PREFIX}"
 
-  LABEL1=$(getSetLabel ${PREFIX} ${IMAGE1})
-  LABEL2=$(getSetLabel ${PREFIX} ${IMAGE2})
+  # Quoted so an empty prefix stays in position instead of shifting the image names left
+  LABEL1=$(getSetLabel "${PREFIX}" "${IMAGE1}")
+  LABEL2=$(getSetLabel "${PREFIX}" "${IMAGE2}")
 
   echo "PREFIX=${PREFIX}" | tee -a ${OUTPUT_NAME}
   echo "SET_LABEL_1=${LABEL1}" | tee -a ${OUTPUT_NAME}
@@ -111,8 +112,11 @@ if [[ ${ACTION} == "deploy-metal" ]]; then
   TOKEN=$(getApiToken "${PROJECT_ID}" "${API_KEY}")
 
   echo "Making Deploy POST"
-  jq --arg hostname "${ACTOR}" --arg plan "${PLAN}" \
-   '.hostname = $hostname | .type = $plan' adhoc-server-deploy.json > adhoc-server-deploy-final.json
+  # The API wants cloud-init user data base64 encoded on one line, and will not echo it back
+  USER_DATA=$(base64 -w0 adhoc-server-cloud-init.yml)
+  jq --arg hostname "${ACTOR}" --arg plan "${PLAN}" --arg userdata "${USER_DATA}" \
+   '.hostname = $hostname | .type = $plan | .osConfiguration.cloudInit.userData = $userdata' \
+   adhoc-server-deploy.json > adhoc-server-deploy-final.json
   echo "Finished Deploy POST"
 
   echo "Running Deploy API"

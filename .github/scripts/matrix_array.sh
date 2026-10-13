@@ -9,12 +9,13 @@ set -o pipefail
 # workflow with fromJSON(array)
 # ex. matrix_array.sh matrix-arr adhoc 5
 # ex. matrix_array.sh matrix-arr release 4
+# Only nightly splits on the Iterate tag, to fit a curated subset of repeats into its time budget
 
 NAME=$1
 RUN_TYPE=$2
 ITERATIONS=$3
 
-if [ "${RUN_TYPE}" = 'release' ] || [ "${RUN_TYPE}" = 'nightly' ]; then
+if [ "${RUN_TYPE}" = 'nightly' ]; then
   FIRST='!Iterate'
   TAG='Iterate'
 else
