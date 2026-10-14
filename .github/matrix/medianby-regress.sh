@@ -1,86 +1,80 @@
-# Profile the median/percentile regressions that appeared in the 2026-10-13 nightly
+# Measure how much of the #8858 median/percentile regressions the follow-up #8914 recovers
 #
-# Nightly 10-12 ran 9fc7833bbb and nightly 10-13 ran 62726a15ee. Across that step most MedianBy and
-# SortedCombo benchmarks gained 10% to 190%, but three regressed, and an 11-iteration adhoc A/B
-# confirmed each one (see the 2026-10-13_medianby-percentile study):
+# #8858 (DH-24000) sped up most MedianBy and SortedCombo benchmarks, many by 2-3x, but four
+# regressed (see the 2026-10-13_medianby-percentile study):
 #
-#   MedianBy- No Groups -Inc                           -15% to -19%
-#   SortedCombo-AggBy- 5 Ops 3 Groups 1M Unique Combos -Inc  -9% to -11%
-#   SortedCombo-AggBy- 5 Ops No Groups -Static          -7% to  -9%
+#   MedianBy- No Groups -Inc                    -15% to -19%  Object TimSort over a multi-million-
+#                                                             value staged chunk per cycle
+#   SortedCombo-AggBy- 5 Ops 3 Groups 1M -Inc     -7% to -11%  per-group staging at ~0.3 values per
+#                                                             group per cycle, plus SSM churn
+#   SortedCombo-AggBy- 5 Ops No Groups -Static    -7% to  -9%  growing a 200M-value array by doubling
+#   SortedCombo-AggBy- 5 Ops No Groups -Inc       -1% to  -9%  single-group staging growth (weakest)
 #
-# Run 1 (labels medianby_{before,pr,tip}_jfr) settled the commit: before -> pr carried all of it and
-# pr -> tip was flat, so #8858 alone is responsible. Its profiles showed that most of the added wall
-# time is on the busy thread but in neither Java samples nor GC pauses. In all three benchmarks, the
-# one quantity that grows with it is bytes allocated: +2.0 GB, +10.6 GB and +8.0 GB per benchmark.
-# The suspicion is first-touch page faults on fresh heap, which the JFR execution sampler cannot see.
+# Two JFR rounds on this matrix found the causes; this round is throughput only, the measurement of
+# record. #8914 (draft, Charles Wright) targets them:
+#   - Object values stage in shared, bounded windows: no multi-million-value sort per cycle
+#   - an emptied lo/hi SSM is kept until both are empty, for every type: no create/clear churn
+#   - a zero-key static aggregation presizes its array from the table size: no doubling
+#   - primitive values keep per-destination staging, which #8914 itself says leaves primitive
+#     columns with 1M keys slower than before #8858
 #
-# This run tests that, and only needs the two commits:
+# Expectations: MedianBy No Groups -Inc (strings) recovers; SortedCombo No Groups -Static improves;
+# SortedCombo 3 Groups 1M -Inc (num1 is a double) recovers only the churn share, so some regression
+# likely remains.
 #
-#   before  2a29db7a5f  parent of #8858
-#   pr      29668d5d0c  perf: DH-24000: Faster percentile and median aggregations (#8858)
+# Rows, all built from source so the three are the same kind of image:
 #
-# Each commit runs under two heap configurations that differ only in -XX:+AlwaysPreTouch:
+#   before_8858  deephaven:2a29db7a5f  parent of #8858
+#   after_8858   deephaven:591c80a5bf  main at #8914's merge base. Besides #8858 it adds #8799 and
+#                                      #8828, which the first JFR round showed flat on all 18
+#                                      MedianBy/SortedCombo benchmarks
+#   after_8914   cpwright:a4e38a4e96   #8914 head, from Charles's fork
 #
-#   xms   -Xms24g -Xmx24g                       heap committed up front, pages faulted on first use
-#   pt    -Xms24g -Xmx24g -XX:+AlwaysPreTouch   every heap page faulted in at JVM startup
+# before_8858 -> after_8858 re-measures the regressions. after_8858 -> after_8914 is #8914 alone,
+# since #8914 is built on exactly that commit. before_8858 -> after_8914 is what, if anything, is
+# still regressed with both PRs in. The refs are pinned SHAs: the PR is a draft and may move, and
+# results should name the exact commit measured. To measure a newer push, change PR8914 and the
+# labels.
 #
-# -Xms24g is required, not optional: AlwaysPreTouch only touches committed memory, and with the
-# default -Xms G1 commits as it grows, so the touching would just move into the operation. It also
-# changes G1's sizing, which is why the comparison is xms vs pt, never run 1 vs pt. Run 1's
-# default-heap numbers compare to the xms rows only as a cross-run sanity check.
+# A cpwright row clones cpwright/deephaven-core; the build script repoints origin per owner, so
+# mixing owners in one matrix is supported.
 #
-# How to read it (with jfr_timeline.py and jfr_alloc_thread.py from the study):
-#   gap shrinks under pt, before->pr delta mostly gone   first-touch page faults were the cost
-#   gap stays under pt                                   it is in the allocation itself (zeroing,
-#                                                        humongous slow path), or not allocation;
-#                                                        needs a profiler that sees VM frames
-# Pre-touch does not remove zeroing or copying, so a partial drop is possible. The 1M-groups
-# benchmark also has visible SSM churn CPU (create/clear every cycle) that pt should not change.
+# config_options is <default> (-Xmx24g, no JFR, no pre-touch), matching the nightly. Pre-touch
+# would hide the two page-fault regressions, which a user on a fresh server does see.
 #
-# Pre-touching 24 GB adds a few seconds to each engine start. That falls outside the measured
-# operation but lengthens every row; the four rows run about 75 minutes plus two source builds.
+# Not included: larger update cycles via -Dbench.incLoadTarget. At 1M groups the source has only
+# ~10 values per group in total, so even a few long cycles cannot give a group enough values per
+# cycle to change the result. Testing the cycle-size effect would need its own benchmark.
 #
-# Labels are new: reusing run 1's labels would append run directories to those sets and mix them.
-# The JFR filename is the label, so recordings map to their row by name.
+# ITERS=11. The four original regressions (7-19%) would resolve at 7, but the open question for
+# #8914 is whether a residual of a few percent remains. 11 tightens each row's median by about 20%
+# and leaves room under a Bonferroni threshold for 18 benchmarks x 3 comparisons (p<0.00093). At 7,
+# complete separation gives p=0.00058 but a single overlapping run gives 0.0012, which fails it;
+# at 11, complete separation gives 0.0000028, with room for a few overlaps. It also matches the
+# 11-iteration adhoc sets that first measured the regressions. Class lists omit the Test suffix:
+# ConsoleLauncherUtil appends it. Labels are new, so nothing appends to earlier sets.
 #
-# Both rows of each commit request the same ref, so the second reuses the image the first built:
-# each pair is the same binary. Rows are built from source, not pulled, for the same reason.
-#
-# settings=profile includes jdk.ObjectAllocationSample. JFR needs docker.compose.stop.timeout above 0
-# or the engine is killed before the recording flushes; adhoc-scale-benchmark.properties sets 30.
-#
-# Class lists omit the Test suffix: ConsoleLauncherUtil appends it. Both classes run in full, so the
-# improving benchmarks and SortedCombo No Groups -Inc (a probable fourth, smaller regression) come
-# along as controls.
-#
-# ITERS=3 gives each benchmark three recordings per row. ROWSM=10 and DIST=random match the nightly.
+# Expect roughly 6 minutes per iteration per row, about 3.3 hours for the three rows plus three
+# source builds.
 #
 # TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
-EXPECTED_COMBOS=4
+EXPECTED_COMBOS=3
 
 RTYP='adhoc'
 PKG=io.deephaven.benchmark.tests.standard
 CLASSES='MedianBy,SortedCombo'
 DIST=random
 ROWSM=10
-ITERS=3
+ITERS=11
+PLAIN='<default>'
 
 BEFORE=deephaven:2a29db7a5fe74744cc5f3fa05b9a18d14f096dd4
-PR=deephaven:29668d5d0c56ca3a5d67e98b087e3513dca458a5
+MAIN=deephaven:591c80a5bf1c509237f78095ffadde42d4ed0c64
+PR8914=cpwright:a4e38a4e966905afc040abcb3cd02ab22c931cf0
 
-XMS='-Xms24g -Xmx24g'
-PT='-Xms24g -Xmx24g -XX:+AlwaysPreTouch'
+row() { echo -e "$RTYP\t$1\t$2\t$PKG\t$CLASSES\t$ITERS\t$ROWSM\t$DIST\t$PLAIN"; }
 
-# $1 label, $2 heap options
-jfr_opts() {
-    echo "$2 -XX:StartFlightRecording=name=bench,filename=/data/$1-%t-%p.jfr,settings=profile,maxsize=200m"
-}
-
-# $1 label, $2 image, $3 heap options
-row() { echo -e "$RTYP\t$1\t$2\t$PKG\t$CLASSES\t$ITERS\t$ROWSM\t$DIST\t$(jfr_opts "$1" "$3")"; }
-
-row medianby_before_xms "$BEFORE" "$XMS"
-row medianby_pr_xms     "$PR"     "$XMS"
-row medianby_before_pt  "$BEFORE" "$PT"
-row medianby_pr_pt      "$PR"     "$PT"
+row medianby_r3_before_8858 "$BEFORE"
+row medianby_r3_after_8858  "$MAIN"
+row medianby_r3_after_8914  "$PR8914"
