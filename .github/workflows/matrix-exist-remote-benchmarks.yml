@@ -18,6 +18,8 @@ on:
         - gc-train-1000-100.sh
         - gc-train-heap-fail.sh
         - parquet-cache-heap.sh
+        - parquet-cache-48g.sh
+        - parquet-cache-48g-smoke.sh
         - example-regression-matrix.sh
 
 jobs:
