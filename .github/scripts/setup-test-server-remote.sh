@@ -18,7 +18,7 @@ GIT_DIR=${HOME}/git
 GIT_REPO=$1
 GIT_BRANCH=$2
 RUN_TYPE=$3                     # ex. nightly | release | compare
-DOCKER_IMG=$4			# ex. edge | 0.32.0 (assumes location ghcr.io/deephaven/server)
+DOCKER_IMG=$4			# ex. edge | 42.0 (assumes location ghcr.io/deephaven/server)
 DEEPHAVEN_DIR=${HOME}/deephaven
 export DEBIAN_FRONTEND=noninteractive
 
@@ -91,7 +91,8 @@ if ! sudo update-alternatives --list java 2>/dev/null | grep -qi temurin; then
 fi
 
 title "-- Installing JVMs --"
-sudo apt-get -y install temurin-17-jdk
+sudo apt-get -y install temurin-17-jdk temurin-21-jdk
+sudo update-alternatives --set java /usr/lib/jvm/temurin-17-jdk-amd64/bin/java
 
 title "-- Installing Maven --"
 sudo apt-get -y install maven
