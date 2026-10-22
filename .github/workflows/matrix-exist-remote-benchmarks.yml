@@ -20,6 +20,7 @@ on:
         - parquet-cache-heap.sh
         - parquet-cache-48g.sh
         - parquet-cache-48g-smoke.sh
+        - dh23641-regress.sh
         - example-regression-matrix.sh
 
 jobs:
