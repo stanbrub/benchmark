@@ -18,9 +18,9 @@ The typical Benchmark run will be initiated from a [Github on-demand workflow](h
 
 There are two Adhoc Workflows:
 - [Adhoc Benchmarks (Auto-provisioned Server)](https://github.com/deephaven/benchmark/actions/workflows/adhoc-auto-remote-benchmarks.yml)
-- [Adhoc Benchmarks (Existing Server) ](https://github.com/deephaven/benchmark/actions/workflows/adhoc-exist-remote-benchmarks.yml)
+- [Adhoc Benchmarks (Nightly Server)](https://github.com/deephaven/benchmark/actions/workflows/adhoc-exist-remote-benchmarks.yml)
 
-Of the two workflows, privileged users will use the "Auto-provisioned Server" workflow in the vast majority of cases. Using the "Existing Server" workflow requires a dedicated server and extra setup.
+Of the two workflows, privileged users will use the "Auto-provisioned Server" workflow in the vast majority of cases. The "Nightly Server" workflow runs on the always-on server shared with the nightly benchmarks, so it suits short runs. Longer runs belong in a matrix config run by "Matrix Benchmarks (Matrix Server)".
 
 ### Common Workflow UI Fields
 
@@ -55,27 +55,48 @@ The ui fields used for both Adhoc workflows that are common are defined below:
 
 The auto-provisioned adhoc workflow allows developers to run workflows on bare metal server hardware that is provisioned on the fly for the benchmark run. It requires two branches, tags, commit hashes, or docker images/shas to run for the same benchmark set. This is the workflow most commonly used to compare performance between a Deephaven PR branch and the main branch.
 
-Workflow fields not shared with the Existing Server workflow:
+Workflow fields not shared with the Nightly Server workflow:
 - Set Label Prefix
   - The prefix used to make the Set Label for each side of the benchmark comparison
   - ex. Setting `myprefix` with the images `41.0` and `42.0` for Deephaven Image or Core Branch cause two directories in the GCloud benchmark bucket
     - `adhoc/githubuser/myprefix_41_0` and `adhoc/githubuser/myprefix_42_0`
     - Because of naming rules, non-alpha-nums will be replaced with underscores
 
-### Adhoc Benchmarks (Existing Server)
+### Adhoc Benchmarks (Nightly Server)
 
-The adhoc workflow that uses an existing server allows developers more freedom to experiment with JVM options. It also gives them more freedom to shoot themselves in the foot. For example, if max heap is set bigger than the test server memory, the Deephaven service will crash.
+The adhoc workflow that uses the nightly server allows developers more freedom to experiment with JVM options. It also gives them more freedom to shoot themselves in the foot. For example, if max heap is set bigger than the test server memory, the Deephaven service will crash.
 
 Workflow fields not shared with the Auto-provisioned Server workflow:
 - Deephaven JVM Options
   - Options that will be included as JVM arguments to the Deephaven service
   - ex. `-Xmx24g -DQueryTable.memoizeResults=false`
+  - Add `-Dbench.jfr=profile` to record JFR for each benchmark (see [JFR Recordings](#jfr-recordings))
 - Set Label
   - The label to used to store the result in the GCloud benchmark bucket
   - ex. Setting `mysetlabel` would be stored at `adhoc/mygithubuser/mysetlabel`
 - Benchmark Test Package
   - The java package where the desired benchmark test classes are
   - Unless making custom tests in a fork, use the default
+
+### JFR Recordings
+
+Setting `-Dbench.jfr=<settings>` in the Deephaven JVM Options (or a matrix row's `config_options`) records a Java Flight Recording of the engine for each benchmark and uploads it with the other results.
+- Values name the JDK's JFR settings, and leaving the property out means no recording
+  - `profile`: More detail, more overhead
+  - `default`: Less detail, less overhead
+  - Any other value fails every benchmark with `Could not locate configuration with name ...`
+- Recordings are added to the run's `test-logs.tgz`, next to each test class's `query.md` and `engine.log`, and named with the exact `benchmark_name` from the results
+  - ex. `adhoc/mygithubuser/mysetlabel/run-1BzVb5hqX/test-logs.tgz`
+  - containing `standard.sort.SortComboTest/Sort- 3 Cols -Static.jfr`
+- Each recording covers the engine from the start of the benchmark's session (including table generation) to the end of the measured operation, up to 512MB
+- JFR changes what it measures. Confirm a performance difference without it before trusting a profiled comparison
+- Recordings started with your own JVM options (e.g. `-XX:StartFlightRecording=filename=/data/...`) still work for experiments, but are not collected or uploaded. They stay in the server's `deephaven/data` directory until the next workflow clears the server, so copy them off with `scp` before then
+
+The bucket deletes test logs, with or without recordings, after 14 days. The expiration is a bucket lifecycle rule defined in [gcloud-bucket-lifecycle.json](../.github/resources/gcloud-bucket-lifecycle.json). It is applied by a bucket admin, not by the workflows. Applying it replaces any existing lifecycle rules, so check those first.
+```
+gcloud storage buckets describe gs://deephaven-benchmark --format="default(lifecycle_config)"
+gcloud storage buckets update gs://deephaven-benchmark --lifecycle-file=.github/resources/gcloud-bucket-lifecycle.json
+```
   
 ### The Adhoc Dashboard
 
