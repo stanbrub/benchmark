@@ -22,6 +22,7 @@ on:
         - parquet-cache-48g-smoke.sh
         - dh23641-regress.sh
         - dh23641-weekend.sh
+        - dh23641-sweep2.sh
         - example-regression-matrix.sh
         - train-jfr.sh
 
