@@ -38,7 +38,7 @@ final public class StandardTestRunner {
     private int staticFactor = 1;
     private int incFactor = 1;
     private double initialFactor = 0;
-    private boolean useCachedSource = true;
+    private Boolean useCachedSource = null;
     private boolean useLocalParquet = false;
 
     public StandardTestRunner(Object testInst) {
@@ -105,9 +105,12 @@ final public class StandardTestRunner {
     }
 
     /**
-     * Set if the generated tables are loaded into memory before running the test queries.
+     * Set if the generated tables are loaded into memory (<code>select</code>) before running the test queries, or
+     * read through a <code>view</code> so the measured operation reads from the Parquet files (and their page cache)
+     * itself. If not set, the engine's <code>-Dbench.cachedSource</code> decides, defaulting to true. Derived columns,
+     * like the scaled <code>timed</code> timestamp, are always stored.
      * 
-     * @return true if in memory source, otherwise false
+     * @param useMemorySource true to load the source into memory, otherwise false
      */
     public void useCachedSource(boolean useMemorySource) {
         this.useCachedSource = useMemorySource;
@@ -259,20 +262,20 @@ final public class StandardTestRunner {
 
     String getReadOperation(int scaleFactor, long rowCount, String... loadColumns) {
         var headRows = (rowCount >= getGeneratedRowCount()) ? "" : ".head(${rows})";
-        var selectStr = useCachedSource ? "select" : "view";
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
-            merge([
+            bench_api_cache(merge([
                 bench_api_read('/data/timed.parquet').view(formulas=[${loadColumns}])${headRows}
-            ] * ${scaleFactor}).update_view([
+            ] * ${scaleFactor}), ${cached}, updates=[
                 'timestamp=timestamp.plusMillis((long)(ii / ${rows}) * ${rows})'
-            ]).${selectStr}()
+            ])
             """;
-            read = read.replace("${headRows}", headRows).replace("${selectStr}", selectStr);
+            read = read.replace("${headRows}", headRows).replace("${cached}", getCachedArg());
             return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + rowCount);
         }
 
-        var read = "bench_api_read('/data/${mainTable}.parquet')${headRows}.${selectStr}(formulas=[${loadColumns}])";
+        var read = "bench_api_cache(bench_api_read('/data/${mainTable}.parquet')${headRows}, ${cached}, "
+                + "columns=[${loadColumns}])";
         read = (loadColumns.length == 0) ? ("empty_table(${rows})") : read;
 
         if (scaleFactor > 1) {
@@ -280,7 +283,11 @@ final public class StandardTestRunner {
             read = read.replace("${scaleFactor}", "" + scaleFactor);
         }
         read = read.replace("${headRows}", headRows).replace("${rows}", "" + rowCount);
-        return read.replace("${selectStr}", selectStr);
+        return read.replace("${cached}", getCachedArg());
+    }
+
+    String getCachedArg() {
+        return (useCachedSource == null) ? "None" : (useCachedSource ? "True" : "False");
     }
 
     String getStaticQuery(String name, String operation, long rowCount, String... loadColumns) {
@@ -428,7 +435,8 @@ final public class StandardTestRunner {
     }
 
     String loadSupportTables() {
-        return supportTables.stream().map(t -> t + " = bench_api_read('/data/" + t + ".parquet').select()\n")
+        return supportTables.stream()
+                .map(t -> t + " = bench_api_cache(bench_api_read('/data/" + t + ".parquet'), " + getCachedArg() + ")\n")
                 .collect(Collectors.joining(""));
     }
 

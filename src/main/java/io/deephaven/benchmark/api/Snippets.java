@@ -242,6 +242,29 @@ class Snippets {
         """;
 
     /**
+     * Load a table into memory (<code>select</code>) or leave it reading from its source (<code>view</code>). Unless
+     * given explicitly, <code>cached</code> comes from the engine's <code>-Dbench.cachedSource=( true | false )</code>,
+     * defaulting to true. Columns are loaded as given, and update formulas are always stored.
+     * <p>
+     * ex. source = bench_api_cache(bench_api_read('/data/source.parquet'), columns=['key1','num1'])
+     * 
+     * @param table the table to load
+     * @param cached True to select, False to view, or None to use <code>bench.cachedSource</code>
+     * @param columns the columns to load, or None for all
+     * @param updates formulas to add as stored columns, instead of loading columns
+     * @return the loaded table
+     */
+    static String bench_api_cache = """
+        import jpy
+        def bench_api_cache(table, cached=None, columns=None, updates=None):
+            if cached is None:
+                cached = jpy.get_type('java.lang.System').getProperty('bench.cachedSource', 'true').strip() != 'false'
+            if updates: return table.update_view(updates).select() if cached else table.update(updates)
+            if columns: return table.select(columns) if cached else table.view(columns)
+            return table.select() if cached else table
+        """;
+
+    /**
      * Get the running JFR recording started by <code>bench_api_jfr_start</code>, or None
      */
     static String bench_api_jfr_recording = """
@@ -318,6 +341,7 @@ class Snippets {
         defs += getFunc("bench_api_await_column_value_limit", bench_api_await_column_value_limit, query, defs);
         defs += getFunc("bench_api_link", bench_api_link, query, defs);
         defs += getFunc("bench_api_read", bench_api_read, query, defs);
+        defs += getFunc("bench_api_cache", bench_api_cache, query, defs);
         defs += getFunc("bench_api_jfr_start", bench_api_jfr_start, query, defs);
         defs += getFunc("bench_api_jfr_dump", bench_api_jfr_dump, query, defs);
         defs += getFunc("bench_api_jfr_recording", bench_api_jfr_recording, query, defs);
