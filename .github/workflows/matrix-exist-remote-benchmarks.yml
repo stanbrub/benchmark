@@ -23,6 +23,7 @@ on:
         - dh23641-regress.sh
         - dh23641-weekend.sh
         - dh23641-sweep2.sh
+        - dh23641-main.sh
         - example-regression-matrix.sh
         - train-jfr.sh
 
