@@ -11,6 +11,8 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 @Tag("Iterate")
 class ParquetMultiColTest {
     final String[] usedColumns = {"str10K", "long10K", "int10K", "short10K", "bigDec10K", "intArr5", "intVec5"};
+    // Array columns can't be read sparsely (DH-23641), so the filtered reads leave them out
+    final String[] filteredColumns = {"str10K", "int10K", "short10K", "bigDec10K"};
     final FileTestRunner runner = new FileTestRunner(this);
 
     @BeforeEach
@@ -102,6 +104,18 @@ class ParquetMultiColTest {
     void readMultiColDefaultSnappy() {
         runner.useParquetDefaultSettings();
         runner.runParquetReadTest("ParquetRead- Snappy Multi Col Defaults -Static");
+    }
+
+    @Test
+    @Order(15)
+    void readMultiColSparse() {
+        runner.runParquetFilteredReadTest("ParquetRead- Sparse Multi Col -Static", 100, filteredColumns);
+    }
+
+    @Test
+    @Order(16)
+    void readMultiColDense() {
+        runner.runParquetFilteredReadTest("ParquetRead- Dense Multi Col -Static", 2, filteredColumns);
     }
 
 }

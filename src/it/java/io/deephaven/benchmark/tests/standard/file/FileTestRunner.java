@@ -93,6 +93,29 @@ class FileTestRunner {
     }
 
     /**
+     * Run a benchmark that measures a filtered parquet read. The filter reads {@code long10K} in full and keeps 1 in
+     * {@code modulus} rows, spread evenly through the file, then the given columns are read for only those rows. The
+     * rate is file rows per second, like the full read tests. This test always runs after a corresponding write test.
+     * 
+     * @param testName name that will appear in the results as the benchmark name
+     * @param modulus keep the rows where {@code long10K % modulus == 1}; should divide 10000 to keep exactly 1 in
+     *        {@code modulus}
+     * @param columnNames the columns to read for the remaining rows
+     */
+    void runParquetFilteredReadTest(String testName, int modulus, String... columnNames) {
+        var q = """
+        read('/data/source.ptr.parquet')
+        result = source.where('long10K % ${modulus} == 1').select([${columns}])
+        metric_file_size = os.path.getsize('/data/source.ptr.parquet')
+        bench_api_metrics_add('data', 'file.size', str(metric_file_size), 'parquet')
+        """;
+        q = q.replace("${modulus}", "" + modulus);
+        var columns = Arrays.stream(columnNames).map(c -> "'" + c + "'").collect(Collectors.joining(","));
+        q = q.replace("${columns}", columns);
+        runReadTest(testName, q);
+    }
+
+    /**
      * Run a benchmark that measures parquet write performance.
      * 
      * @param testName the benchmark name to record with the measurement
