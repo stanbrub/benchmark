@@ -19,7 +19,6 @@ on:
         - gc-train-heap-fail.sh
         - example-regression-matrix.sh
         - train-jfr.sh
-        - sparse-parquet-read.sh
 
 jobs:
   generate-matrix:
@@ -52,7 +51,7 @@ jobs:
       test_iterations: ${{ matrix.test_iterations }}
       scale_row_count: ${{ matrix.scale_row_count }}
       distribution: ${{ matrix.distribution }}
-      test_device_addr: "<default>"
+      test_device_addr: "<matrix>"
       clear_server: ${{ strategy.job-index == 0 }}
       config_options: ${{ matrix.config_options }}
     secrets: inherit
