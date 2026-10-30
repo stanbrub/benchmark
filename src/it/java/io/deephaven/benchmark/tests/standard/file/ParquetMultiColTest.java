@@ -133,4 +133,12 @@ class ParquetMultiColTest {
         runner.runParquetFilteredReadTest("ParquetRead- Dense Snappy Multi Col Defaults -Static", 2, filteredColumns);
     }
 
+    @Test
+    @Order(17)
+    void forceReadMultiColDefaultSnappySparse() {
+        setup(3);
+        runner.runParquetFilteredForceReadTest("ParquetRead- Sparse ForceRead Snappy Multi Col Defaults -Static", 100,
+                filteredColumns);
+    }
+
 }
