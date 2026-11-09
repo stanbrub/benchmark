@@ -19,6 +19,7 @@ on:
         - gc-train-heap-fail.sh
         - example-regression-matrix.sh
         - train-jfr.sh
+        - dh24246-adaptive-sparse.sh
 
 jobs:
   generate-matrix:
