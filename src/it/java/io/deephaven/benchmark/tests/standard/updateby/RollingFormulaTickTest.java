@@ -48,6 +48,7 @@ public class RollingFormulaTickTest {
     @Test
     void rollingFormulaGeneralTick1Group3Ops() {
         setup(3, 7, 2);
+        runner.setRowFactors(3, 2);
         runner.addSetupQuery("""
         contains = rolling_formula_tick(formula="Contains=avg(num1)", rev_ticks=20, fwd_ticks=30)
         """);

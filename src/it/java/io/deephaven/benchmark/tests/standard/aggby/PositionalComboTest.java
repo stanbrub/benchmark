@@ -35,7 +35,7 @@ public class PositionalComboTest {
 
     @Test
     void posComboAggBy4Ops2Groups() {
-        runner.setScaleFactors(8, 2);
+        runner.setScaleFactors(8, 1);
         var q = "source.agg_by(aggs, by=['key1', 'key2'])";
         runner.test("PositionCombo-AggBy- 4 Ops 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "key3", "key4",
                 "num1", "num2");
@@ -43,6 +43,7 @@ public class PositionalComboTest {
 
     @Test
     void posComboAggBy4Ops3Groups() {
+        runner.setRowFactors(3, 2);
         runner.setScaleFactors(3, 1);
         var q = "source.agg_by(aggs, by=['key1', 'key2', 'key3'])";
         runner.test("PositionCombo-AggBy- 4 Ops 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "key4",
@@ -51,6 +52,7 @@ public class PositionalComboTest {
 
     @Test
     void posComboAggBy4Ops3GroupsLarge() {
+        runner.setRowFactors(3, 1);
         runner.setScaleFactors(2, 1);
         var q = "source.agg_by(aggs, by=['key1', 'key2', 'key4'])";
         runner.test("PositionCombo-AggBy- 4 Ops 3 Groups 1M Unique Combos", 999900, q, "key1", "key2", "key3", "key4",

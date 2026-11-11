@@ -18,7 +18,7 @@ public class SelectDistinctTest {
 
     @Test
     void selectDistict1Group() {
-        runner.setScaleFactors(15, 15);
+        runner.setScaleFactors(15, 11);
         var q = "source.select_distinct(formulas=['key1'])";
         runner.test("SelectDistinct- 1 Group 100 Unique Vals", 100, q, "key1", "num1");
     }

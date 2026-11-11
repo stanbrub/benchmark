@@ -32,7 +32,7 @@ public class CumComboTest {
 
     @Test
     void cumComboNoGroups6Ops() {
-        runner.setScaleFactors(10, 7);
+        runner.setScaleFactors(10, 5);
         var q = "timed.update_by(ops=[ema_tick_op, ema_time_op, max_op, min_op, sum_op, prod_op])";
         runner.test("CumCombo- 6 Ops No Groups", q, "num1", "num2", "timestamp");
     }

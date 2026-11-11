@@ -25,7 +25,7 @@ public class RollingSumTickTest {
 
     @Test
     void rollingSumTick1Group3Ops() {
-        setup.factors(4, 6, 2);
+        setup.factors(4, 6, 1);
         setup.rollTick1Group("rolling_sum_tick");
         var q = "timed.update_by(ops=[contains_row], by=['key1'])";
         runner.test("RollingSumTick- 1 Group 100 Unique Vals", q, "key1", "num1");

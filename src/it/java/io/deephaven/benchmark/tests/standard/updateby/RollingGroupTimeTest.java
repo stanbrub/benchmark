@@ -17,7 +17,7 @@ public class RollingGroupTimeTest {
 
     @Test
     void rollingGroupTime0Group3Ops() {
-        setup.factors(5, 5, 3);
+        setup.factors(5, 5, 2);
         setup.rollTime0Groups("rolling_group_time");
         var q = "timed.update_by(ops=[contains_row])";
         runner.test("RollingGroupTime- No Groups 1 Col", q, "num1", "timestamp");

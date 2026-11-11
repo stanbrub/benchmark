@@ -49,7 +49,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaGeneralTime1Group3Ops() {
-        setup(3, 2, 1);
+        setup(3, 3, 1);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="Contains=avg(num1)", ts_col="timestamp", rev_time="PT2S", 
             fwd_time="PT3S")

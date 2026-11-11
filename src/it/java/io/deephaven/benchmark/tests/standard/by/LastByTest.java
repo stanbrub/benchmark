@@ -32,6 +32,7 @@ public class LastByTest {
 
     @Test
     void lastBy3Groups() {
+        runner.setRowFactors(4, 3);
         runner.setScaleFactors(3, 1);
         var q = "source.last_by(by=['key1', 'key2', 'key3'])";
         runner.test("LastBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");

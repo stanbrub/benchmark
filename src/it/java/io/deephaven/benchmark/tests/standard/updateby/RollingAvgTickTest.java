@@ -17,7 +17,7 @@ public class RollingAvgTickTest {
 
     @Test
     void rollingAvgTick0Group3Ops() {
-        setup.factors(4, 5, 2);
+        setup.factors(4, 2, 2);
         setup.rollTick0Groups("rolling_avg_tick");
         var q = "timed.update_by(ops=[contains_row])";
         runner.test("RollingAvgTick- No Groups 1 Col", q, "num1");

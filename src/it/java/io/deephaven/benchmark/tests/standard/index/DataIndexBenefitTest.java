@@ -117,7 +117,7 @@ public class DataIndexBenefitTest {
     @Test
     @Order(6)
     void dataIndexSortNoIndex() {
-        setup(1, 1, 0);
+        setup(1, 3, 0);
 
         var op = """
         source.sort(['key1','key2','key4'])

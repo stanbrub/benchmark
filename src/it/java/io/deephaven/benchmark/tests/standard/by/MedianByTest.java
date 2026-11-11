@@ -18,7 +18,7 @@ public class MedianByTest {
 
     @Test
     void medianBy0Groups() {
-        runner.setScaleFactors(2, 2);
+        runner.setScaleFactors(6, 2);
         var q = "source.median_by()";
         runner.test("MedianBy- No Groups", 100, q, "key1", "key2", "num1");
     }
@@ -33,13 +33,14 @@ public class MedianByTest {
 
     @Test
     void medianBy2Groups() {
-        runner.setScaleFactors(3, 3);
+        runner.setScaleFactors(7, 5);
         var q = "source.median_by(by=['key1', 'key2'])";
         runner.test("MedianBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1");
     }
 
     @Test
     void medianBy3Groups() {
+        runner.setScaleFactors(2, 2);
         var q = "source.median_by(by=['key1', 'key2', 'key3'])";
         runner.test("MedianBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
     }

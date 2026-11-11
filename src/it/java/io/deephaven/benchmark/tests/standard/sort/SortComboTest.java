@@ -19,7 +19,7 @@ public class SortComboTest {
 
     @Test
     void sort2ColsAscendDescend() {
-        setup(3, 1);
+        setup(6, 1);
         var q = "source.sort(order_by=['key1', 'key2'], order=[SortDirection.ASCENDING, SortDirection.DESCENDING])";
         runner.test("Sort- Both Directions 2 Cols", q, "key1", "key2", "num1");
     }

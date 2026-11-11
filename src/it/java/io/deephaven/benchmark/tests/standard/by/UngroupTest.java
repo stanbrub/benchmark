@@ -35,6 +35,7 @@ public class UngroupTest {
 
     @Test
     void ungroup3Groups() {
+        runner.setRowFactors(4, 3);
         runner.setScaleFactors(1, 1);
         var q = "source.group_by(by=['key1', 'key2', 'key3']).ungroup(cols=['num1'])";
         runner.test("Ungroup- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1");

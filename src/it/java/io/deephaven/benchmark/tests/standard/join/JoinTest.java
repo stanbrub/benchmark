@@ -15,7 +15,12 @@ public class JoinTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
     void setup(int rowFactor) {
-        runner.setRowFactor(rowFactor);
+        setup(rowFactor, 1, rowFactor, 1);
+    }
+
+    void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+        runner.setRowFactors(staticRowFactor, incRowFactor);
+        runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("source", "right");
     }
 
@@ -28,14 +33,14 @@ public class JoinTest {
 
     @Test
     void joinOn2Cols() {
-        setup(3);
+        setup(3, 3, 1, 1);
         var q = "source.join(right, on=['key1 = r_wild', 'key2 = r_key2'])";
         runner.test("Join- Join On 2 Cols", q, "key1", "key2", "num1");
     }
 
     @Test
     void joinOn3Cols() {
-        setup(3);
+        setup(3, 3, 1, 1);
         var q = "source.join(right, on=['key1 = r_wild', 'key2 = r_key2', 'key1 = r_key1'])";
         runner.test("Join- Join On 3 Cols", q, "key1", "key2", "num1");
     }

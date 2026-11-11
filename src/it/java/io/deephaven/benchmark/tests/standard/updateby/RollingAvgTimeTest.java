@@ -17,7 +17,7 @@ public class RollingAvgTimeTest {
 
     @Test
     void rollingAvgTime0Group3Ops() {
-        setup.factors(4, 2, 2);
+        setup.factors(4, 2, 3, 2);
         setup.rollTime0Groups("rolling_avg_time");
         var q = "timed.update_by(ops=[contains_row])";
         runner.test("RollingAvgTime- No Groups 1 Col", q, "num1", "timestamp");

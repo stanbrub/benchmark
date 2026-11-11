@@ -27,14 +27,14 @@ public class DateTimeFormulaTest {
 
     @Test
     public void parseDuration() {
-        setup(3, 6, 1);
+        setup(3, 3, 2, 1);
         var q = "source.update(formulas=['New1 = parseDuration(`PT4H52M14S`)'])";
         runner.test("ParseDuration- PT Duration String", q);
     }
 
     @Test
     public void parseLocalTime() {
-        setup(3, 5, 1);
+        setup(3, 3, 2, 1);
         var q = "source.update(formulas=['New1 = parseLocalTime(`04:52:14.001`)'])";
         runner.test("ParseLocalTime- Time String", q);
     }
@@ -50,7 +50,11 @@ public class DateTimeFormulaTest {
     }
 
     private void setup(int rowFactor, int staticFactor, int incFactor) {
-        runner.setRowFactor(rowFactor);
+        setup(rowFactor, staticFactor, rowFactor, incFactor);
+    }
+
+    private void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+        runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
     }
 

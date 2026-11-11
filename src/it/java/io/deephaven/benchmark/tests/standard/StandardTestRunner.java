@@ -31,10 +31,13 @@ final public class StandardTestRunner {
     final List<String> preOpQueries = new ArrayList<>();
     final List<String> teardownQueries = new ArrayList<>();
     final Set<String> requiredServices = new TreeSet<>(List.of("deephaven"));
+    final List<TableGen> generatedTables = new ArrayList<>();
     private String mainTable = "source";
     private Bench api;
     private Controller controller;
     private int rowCountFactor = 1;
+    private int staticRowFactor = 1;
+    private int incRowFactor = 1;
     private int staticFactor = 1;
     private int incFactor = 1;
     private double initialFactor = 0;
@@ -69,7 +72,7 @@ final public class StandardTestRunner {
             mainTable = names[0];
 
         for (String name : names) {
-            generateTable(name, null, null);
+            addTable(name, null, null);
         }
     }
 
@@ -83,7 +86,7 @@ final public class StandardTestRunner {
      */
     public void table(String name, String distribution) {
         mainTable = name;
-        generateTable(name, distribution, null);
+        addTable(name, distribution, null);
     }
 
     /**
@@ -96,7 +99,7 @@ final public class StandardTestRunner {
      */
     public void groupedTable(String name, String... groups) {
         mainTable = name;
-        generateTable(name, null, groups);
+        addTable(name, null, groups);
     }
 
     public void setServices(String... services) {
@@ -162,7 +165,24 @@ final public class StandardTestRunner {
      * @param rowCountFactor a multiplier applied against {@code scale.row.count}
      */
     public void setRowFactor(int rowCountFactor) {
-        this.rowCountFactor = rowCountFactor;
+        setRowFactors(rowCountFactor, rowCountFactor);
+    }
+
+    /**
+     * Set separate row factors for the static and incremental tests (see {@link #setRowFactor(int)}). Each test reads
+     * a table generated at its own row count, so neither is trimmed or merged to match the other. Prefer row factors
+     * already used by other tests, since each distinct row count is a separately generated file.
+     * <p>
+     * If tables were already generated, they are switched to the right row count before each test.
+     * 
+     * @param staticRowFactor a multiplier applied against {@code scale.row.count} for the static test
+     * @param incRowFactor a multiplier applied against {@code scale.row.count} for the inc test
+     */
+    public void setRowFactors(int staticRowFactor, int incRowFactor) {
+        this.staticRowFactor = staticRowFactor;
+        this.incRowFactor = incRowFactor;
+        if (generatedTables.isEmpty())
+            this.rowCountFactor = staticRowFactor;
     }
 
     /**
@@ -220,6 +240,7 @@ final public class StandardTestRunner {
      */
     public void test(String name, long maxExpectedRowCount, String operation, String... loadColumns) {
         if (staticFactor > 0) {
+            useRowFactor(staticRowFactor);
             var sname = name + " -Static";
             var warmup = getStaticQuery(sname, operation, getWarmupRowCount(), loadColumns);
             var query = getStaticQuery(sname, operation, getGeneratedRowCount(), loadColumns);
@@ -230,6 +251,7 @@ final public class StandardTestRunner {
         }
 
         if (incFactor > 0) {
+            useRowFactor(incRowFactor);
             var iname = name + " -Inc";
             var warmup = getIncQuery(iname, operation, getWarmupRowCount(), loadColumns);
             var query = getIncQuery(iname, operation, getGeneratedRowCount(), loadColumns);
@@ -484,6 +506,33 @@ final public class StandardTestRunner {
         api.metrics().add(metrics);
     }
 
+    void addTable(String name, String distribution, String[] groups) {
+        generatedTables.add(new TableGen(name, distribution, groups));
+        generateTable(name, distribution, groups);
+    }
+
+    /**
+     * Point the generated tables at the given row factor before a static or inc test, generating them if needed. The
+     * fixed-size <code>right</code> table does not depend on the row factor, so it is left as is.
+     * 
+     * @param rowFactor the row factor for the next test
+     */
+    void useRowFactor(int rowFactor) {
+        if (rowFactor == rowCountFactor)
+            return;
+        rowCountFactor = rowFactor;
+        if (!api.isClosed()) {
+            api.setName("# Data Table Generation");
+            addServiceLog(api);
+            api.close();
+        }
+        initialize(testInst);
+        for (TableGen t : generatedTables) {
+            if (!t.name().equals("right"))
+                generateTable(t.name(), t.distribution(), t.groups());
+        }
+    }
+
     void generateTable(String name, String distribution, String[] groups) {
         var isNew = generateNamedTable(name, distribution, groups);
         if (isNew) {
@@ -556,6 +605,9 @@ final public class StandardTestRunner {
     }
 
     record Result(long loadedRowCount, Duration elapsedTime, long resultRowCount) {
+    }
+
+    record TableGen(String name, String distribution, String[] groups) {
     }
 
 }

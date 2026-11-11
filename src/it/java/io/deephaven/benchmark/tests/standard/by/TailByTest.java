@@ -32,6 +32,7 @@ public class TailByTest {
 
     @Test
     void tailBy3Groups() {
+        runner.setRowFactors(4, 3);
         var q = "source.tail_by(2, by=['key1', 'key2', 'key3'])";
         runner.test("TailBy- 3 Groups 100K Unique Combos", 90900 * 2, q, "key1", "key2", "key3", "num1");
     }

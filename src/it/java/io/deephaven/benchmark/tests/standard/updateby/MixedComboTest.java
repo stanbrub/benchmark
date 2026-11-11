@@ -55,7 +55,7 @@ public class MixedComboTest {
 
     @Test
     void mixedComboNoGroups6Ops() {
-        setup.factors(2, 1, 1);
+        setup.factors(2, 1, 1, 1);
         runner.addSetupQuery(noGroups);
         var q = "timed.update_by(ops=[avg_contains, max_before, prod_after, ema_tick_op, min_op, sum_op])";
         runner.test("MixedCombo- No Groups 12 Cols", q, "num1", "num2", "timestamp");
@@ -63,7 +63,7 @@ public class MixedComboTest {
 
     @Test
     void mixedCombo1Group6Ops() {
-        setup.factors(2, 2, 1);
+        setup.factors(1, 3, 2, 1);
         runner.addSetupQuery(group100);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1'])

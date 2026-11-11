@@ -34,7 +34,7 @@ public class SortedComboTest {
 
     @Test
     void aggBySorted5Ops1Group() {
-        runner.setScaleFactors(8, 1);
+        runner.setScaleFactors(12, 1);
         var q = "source.agg_by(aggs, by=['key1'])";
         runner.test("SortedCombo-AggBy- 5 Ops 1 Group 100 Unique Vals", 100, q, "key1", "key3", "key4", "num1", "num2");
     }

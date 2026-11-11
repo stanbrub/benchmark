@@ -30,7 +30,7 @@ public class RowIteratorTest {
 
     @Test
     void iterTuple2Cols() {
-        setup(4);
+        setup(3);
         var q = """
         new_table([
             double_col('total', [sum(row.num1 + row.num2 for row in source.iter_tuple())])

@@ -32,6 +32,7 @@ public class GroupByTest {
 
     @Test
     void groupBy3Groups() {
+        runner.setRowFactors(4, 3);
         var q = "source.group_by(by=['key1', 'key2', 'key3'])";
         runner.test("GroupBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
     }

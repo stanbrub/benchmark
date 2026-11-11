@@ -13,7 +13,12 @@ public class AsOfJoinTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
     void setup(int rowFactor) {
-        runner.setRowFactor(rowFactor);
+        setup(rowFactor, 1, rowFactor, 1);
+    }
+
+    void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+        runner.setRowFactors(staticRowFactor, incRowFactor);
+        runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("source", "right");
     }
 
@@ -33,7 +38,7 @@ public class AsOfJoinTest {
 
     @Test
     void asOfJoinOn3Cols() {
-        setup(4);
+        setup(4, 1, 3, 1);
         var q = "source.aj(right, on=['key1 = r_wild', 'key2 = r_key2', 'key1 >= r_key1'])";
         runner.test("AsOfJoin- Join On 3 Cols", q, "key1", "key2", "num1");
     }

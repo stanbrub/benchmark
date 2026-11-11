@@ -90,6 +90,10 @@ if [[ ${ACTION} == "make-labels" ]]; then
   # Quoted so an empty prefix stays in position instead of shifting the image names left
   LABEL1=$(getSetLabel "${PREFIX}" "${IMAGE1}")
   LABEL2=$(getSetLabel "${PREFIX}" "${IMAGE2}")
+  if [[ "${LABEL1}" == "${LABEL2}" ]]; then
+    LABEL1="${LABEL1}_1"
+    LABEL2="${LABEL2}_2"
+  fi
 
   echo "PREFIX=${PREFIX}" | tee -a ${OUTPUT_NAME}
   echo "SET_LABEL_1=${LABEL1}" | tee -a ${OUTPUT_NAME}

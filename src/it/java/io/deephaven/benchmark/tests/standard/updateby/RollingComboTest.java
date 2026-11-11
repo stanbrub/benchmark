@@ -63,7 +63,7 @@ public class RollingComboTest {
 
     @Test
     void rollingCombo1Groups6Ops() {
-        setup.factors(2, 1, 1);
+        setup.factors(2, 1, 1, 1);
         runner.addSetupQuery(group100);
         var q = """
         timed.update_by(ops=[sum_contains,min_before,prod_after,avg_contains,max_before,group_after], by=['key1']);

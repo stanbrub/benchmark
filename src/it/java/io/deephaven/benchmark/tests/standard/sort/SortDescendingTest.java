@@ -18,14 +18,14 @@ public class SortDescendingTest {
 
     @Test
     void sort1Col() {
-        setup(3, 1);
+        setup(16, 1);
         var q = "source.sort(order_by=['key1'])";
         runner.test("Sort- 1 Col Descending", q, "key1", "num1");
     }
 
     @Test
     void sort2Cols() {
-        setup(3, 1);
+        setup(5, 1);
         var q = "source.sort(order_by=['key1', 'key2'])";
         runner.test("Sort- 2 Cols Descending", q, "key1", "key2", "num1");
     }
