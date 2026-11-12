@@ -49,8 +49,7 @@ public class BasicMathComboTest {
 
     @Test
     void mathComboAggBy7Ops3Groups() {
-        runner.setRowFactors(2, 1);
-        runner.setScaleFactors(2, 1);
+        runner.setRowFactors(4, 1);
         var q = "source.agg_by(aggs, by=['key1', 'key2', 'key3'])";
         runner.test("MathCombo-AggBy- 7 Ops 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1",
                 "num2");
@@ -58,6 +57,7 @@ public class BasicMathComboTest {
 
     @Test
     void mathComboAggBy7Ops3GroupsLarge() {
+        runner.setRowFactors(2, 0.35);
         var q = "source.agg_by(aggs, by=['key1', 'key2', 'key4'])";
         runner.test("MathCombo-AggBy- 7 Ops 3 Groups 1M Unique Combos", 999900, q, "key1", "key2", "key4", "num1",
                 "num2");

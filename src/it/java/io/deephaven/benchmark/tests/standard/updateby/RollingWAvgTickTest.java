@@ -41,7 +41,7 @@ public class RollingWAvgTickTest {
 
     @Test
     void rollingWAvgTick2Groups3Ops() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         runner.addSetupQuery(fifty);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
         runner.test("RollingWAvgTick- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "num2");
@@ -49,7 +49,7 @@ public class RollingWAvgTickTest {
 
     @Test
     void rollingWAvgTick3Groups3Ops() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.45, 1);
         runner.addSetupQuery(fifty);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
         runner.test("RollingWAvgTick- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1",

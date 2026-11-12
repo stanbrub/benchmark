@@ -33,7 +33,7 @@ public class EmMinTickTest {
 
     @Test
     void emMinTick2Group1Col() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         setup.emTick2Groups("emmin_tick");
         var q = "timed.update_by(ops=[dk], by=['key1','key2'])";
         runner.test("EmMinTick- 2 Group 10K Unique Combos", q, "key1", "key2", "num1");
@@ -41,7 +41,7 @@ public class EmMinTickTest {
 
     @Test
     void emMinTick3Groups1Col() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 1, 1);
         setup.emTick3Groups("emmin_tick");
         var q = "timed.update_by(ops=[dk], by=['key1','key2','key3'])";
         runner.test("EmMinTick- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1");

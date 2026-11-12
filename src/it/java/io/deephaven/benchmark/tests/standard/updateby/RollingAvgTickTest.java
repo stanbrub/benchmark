@@ -41,7 +41,7 @@ public class RollingAvgTickTest {
 
     @Test
     void rollingAvgTime3Groups3Ops() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.45, 1);
         setup.rollTick3Groups("rolling_avg_tick");
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
         runner.test("RollingAvgTick- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1");

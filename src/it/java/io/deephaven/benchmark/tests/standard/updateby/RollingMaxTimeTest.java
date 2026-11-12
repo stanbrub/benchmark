@@ -33,7 +33,7 @@ public class RollingMaxTimeTest {
 
     @Test
     void rollingMaxTime2Groups3Ops() {
-        setup.factors(2, 2, 1);
+        setup.factors(4, 1, 2, 1);
         setup.rollTime2Groups("rolling_max_time");
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
         runner.test("RollingMaxTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "timestamp");
@@ -41,7 +41,7 @@ public class RollingMaxTimeTest {
 
     @Test
     void rollingMaxTime3Groups3Ops() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.2, 1);
         setup.rollTime3Groups("rolling_max_time");
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
         runner.test("RollingMaxTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1",

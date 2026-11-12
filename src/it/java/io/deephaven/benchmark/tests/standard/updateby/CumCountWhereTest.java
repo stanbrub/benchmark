@@ -11,8 +11,12 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class CumCountWhereTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(int rowFactor, int staticFactor, int incFactor) {
-        runner.setRowFactor(rowFactor);
+    void setup(double rowFactor, int staticFactor, int incFactor) {
+        setup(rowFactor, staticFactor, rowFactor, incFactor);
+    }
+
+    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
+        runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("timed");
         runner.addSetupQuery("""
@@ -58,7 +62,7 @@ public class CumCountWhereTest {
 
     @Test
     void cumCountWhereEquals2Groups1Col() {
-        setup(2, 3, 1);
+        setup(6, 1, 2, 1);
         var q = "timed.update_by(ops=cum_count_where(col='X', filters=['num1 % 3 = 0']), by=['key1','key2'])";
         runner.test("CumCountWhere- Equals 2 Groups 10K Unique Combos", q, "key1", "key2", "num1");
     }

@@ -25,6 +25,7 @@ final public class StandardTestRunner {
     static {
         System.setProperty("root.test.package", "io.deephaven.benchmark.tests");
     }
+    static final int minGeneratedRowFactor = 6;
     final Object testInst;
     final List<String> supportTables = new ArrayList<>();
     final List<String> setupQueries = new ArrayList<>();
@@ -35,9 +36,10 @@ final public class StandardTestRunner {
     private String mainTable = "source";
     private Bench api;
     private Controller controller;
-    private int rowCountFactor = 1;
-    private int staticRowFactor = 1;
-    private int incRowFactor = 1;
+    private double rowCountFactor = 1;
+    private double staticRowFactor = 1;
+    private double incRowFactor = 1;
+    private int generatedRowFactor = 0;
     private int staticFactor = 1;
     private int incFactor = 1;
     private double initialFactor = 0;
@@ -164,25 +166,30 @@ final public class StandardTestRunner {
      * 
      * @param rowCountFactor a multiplier applied against {@code scale.row.count}
      */
-    public void setRowFactor(int rowCountFactor) {
+    public void setRowFactor(double rowCountFactor) {
         setRowFactors(rowCountFactor, rowCountFactor);
     }
 
     /**
-     * Set separate row factors for the static and incremental tests (see {@link #setRowFactor(int)}). Each test reads
-     * a table generated at its own row count, so neither is trimmed or merged to match the other. Prefer row factors
-     * already used by other tests, since each distinct row count is a separately generated file.
+     * Set separate row factors for the static and incremental tests (see {@link #setRowFactor(double)}). Generated
+     * tables hold at least {@code minGeneratedRowFactor} times {@code scale.row.count} rows, and each test reads the
+     * first rows it needs from the main table with <code>head</code> before they are loaded, so different row factors
+     * share the same file.
      * <p>
-     * If tables were already generated, they are switched to the right row count before each test.
+     * Row factors below 1 may be fractional. Row factors of 1 or more must be whole numbers.
      * 
      * @param staticRowFactor a multiplier applied against {@code scale.row.count} for the static test
      * @param incRowFactor a multiplier applied against {@code scale.row.count} for the inc test
      */
-    public void setRowFactors(int staticRowFactor, int incRowFactor) {
-        this.staticRowFactor = staticRowFactor;
-        this.incRowFactor = incRowFactor;
-        if (generatedTables.isEmpty())
-            this.rowCountFactor = staticRowFactor;
+    public void setRowFactors(double staticRowFactor, double incRowFactor) {
+        this.staticRowFactor = checkRowFactor(staticRowFactor);
+        this.incRowFactor = checkRowFactor(incRowFactor);
+    }
+
+    double checkRowFactor(double rowFactor) {
+        if (rowFactor <= 0 || (rowFactor > 1 && rowFactor != Math.floor(rowFactor)))
+            throw new IllegalArgumentException("Row factor must be a fraction below 1 or a whole number: " + rowFactor);
+        return rowFactor;
     }
 
     /**
@@ -242,7 +249,7 @@ final public class StandardTestRunner {
         if (staticFactor > 0) {
             useRowFactor(staticRowFactor);
             var sname = name + " -Static";
-            var query = getStaticQuery(sname, operation, getGeneratedRowCount(), loadColumns);
+            var query = getStaticQuery(sname, operation, loadColumns);
             var result = runTest(sname, query);
             var rcount = result.resultRowCount();
             var ecount = getMaxExpectedRowCount(maxExpectedRowCount, staticFactor);
@@ -252,7 +259,7 @@ final public class StandardTestRunner {
         if (incFactor > 0) {
             useRowFactor(incRowFactor);
             var iname = name + " -Inc";
-            var query = getIncQuery(iname, operation, getGeneratedRowCount(), loadColumns);
+            var query = getIncQuery(iname, operation, loadColumns);
             var result = runTest(iname, query);
             var rcount = result.resultRowCount();
             var ecount = getMaxExpectedRowCount(maxExpectedRowCount, incFactor);
@@ -260,11 +267,20 @@ final public class StandardTestRunner {
         }
     }
 
-    public long getGeneratedRowCount() {
-        return (long) (api.propertyAsIntegral("scale.row.count", "100000") * rowCountFactor);
+    public long getMainTableRowCount() {
+        return Math.round(getScaleRowCount() * rowCountFactor);
     }
 
-    long getInitialRowCount(long rowCount) {
+    long getGeneratedRowCount() {
+        return getScaleRowCount() * generatedRowFactor;
+    }
+
+    long getScaleRowCount() {
+        return api.propertyAsIntegral("scale.row.count", "100000");
+    }
+
+    long getInitialRowCount() {
+        var rowCount = getMainTableRowCount();
         var initialRows = (long) (rowCount * initialFactor);
         return Math.max(0, Math.min(initialRows, rowCount - 1));
     }
@@ -273,32 +289,35 @@ final public class StandardTestRunner {
         return (expectedRowCount < 1) ? Long.MAX_VALUE : expectedRowCount;
     }
 
-    String getReadOperation(int scaleFactor, long rowCount, String... loadColumns) {
+    String getReadOperation(int scaleFactor, String... loadColumns) {
+        var rowCount = getMainTableRowCount();
+        var headRows = (rowCount < getGeneratedRowCount()) ? ".head(${rows})" : "";
         var selectStr = useCachedSource ? "select" : "view";
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
             merge([
-                bench_api_read('/data/timed.parquet').view(formulas=[${loadColumns}])
-            ] * ${scaleFactor}).update_view([
+                bench_api_read('/data/timed.parquet')${headRows}.${selectStr}(formulas=[${loadColumns}])
+            ] * ${scaleFactor}).${updateStr}([
                 'timestamp=timestamp.plusMillis((long)(ii / ${rows}) * ${rows})'
-            ]).${selectStr}()
+            ])
             """;
-            read = read.replace("${selectStr}", selectStr);
+            read = read.replace("${headRows}", headRows).replace("${selectStr}", selectStr).replace("${updateStr}",
+                    useCachedSource ? "update" : "update_view");
             return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + rowCount);
         }
 
-        var read = "bench_api_read('/data/${mainTable}.parquet').${selectStr}(formulas=[${loadColumns}])";
+        var read = "bench_api_read('/data/${mainTable}.parquet')${headRows}.${selectStr}(formulas=[${loadColumns}])";
         read = (loadColumns.length == 0) ? ("empty_table(${rows})") : read;
 
         if (scaleFactor > 1) {
             read = "merge([${readTable}] * ${scaleFactor})".replace("${readTable}", read);
             read = read.replace("${scaleFactor}", "" + scaleFactor);
         }
-        read = read.replace("${rows}", "" + rowCount);
+        read = read.replace("${headRows}", headRows).replace("${rows}", "" + rowCount);
         return read.replace("${selectStr}", selectStr);
     }
 
-    String getStaticQuery(String name, String operation, long rowCount, String... loadColumns) {
+    String getStaticQuery(String name, String operation, String... loadColumns) {
         var staticQuery = """
         source = right = timed = result = stats = None
         bench_api_metrics_init()
@@ -330,11 +349,11 @@ final public class StandardTestRunner {
         ${teardownQueries}
         standard_events = standard_events.where([f'start_ns > {begin_clock}L', f'start_ns < {end_clock}L'])
         """;
-        var read = getReadOperation(staticFactor, rowCount, loadColumns);
-        return populateQuery(name, staticQuery, operation, read, rowCount, loadColumns);
+        var read = getReadOperation(staticFactor, loadColumns);
+        return populateQuery(name, staticQuery, operation, read, loadColumns);
     }
 
-    String getIncQuery(String name, String operation, long rowCount, String... loadColumns) {
+    String getIncQuery(String name, String operation, String... loadColumns) {
         var incQuery = """
         source = right = timed = result = source_filter = right_filter = autotune = stats = None
         bench_api_metrics_init()
@@ -382,12 +401,11 @@ final public class StandardTestRunner {
         ${teardownQueries}
         standard_events = standard_events.where([f'start_ns > {begin_clock}L', f'start_ns < {end_clock}L'])
         """;
-        var read = getReadOperation(incFactor, rowCount, loadColumns);
-        return populateQuery(name, incQuery, operation, read, rowCount, loadColumns);
+        var read = getReadOperation(incFactor, loadColumns);
+        return populateQuery(name, incQuery, operation, read, loadColumns);
     }
 
-    String populateQuery(String name, String query, String operation, String read, long rowCount,
-            String... loadColumns) {
+    String populateQuery(String name, String query, String operation, String read, String... loadColumns) {
         query = query.replace("${readTable}", read);
         query = query.replace("${loadSupportTables}", loadSupportTables());
         query = query.replace("${loadColumns}", listStr(loadColumns));
@@ -398,10 +416,9 @@ final public class StandardTestRunner {
         query = query.replace("${logOperationBegin}", getLogSnippet("Begin", name));
         query = query.replace("${logOperationEnd}", getLogSnippet("End", name));
         query = query.replace("${mainTable}", mainTable);
-        query = query.replace("${initialSize}", "" + getInitialRowCount(rowCount));
+        query = query.replace("${initialSize}", "" + getInitialRowCount());
         return query;
     }
-
 
     Result runTest(String name, String mainQuery) {
         if (api.isClosed())
@@ -498,20 +515,25 @@ final public class StandardTestRunner {
     }
 
     void addTable(String name, String distribution, String[] groups) {
+        if (generatedTables.isEmpty())
+            generatedRowFactor = (int) Math.max(minGeneratedRowFactor,
+                    Math.ceil(Math.max(staticRowFactor, incRowFactor)));
         generatedTables.add(new TableGen(name, distribution, groups));
         generateTable(name, distribution, groups);
     }
 
     /**
-     * Point the generated tables at the given row factor before a static or inc test, generating them if needed. The
-     * fixed-size <code>right</code> table does not depend on the row factor, so it is left as is.
+     * Set the row factor for the next static or inc test. Generated tables are only regenerated if they are too small
+     * for the given row factor. The fixed-size <code>right</code> table does not depend on the row factor, so it is
+     * left as is.
      * 
      * @param rowFactor the row factor for the next test
      */
-    void useRowFactor(int rowFactor) {
-        if (rowFactor == rowCountFactor)
-            return;
+    void useRowFactor(double rowFactor) {
         rowCountFactor = rowFactor;
+        if (generatedTables.isEmpty() || Math.ceil(rowFactor) <= generatedRowFactor)
+            return;
+        generatedRowFactor = (int) Math.ceil(rowFactor);
         if (!api.isClosed()) {
             api.setName("# Data Table Generation");
             addServiceLog(api);

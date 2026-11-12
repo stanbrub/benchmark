@@ -15,8 +15,12 @@ public class RollingFormulaTimeTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
     final Setup setup = new Setup(runner);
 
-    void setup(int rowFactor, int staticFactor, int incFactor) {
-        runner.setRowFactor(rowFactor);
+    void setup(double rowFactor, int staticFactor, int incFactor) {
+        setup(rowFactor, staticFactor, rowFactor, incFactor);
+    }
+
+    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
+        runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("timed");
         var s = """
@@ -27,7 +31,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaParamTime2Groups3Ops() {
-        setup(2, 2, 1);
+        setup(4, 1, 2, 1);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="avg(x)", formula_param="x", ts_col="timestamp",
             cols=["Contains=num1"], rev_time="PT4M", fwd_time="PT5M")
@@ -38,7 +42,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaGeneralTime0Group3Ops() {
-        setup(1, 1, 1);
+        setup(0.1, 1, 1);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="Contains=avg(num1)", ts_col="timestamp", rev_time="PT2S", 
             fwd_time="PT3S")
@@ -60,7 +64,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaGeneralTime2Groups3Ops() {
-        setup(2, 2, 1);
+        setup(4, 1, 2, 1);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="Contains=avg(num1)", ts_col="timestamp", rev_time="PT4M", 
             fwd_time="PT5M")

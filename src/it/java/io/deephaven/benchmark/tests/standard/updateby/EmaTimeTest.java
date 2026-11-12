@@ -32,7 +32,7 @@ public class EmaTimeTest {
 
     @Test
     void emaTime2Groups1Col() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         setup.emTime2Groups("ema_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2'])";
         runner.test("EmaTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "timestamp");
@@ -40,7 +40,7 @@ public class EmaTimeTest {
 
     @Test
     void emaTime3Groups1Col() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.65, 1);
         setup.emTime3Groups("ema_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2','key3'])";
         runner.test("EmaTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1", "timestamp");

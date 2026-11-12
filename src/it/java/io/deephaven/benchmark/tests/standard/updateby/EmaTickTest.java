@@ -32,7 +32,7 @@ public class EmaTickTest {
 
     @Test
     void emaTick2Group1Col() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         setup.emTick2Groups("ema_tick");
         var q = "timed.update_by(ops=[dk], by=['key1','key2'])";
         runner.test("EmaTick- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1");
@@ -40,7 +40,7 @@ public class EmaTickTest {
 
     @Test
     void emaTick3Groups1Col() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 1, 1);
         setup.emTick3Groups("ema_tick");
         var q = "timed.update_by(ops=[dk], by=['key1','key2','key3'])";
         runner.test("EmaTick- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1");

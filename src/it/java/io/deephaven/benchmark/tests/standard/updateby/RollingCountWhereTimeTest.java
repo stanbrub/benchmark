@@ -33,7 +33,7 @@ public class RollingCountWhereTimeTest {
 
     @Test
     void rollingCountWhereTime2Groups3Ops() {
-        setup.factors(2, 2, 1);
+        setup.factors(4, 1, 2, 1);
         runner.addSetupQuery(fifty2Groups);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
         runner.test("RollingCountWhereTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "timestamp");

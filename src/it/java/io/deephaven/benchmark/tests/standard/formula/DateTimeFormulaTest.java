@@ -20,7 +20,7 @@ public class DateTimeFormulaTest {
 
     @Test
     public void parseInstant() {
-        setup(1, 1, 1);
+        setup(0.4, 1, 0.2, 1);
         var q = "source.update(formulas=['New1 = parseInstant(`2023-05-31T04:52:14.001 ET`)'])";
         runner.test("ParseInstant- DateTime String with Timezone", q);
     }
@@ -49,11 +49,11 @@ public class DateTimeFormulaTest {
         runner.test("EpochNanosToZonedDateTime- Nanos Long and ZoneId", q);
     }
 
-    private void setup(int rowFactor, int staticFactor, int incFactor) {
+    private void setup(double rowFactor, int staticFactor, int incFactor) {
         setup(rowFactor, staticFactor, rowFactor, incFactor);
     }
 
-    private void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+    private void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
         runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
     }

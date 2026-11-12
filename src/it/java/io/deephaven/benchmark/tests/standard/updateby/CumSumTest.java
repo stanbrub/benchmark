@@ -11,7 +11,7 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class CumSumTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
         runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("timed");
@@ -34,7 +34,7 @@ public class CumSumTest {
     
     @Test
     void cumSum2Groups1Col() {
-        setup(3, 2, 3, 1);
+        setup(6, 1, 3, 1);
         var q = "timed.update_by(ops=cum_sum(cols=['X=num1']), by=['key1','key2'])";
         runner.test("CumSum- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1");
     }

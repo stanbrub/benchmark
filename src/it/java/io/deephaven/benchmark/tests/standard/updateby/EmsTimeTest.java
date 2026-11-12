@@ -33,7 +33,7 @@ public class EmsTimeTest {
 
     @Test
     void emsTime2Groups1Col() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         setup.emTime2Groups("ems_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2'])";
         runner.test("EmsTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "timestamp");
@@ -41,7 +41,7 @@ public class EmsTimeTest {
 
     @Test
     void emsTime3Groups1Col() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 1, 1);
         setup.emTime3Groups("ems_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2','key3'])";
         runner.test("EmsTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1", "timestamp");

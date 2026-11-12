@@ -18,7 +18,8 @@ public class MedianByTest {
 
     @Test
     void medianBy0Groups() {
-        runner.setScaleFactors(6, 2);
+        runner.setRowFactors(2, 4);
+        runner.setScaleFactors(6, 1);
         var q = "source.median_by()";
         runner.test("MedianBy- No Groups", 100, q, "key1", "key2", "num1");
     }
@@ -40,7 +41,7 @@ public class MedianByTest {
 
     @Test
     void medianBy3Groups() {
-        runner.setScaleFactors(2, 2);
+        runner.setRowFactors(6, 4);
         var q = "source.median_by(by=['key1', 'key2', 'key3'])";
         runner.test("MedianBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
     }

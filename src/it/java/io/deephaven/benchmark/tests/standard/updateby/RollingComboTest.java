@@ -55,7 +55,7 @@ public class RollingComboTest {
 
     @Test
     void rollingCombo0Groups6Ops() {
-        setup.factors(1, 1, 1);
+        setup.factors(1, 1, 0.4, 1);
         runner.addSetupQuery(noGroups);
         var q = "timed.update_by(ops=[sum_contains, min_before, prod_after, avg_contains, max_before, group_after])";
         runner.test("RollingCombo- No Groups 12 Cols", q, "num1", "num2", "timestamp");
@@ -73,7 +73,7 @@ public class RollingComboTest {
 
     @Test
     void rollingCombo2Groups6Ops() {
-        setup.factors(1, 2, 1);
+        setup.factors(2, 1, 0.45, 1);
         runner.addSetupQuery(group10K);
         var q = """
         timed.update_by(ops=[sum_contains, min_before, prod_after, avg_contains, max_before, group_after], 
@@ -85,7 +85,7 @@ public class RollingComboTest {
 
     @Test
     void rollingCombo3Groups6Ops() {
-        setup.factors(1, 1, 1);
+        setup.factors(1, 1, 0.05, 1);
         runner.addSetupQuery(group100K);
         var q = """
         timed.update_by(ops=[sum_contains,min_before,prod_after,avg_contains,max_before,group_after], 

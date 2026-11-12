@@ -33,7 +33,7 @@ public class EmStdTimeTest {
 
     @Test
     void emStdTime2Groups1Col() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         setup.emTime2Groups("emstd_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2'])";
         runner.test("EmStdTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "timestamp");
@@ -41,7 +41,7 @@ public class EmStdTimeTest {
 
     @Test
     void emStdTime3Groups1Col() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.65, 1);
         setup.emTime3Groups("emstd_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2','key3'])";
         runner.test("EmStdTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1", "timestamp");

@@ -33,7 +33,7 @@ public class EmMaxTimeTest {
 
     @Test
     void emMaxTime2Groups1Col() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         setup.emTime2Groups("emmax_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2'])";
         runner.test("EmMaxTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "timestamp");
@@ -41,7 +41,7 @@ public class EmMaxTimeTest {
 
     @Test
     void emMaxTime3Groups1Col() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.65, 1);
         setup.emTime3Groups("emmax_time");
         var q = "timed.update_by(ops=[dk], by=['key1','key2','key3'])";
         runner.test("EmMaxTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1", "timestamp");

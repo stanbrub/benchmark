@@ -15,11 +15,11 @@ class Setup {
         this.runner = runner;
     }
 
-    void factors(int rowFactor, int staticFactor, int incFactor) {
+    void factors(double rowFactor, int staticFactor, int incFactor) {
         factors(rowFactor, staticFactor, rowFactor, incFactor);
     }
 
-    void factors(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+    void factors(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
         runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("timed");

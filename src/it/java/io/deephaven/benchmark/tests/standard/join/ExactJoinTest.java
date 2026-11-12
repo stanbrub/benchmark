@@ -11,11 +11,11 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class ExactJoinTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(int rowFactor) {
+    void setup(double rowFactor) {
         setup(rowFactor, 1, rowFactor, 1);
     }
 
-    void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
         runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("source", "right");
@@ -23,7 +23,7 @@ public class ExactJoinTest {
 
     @Test
     void ExactJoinOn1Col() {
-        setup(2, 3, 1, 1);
+        setup(6, 1, 1, 1);
         var q = "source.exact_join(right, on=['key5 = r_key5'])";
         runner.test("ExactJoin- Join On 1 Col", q, "key5", "num1");
     }

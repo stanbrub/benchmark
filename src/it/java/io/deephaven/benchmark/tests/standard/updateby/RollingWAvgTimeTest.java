@@ -49,7 +49,7 @@ public class RollingWAvgTimeTest {
 
     @Test
     void rollingWAvgTime2Groups3Ops() {
-        setup.factors(2, 2, 1);
+        setup.factors(4, 1, 2, 1);
         runner.addSetupQuery(fifty2Groups);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
         runner.test("RollingWAvgTime- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1", "num2",
@@ -58,7 +58,7 @@ public class RollingWAvgTimeTest {
 
     @Test
     void rollingWAvgTime3Groups3Ops() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.15, 1);
         runner.addSetupQuery(fifty3Groups);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
         runner.test("RollingWAvgTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1",

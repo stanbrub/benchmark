@@ -24,14 +24,15 @@ public class PartitionByTest {
 
     @Test
     void partitionBy2Groups() {
-        runner.setScaleFactors(8, 4);
+        runner.setRowFactors(1, 4);
+        runner.setScaleFactors(8, 1);
         var q = "source.partition_by(by=['key1', 'key2']).table";
         runner.test("PartitionBy- 2 Groups 10K Unique Combos", 10100, q, "key1", "key2", "num1");
     }
 
     @Test
     void partitionBy3Groups() {
-        runner.setScaleFactors(4, 2);
+        runner.setRowFactors(4, 2);
         var q = "source.partition_by(by=['key1', 'key2', 'key3']).table";
         runner.test("PartitionBy- 3 Groups 100K Unique Combos", 90900, q, "key1", "key2", "key3", "num1");
     }

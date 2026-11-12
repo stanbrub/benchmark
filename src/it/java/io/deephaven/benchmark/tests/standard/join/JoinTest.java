@@ -14,11 +14,11 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class JoinTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(int rowFactor) {
+    void setup(double rowFactor) {
         setup(rowFactor, 1, rowFactor, 1);
     }
 
-    void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
         runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("source", "right");
@@ -26,7 +26,7 @@ public class JoinTest {
 
     @Test
     void joinOn1Col() {
-        setup(2);
+        setup(3, 1, 0.5, 1);
         var q = "source.join(right, on=['key5 = r_key5'])";
         runner.test("Join- Join On 1 Col", q, "key5", "num1");
     }

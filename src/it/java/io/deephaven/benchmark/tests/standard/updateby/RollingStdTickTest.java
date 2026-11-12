@@ -33,7 +33,7 @@ public class RollingStdTickTest {
 
     @Test
     void rollingStdTime2Groups3Ops() {
-        setup.factors(2, 3, 1);
+        setup.factors(6, 1, 2, 1);
         setup.rollTick2Groups("rolling_std_tick");
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2'])";
         runner.test("RollingStdTick- 2 Groups 10K Unique Combos", q, "key1", "key2", "num1");
@@ -41,7 +41,7 @@ public class RollingStdTickTest {
 
     @Test
     void rollingStdTime3Groups3Ops() {
-        setup.factors(1, 3, 1);
+        setup.factors(3, 1, 0.45, 1);
         setup.rollTick3Groups("rolling_std_tick");
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
         runner.test("RollingStdTick- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1");

@@ -12,11 +12,11 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class AsOfJoinTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(int rowFactor) {
+    void setup(double rowFactor) {
         setup(rowFactor, 1, rowFactor, 1);
     }
 
-    void setup(int staticRowFactor, int staticFactor, int incRowFactor, int incFactor) {
+    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
         runner.setRowFactors(staticRowFactor, incRowFactor);
         runner.setScaleFactors(staticFactor, incFactor);
         runner.tables("source", "right");
@@ -24,7 +24,7 @@ public class AsOfJoinTest {
 
     @Test
     void asOfJoinOn1Col() {
-        setup(1);
+        setup(1, 1, 0.6, 1);
         var q = "source.aj(right, on=['key5 >= r_key5'])";
         runner.test("AsOfJoin- Join On 1 Col", q, "key5", "num1");
     }

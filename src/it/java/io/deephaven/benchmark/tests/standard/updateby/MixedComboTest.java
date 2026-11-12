@@ -63,7 +63,7 @@ public class MixedComboTest {
 
     @Test
     void mixedCombo1Group6Ops() {
-        setup.factors(1, 3, 2, 1);
+        setup.factors(3, 1, 2, 1);
         runner.addSetupQuery(group100);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1'])
@@ -73,7 +73,7 @@ public class MixedComboTest {
 
     @Test
     void rollingCombo2Groups6Ops() {
-        setup.factors(1, 2, 1);
+        setup.factors(2, 1, 1, 1);
         runner.addSetupQuery(group10K);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], by=['key1','key2'])
@@ -84,7 +84,7 @@ public class MixedComboTest {
 
     @Test
     void rollingCombo3Groups6Ops() {
-        setup.factors(1, 2, 1);
+        setup.factors(1, 1, 0.05, 1);
         runner.addSetupQuery(group100K);
         var q = """
         timed.update_by(ops=[avg_contains,max_before,prod_after,ema_tick_op,min_op,sum_op], 
