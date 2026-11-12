@@ -242,9 +242,8 @@ final public class StandardTestRunner {
         if (staticFactor > 0) {
             useRowFactor(staticRowFactor);
             var sname = name + " -Static";
-            var warmup = getStaticQuery(sname, operation, getWarmupRowCount(), loadColumns);
             var query = getStaticQuery(sname, operation, getGeneratedRowCount(), loadColumns);
-            var result = runTest(sname, warmup, query);
+            var result = runTest(sname, query);
             var rcount = result.resultRowCount();
             var ecount = getMaxExpectedRowCount(maxExpectedRowCount, staticFactor);
             assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Static row count: " + rcount);
@@ -253,9 +252,8 @@ final public class StandardTestRunner {
         if (incFactor > 0) {
             useRowFactor(incRowFactor);
             var iname = name + " -Inc";
-            var warmup = getIncQuery(iname, operation, getWarmupRowCount(), loadColumns);
             var query = getIncQuery(iname, operation, getGeneratedRowCount(), loadColumns);
-            var result = runTest(iname, warmup, query);
+            var result = runTest(iname, query);
             var rcount = result.resultRowCount();
             var ecount = getMaxExpectedRowCount(maxExpectedRowCount, incFactor);
             assertTrue(rcount > 0 && rcount <= ecount, "Wrong result Inc row count: " + rcount);
@@ -271,37 +269,32 @@ final public class StandardTestRunner {
         return Math.max(0, Math.min(initialRows, rowCount - 1));
     }
 
-    long getWarmupRowCount() {
-        return (long) (api.propertyAsIntegral("warmup.row.count", "0") * rowCountFactor);
-    }
-
     long getMaxExpectedRowCount(long expectedRowCount, long scaleFactor) {
         return (expectedRowCount < 1) ? Long.MAX_VALUE : expectedRowCount;
     }
 
     String getReadOperation(int scaleFactor, long rowCount, String... loadColumns) {
-        var headRows = (rowCount >= getGeneratedRowCount()) ? "" : ".head(${rows})";
         var selectStr = useCachedSource ? "select" : "view";
         if (scaleFactor > 1 && mainTable.equals("timed") && Arrays.asList(loadColumns).contains("timestamp")) {
             var read = """
             merge([
-                bench_api_read('/data/timed.parquet').view(formulas=[${loadColumns}])${headRows}
+                bench_api_read('/data/timed.parquet').view(formulas=[${loadColumns}])
             ] * ${scaleFactor}).update_view([
                 'timestamp=timestamp.plusMillis((long)(ii / ${rows}) * ${rows})'
             ]).${selectStr}()
             """;
-            read = read.replace("${headRows}", headRows).replace("${selectStr}", selectStr);
+            read = read.replace("${selectStr}", selectStr);
             return read.replace("${scaleFactor}", "" + scaleFactor).replace("${rows}", "" + rowCount);
         }
 
-        var read = "bench_api_read('/data/${mainTable}.parquet')${headRows}.${selectStr}(formulas=[${loadColumns}])";
+        var read = "bench_api_read('/data/${mainTable}.parquet').${selectStr}(formulas=[${loadColumns}])";
         read = (loadColumns.length == 0) ? ("empty_table(${rows})") : read;
 
         if (scaleFactor > 1) {
             read = "merge([${readTable}] * ${scaleFactor})".replace("${readTable}", read);
             read = read.replace("${scaleFactor}", "" + scaleFactor);
         }
-        read = read.replace("${headRows}", headRows).replace("${rows}", "" + rowCount);
+        read = read.replace("${rows}", "" + rowCount);
         return read.replace("${selectStr}", selectStr);
     }
 
@@ -410,7 +403,7 @@ final public class StandardTestRunner {
     }
 
 
-    Result runTest(String name, String warmupQuery, String mainQuery) {
+    Result runTest(String name, String mainQuery) {
         if (api.isClosed())
             initialize(testInst);
         api.setName(name);
@@ -418,8 +411,6 @@ final public class StandardTestRunner {
 
         try {
             Log.info("Running Test: %s", name);
-            if (getWarmupRowCount() > 0)
-                api.query(warmupQuery).execute();
             var result = new AtomicReference<Result>();
             api.query(mainQuery).fetchAfter("stats", table -> {
                 long loadedRowCount = table.getSum("processed_row_count").longValue();
