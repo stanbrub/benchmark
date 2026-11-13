@@ -27,5 +27,7 @@ row() { echo -e "$RTYP\t$1\t$2\t$PKG\t$3\t$ITERS\t$ROWSM\t$DIST\t$4"; }
 row scale4     $IMG25 "$ALL"       "$OPTS"
 row scale4     $IMG25 "$ALL"       "$OPTS"
 row scale4     $IMG25 "$ALL"       "$OPTS"
+row scale4     $IMG25 "$ALL"       "$OPTS"
+row scale4     $IMG25 "$ALL"       "$OPTS"
 row jfr_jvm21  $IMG21 "$REGRESSED" "$OPTS -Dbench.jfr=profile"
 row jfr_jvm25  $IMG25 "$REGRESSED" "$OPTS -Dbench.jfr=profile"
