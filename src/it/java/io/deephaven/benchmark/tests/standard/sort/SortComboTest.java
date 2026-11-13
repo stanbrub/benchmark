@@ -36,7 +36,7 @@ public class SortComboTest {
 
     @Test
     void sort4ColsAscendDescend() {
-        runner.setScaleFactors(2.5, 0.25);
+        runner.setScaleFactors(2.5, 0.4);
         var q = """
         source.sort(order_by=['key1', 'key2', 'key3', 'key4'], order=[SortDirection.ASCENDING, 
             SortDirection.DESCENDING, SortDirection.ASCENDING, SortDirection.DESCENDING])

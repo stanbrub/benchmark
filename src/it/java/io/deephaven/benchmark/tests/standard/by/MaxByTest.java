@@ -25,7 +25,7 @@ public class MaxByTest {
 
     @Test
     void maxBy1Group() {
-        runner.setScaleFactors(58, 24);
+        runner.setScaleFactors(58, 36);
         var q = "source.max_by(by=['key1'])";
         runner.test("MaxBy- 1 Group 100 Unique Vals", 100, q, "key1", "num1");
     }

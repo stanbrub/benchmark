@@ -25,7 +25,7 @@ public class TailByTest {
 
     @Test
     void tailBy2Groups() {
-        runner.setScaleFactors(6.6, 6);
+        runner.setScaleFactors(8.2, 6);
         var q = "source.tail_by(2, by=['key1', 'key2'])";
         runner.test("TailBy- 2 Groups 10K Unique Combos", 10100 * 2, q, "key1", "key2", "num1");
     }

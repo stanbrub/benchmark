@@ -20,7 +20,7 @@ public class DateTimeFormulaTest {
 
     @Test
     public void parseInstant() {
-        runner.setScaleFactors(0.45, 0.25);
+        runner.setScaleFactors(0.2, 0.25);
         var q = "source.update(formulas=['New1 = parseInstant(`2023-05-31T04:52:14.001 ET`)'])";
         runner.test("ParseInstant- DateTime String with Timezone", q);
     }

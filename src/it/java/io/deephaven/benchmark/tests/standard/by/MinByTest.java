@@ -25,7 +25,7 @@ public class MinByTest {
 
     @Test
     void minBy1Group() {
-        runner.setScaleFactors(63, 25);
+        runner.setScaleFactors(63, 36);
         var q = "source.min_by(by=['key1'])";
         runner.test("MinBy- 1 Group 100 Unique Vals", 100, q, "key1", "num1");
     }

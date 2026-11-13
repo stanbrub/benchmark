@@ -63,7 +63,7 @@ public class RollingWAvgTimeTest {
 
     @Test
     void rollingWAvgTime3Groups3Ops() {
-        runner.setScaleFactors(2.4, 0.25);
+        runner.setScaleFactors(2.4, 0.4);
         runner.addSetupQuery(fifty3Groups);
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
         runner.test("RollingWAvgTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1",

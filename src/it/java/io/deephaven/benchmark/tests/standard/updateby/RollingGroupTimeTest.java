@@ -46,7 +46,7 @@ public class RollingGroupTimeTest {
 
     @Test
     void rollingGroupTime3Groups3Ops() {
-        runner.setScaleFactors(2.3, 0.2);
+        runner.setScaleFactors(2.3, 0.3);
         setup.rollTime3Groups("rolling_group_time");
         var q = "timed.update_by(ops=[contains_row], by=['key1','key2','key3'])";
         runner.test("RollingGroupTime- 3 Groups 100K Unique Combos", q, "key1", "key2", "key3", "num1",

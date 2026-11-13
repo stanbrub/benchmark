@@ -19,7 +19,7 @@ public class AsOfJoinTest {
 
     @Test
     void asOfJoinOn1Col() {
-        runner.setScaleFactors(0.75, 0.65);
+        runner.setScaleFactors(0.95, 0.8);
         var q = "source.aj(right, on=['key5 >= r_key5'])";
         runner.test("AsOfJoin- Join On 1 Col", q, "key5", "num1");
     }
