@@ -11,33 +11,28 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class NaturalJoinTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(double rowFactor) {
-        setup(rowFactor, 1, rowFactor, 1);
-    }
-
-    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
-        runner.setRowFactors(staticRowFactor, incRowFactor);
-        runner.setScaleFactors(staticFactor, incFactor);
+    @BeforeEach
+    void setup() {
         runner.tables("source", "right");
     }
 
     @Test
     void NaturalJoinOn1Col() {
-        setup(6, 1, 1, 1);
+        runner.setScaleFactors(4.7, 1.2);
         var q = "source.natural_join(right, on=['key5 = r_key5'])";
         runner.test("NaturalJoin- Join On 1 Col", q, "key5", "num1");
     }
 
     @Test
     void NaturalJoinOn2Cols() {
-        setup(6, 2, 5, 1);
+        runner.setScaleFactors(14, 3.3);
         var q = "source.natural_join(right, on=['key1 = r_wild', 'key2 = r_key2'])";
         runner.test("NaturalJoin- Join On 2 Cols", q, "key1", "key2", "num1");
     }
     
     @Test
     void NaturalJoinOn3Cols() {
-        setup(6, 2, 4, 1);
+        runner.setScaleFactors(12, 3.3);
         var q = "source.natural_join(right, on=['key1 = r_wild', 'key2 = r_key2', 'key1 = r_key1'])";
         runner.test("NaturalJoin- Join On 3 Cols", q, "key1", "key2", "num1");
     }
@@ -48,7 +43,7 @@ public class NaturalJoinTest {
      */
     @Test
     void NaturalJoinSelectFlatLeft() {
-        setup(6);
+        runner.setScaleFactors(6, 6);
         runner.addSetupQuery("source = source.where(['" + STRIDE_FILTER + "']).select()");
         runner.setInitialFactor(INITIAL_FACTOR);
         runner.test("NaturalJoin- Select Right Col Flat Left", JOIN_SELECT_RIGHT_COL, "key5");
@@ -60,7 +55,7 @@ public class NaturalJoinTest {
      */
     @Test
     void NaturalJoinSelectStridedLeft() {
-        setup(6);
+        runner.setScaleFactors(6, 6);
         runner.addSetupQuery("source = source.where(['" + STRIDE_FILTER + "'])");
         runner.setInitialFactor(INITIAL_FACTOR);
         runner.test("NaturalJoin- Select Right Col Strided Left", JOIN_SELECT_RIGHT_COL, "key5");

@@ -15,13 +15,8 @@ public class RollingFormulaTimeTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
     final Setup setup = new Setup(runner);
 
-    void setup(double rowFactor, int staticFactor, int incFactor) {
-        setup(rowFactor, staticFactor, rowFactor, incFactor);
-    }
-
-    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
-        runner.setRowFactors(staticRowFactor, incRowFactor);
-        runner.setScaleFactors(staticFactor, incFactor);
+    @BeforeEach
+    void setup() {
         runner.tables("timed");
         var s = """
         from deephaven.updateby import rolling_formula_time
@@ -31,7 +26,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaParamTime2Groups3Ops() {
-        setup(4, 1, 2, 1);
+        runner.setScaleFactors(3.8, 1.7);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="avg(x)", formula_param="x", ts_col="timestamp",
             cols=["Contains=num1"], rev_time="PT4M", fwd_time="PT5M")
@@ -42,7 +37,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaGeneralTime0Group3Ops() {
-        setup(0.1, 1, 1);
+        runner.setScaleFactors(0.15, 0.15);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="Contains=avg(num1)", ts_col="timestamp", rev_time="PT2S", 
             fwd_time="PT3S")
@@ -53,7 +48,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaGeneralTime1Group3Ops() {
-        setup(3, 3, 1);
+        runner.setScaleFactors(8.2, 3);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="Contains=avg(num1)", ts_col="timestamp", rev_time="PT2S", 
             fwd_time="PT3S")
@@ -64,7 +59,7 @@ public class RollingFormulaTimeTest {
 
     @Test
     void rollingFormulaGeneralTime2Groups3Ops() {
-        setup(4, 1, 2, 1);
+        runner.setScaleFactors(3.9, 1.6);
         runner.addSetupQuery("""
         contains = rolling_formula_time(formula="Contains=avg(num1)", ts_col="timestamp", rev_time="PT4M", 
             fwd_time="PT5M")

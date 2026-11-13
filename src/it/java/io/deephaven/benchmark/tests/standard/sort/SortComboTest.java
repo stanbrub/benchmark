@@ -11,27 +11,22 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class SortComboTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
-        runner.setRowFactors(staticRowFactor, incRowFactor);
-        setup(staticFactor, incFactor);
-    }
-
-    void setup(int staticFactor, int incFactor) {
+    @BeforeEach
+    void setup() {
         runner.tables("source");
         runner.addSetupQuery("from deephaven import SortDirection");
-        runner.setScaleFactors(staticFactor, incFactor);
     }
 
     @Test
     void sort2ColsAscendDescend() {
-        setup(6, 1, 1, 1);
+        runner.setScaleFactors(7.2, 0.95);
         var q = "source.sort(order_by=['key1', 'key2'], order=[SortDirection.ASCENDING, SortDirection.DESCENDING])";
         runner.test("Sort- Both Directions 2 Cols", q, "key1", "key2", "num1");
     }
 
     @Test
     void sort3ColsAscendDescend() {
-        setup(3, 1, 0.45, 1);
+        runner.setScaleFactors(3.2, 0.55);
         var q = """
         source.sort(order_by=['key1', 'key2', 'key3'], order=[SortDirection.ASCENDING, SortDirection.DESCENDING,
             SortDirection.ASCENDING])
@@ -41,7 +36,7 @@ public class SortComboTest {
 
     @Test
     void sort4ColsAscendDescend() {
-        setup(2, 1, 0.15, 1);
+        runner.setScaleFactors(2.5, 0.25);
         var q = """
         source.sort(order_by=['key1', 'key2', 'key3', 'key4'], order=[SortDirection.ASCENDING, 
             SortDirection.DESCENDING, SortDirection.ASCENDING, SortDirection.DESCENDING])

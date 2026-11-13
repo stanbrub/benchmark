@@ -40,6 +40,7 @@ final public class StandardTestRunner {
     private double staticRowFactor = 1;
     private double incRowFactor = 1;
     private int generatedRowFactor = 0;
+    private double maxRowFactor = minGeneratedRowFactor;
     private int staticFactor = 1;
     private int incFactor = 1;
     private double initialFactor = 0;
@@ -162,11 +163,11 @@ final public class StandardTestRunner {
     /**
      * The {@code scale.row.count} property supplies a default for the number of rows generated for benchmark tests.
      * Given that some operations use less memory than others, scaling up the generated rows per operation is more
-     * effective than using scale factors {@link #setScaleFactors(int, int)}.
+     * effective than using scale factors {@link #setMergeFactors(int, int)}.
      * 
      * @param rowCountFactor a multiplier applied against {@code scale.row.count}
      */
-    public void setRowFactor(double rowCountFactor) {
+    void setRowFactor(double rowCountFactor) {
         setRowFactors(rowCountFactor, rowCountFactor);
     }
 
@@ -176,19 +177,52 @@ final public class StandardTestRunner {
      * first rows it needs from the main table with <code>head</code> before they are loaded, so different row factors
      * share the same file.
      * <p>
-     * Row factors below 1 may be fractional. Row factors of 1 or more must be whole numbers.
+     * Row factors may be fractional with at most two decimal places (e.g. 0.35 or 2.5).
      * 
      * @param staticRowFactor a multiplier applied against {@code scale.row.count} for the static test
      * @param incRowFactor a multiplier applied against {@code scale.row.count} for the inc test
      */
-    public void setRowFactors(double staticRowFactor, double incRowFactor) {
+    void setRowFactors(double staticRowFactor, double incRowFactor) {
         this.staticRowFactor = checkRowFactor(staticRowFactor);
         this.incRowFactor = checkRowFactor(incRowFactor);
     }
 
+    /**
+     * Set the largest row factor {@link #setScaleFactors(double, double)} may use for real rows, leaving the rest to merge.
+     * Lower it for operations that need more of the heap for themselves than for the loaded data.
+     * 
+     * @param maxRowFactor the largest multiplier of {@code scale.row.count} loaded as real rows
+     */
+    public void setMaxRowFactor(double maxRowFactor) {
+        this.maxRowFactor = checkRowFactor(maxRowFactor);
+    }
+
+    /**
+     * Set how many rows the static and inc operations see, as multiples of {@code scale.row.count}. Rows up to the
+     * max row factor ({@link #setMaxRowFactor(double)}) are real. Beyond that, the fewest merged copies are used, each
+     * holding an equal share of real rows. A scale of 0 skips that test.
+     * 
+     * @param staticScale the rows seen by the static operation, as a multiple of {@code scale.row.count}
+     * @param incScale the rows seen by the inc operation, as a multiple of {@code scale.row.count}
+     */
+    public void setScaleFactors(double staticScale, double incScale) {
+        var s = getScaleFactors(staticScale);
+        var i = getScaleFactors(incScale);
+        setRowFactors(s.rowFactor(), i.rowFactor());
+        setMergeFactors(s.mergeFactor(), i.mergeFactor());
+    }
+
+    ScaleFactors getScaleFactors(double scale) {
+        if (scale <= 0)
+            return new ScaleFactors(1, 0);
+        int mergeFactor = (int) Math.ceil(scale / maxRowFactor - 1e-9);
+        return new ScaleFactors(Math.round(scale / mergeFactor * 100) / 100.0, mergeFactor);
+    }
+
     double checkRowFactor(double rowFactor) {
-        if (rowFactor <= 0 || (rowFactor > 1 && rowFactor != Math.floor(rowFactor)))
-            throw new IllegalArgumentException("Row factor must be a fraction below 1 or a whole number: " + rowFactor);
+        if (rowFactor <= 0 || Math.abs(rowFactor * 100 - Math.round(rowFactor * 100)) > 1e-9)
+            throw new IllegalArgumentException(
+                    "Row factor must be positive with at most two decimal places: " + rowFactor);
         return rowFactor;
     }
 
@@ -202,7 +236,7 @@ final public class StandardTestRunner {
      * @param staticFactor the multiplier used to "merge-amplify" rows for the static test
      * @param incFactor the multiplier used to "merge-amplify" rows for the inc test
      */
-    public void setScaleFactors(int staticFactor, int incFactor) {
+    void setMergeFactors(int staticFactor, int incFactor) {
         this.staticFactor = staticFactor;
         this.incFactor = incFactor;
     }
@@ -621,6 +655,9 @@ final public class StandardTestRunner {
     }
 
     record TableGen(String name, String distribution, String[] groups) {
+    }
+
+    record ScaleFactors(double rowFactor, int mergeFactor) {
     }
 
 }

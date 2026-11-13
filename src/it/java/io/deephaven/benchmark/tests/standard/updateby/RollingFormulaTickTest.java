@@ -14,13 +14,8 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class RollingFormulaTickTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(double rowFactor, int staticFactor, int incFactor) {
-        setup(rowFactor, staticFactor, rowFactor, incFactor);
-    }
-
-    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
-        runner.setRowFactors(staticRowFactor, incRowFactor);
-        runner.setScaleFactors(staticFactor, incFactor);
+    @BeforeEach
+    void setup() {
         runner.tables("timed");
         var s = """
         from deephaven.updateby import rolling_formula_tick
@@ -30,7 +25,7 @@ public class RollingFormulaTickTest {
 
     @Test
     void rollingFormulaParamTick2Groups3Ops() {
-        setup(4, 1, 2, 1);
+        runner.setScaleFactors(5.2, 2);
         runner.addSetupQuery("""
         contains = rolling_formula_tick(formula="avg(x)", formula_param="x", cols=["Contains=num1"], 
             rev_ticks=20, fwd_ticks=30)
@@ -41,7 +36,7 @@ public class RollingFormulaTickTest {
 
     @Test
     void rollingFormulaGeneralTick0Group3Ops() {
-        setup(0.1, 1, 1);
+        runner.setScaleFactors(0.15, 0.15);
         runner.addSetupQuery("""
         contains = rolling_formula_tick(formula="Contains=avg(num1)", rev_ticks=2000, fwd_ticks=3000)
         """);
@@ -51,7 +46,7 @@ public class RollingFormulaTickTest {
 
     @Test
     void rollingFormulaGeneralTick1Group3Ops() {
-        setup(3, 7, 4, 1);
+        runner.setScaleFactors(17, 4.3);
         runner.addSetupQuery("""
         contains = rolling_formula_tick(formula="Contains=avg(num1)", rev_ticks=20, fwd_ticks=30)
         """);
@@ -61,7 +56,7 @@ public class RollingFormulaTickTest {
 
     @Test
     void rollingFormulaGeneralTick2Groups3Ops() {
-        setup(6, 1, 2, 1);
+        runner.setScaleFactors(5.2, 2);
         runner.addSetupQuery("""
         contains = rolling_formula_tick(formula="Contains=avg(num1)", rev_ticks=20, fwd_ticks=30)
         """);

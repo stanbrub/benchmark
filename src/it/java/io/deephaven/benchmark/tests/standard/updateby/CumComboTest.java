@@ -13,7 +13,6 @@ public class CumComboTest {
 
     @BeforeEach
     void setup() {
-        runner.setRowFactor(1);
         runner.tables("timed");
 
         setupStr = """
@@ -32,16 +31,14 @@ public class CumComboTest {
 
     @Test
     void cumComboNoGroups6Ops() {
-        runner.setRowFactors(1, 5);
-        runner.setScaleFactors(10, 1);
+        runner.setScaleFactors(9.6, 5.3);
         var q = "timed.update_by(ops=[ema_tick_op, ema_time_op, max_op, min_op, sum_op, prod_op])";
         runner.test("CumCombo- 6 Ops No Groups", q, "num1", "num2", "timestamp");
     }
 
     @Test
     void cumCombo1Groups6Ops() {
-        runner.setRowFactors(1, 4);
-        runner.setScaleFactors(8, 1);
+        runner.setScaleFactors(7, 3);
         var q = """
         timed.update_by(ops=[ema_tick_op, ema_time_op, max_op, min_op, sum_op, prod_op], by=['key1'])
         """;
@@ -50,7 +47,7 @@ public class CumComboTest {
 
     @Test
     void cumCombo2Groups6Ops() {
-        runner.setRowFactors(3, 2);
+        runner.setScaleFactors(3.4, 1.6);
         var q = """
         timed.update_by(ops=[ema_tick_op, ema_time_op, max_op, min_op, sum_op, prod_op], by=['key1','key2'])
         """;
@@ -59,7 +56,7 @@ public class CumComboTest {
 
     @Test
     void cumCombo3Groups6Ops() {
-        runner.setRowFactors(3, 0.5);
+        runner.setScaleFactors(2.3, 0.4);
         var q = """
         timed.update_by(ops=[ema_tick_op,ema_time_op,max_op,min_op,sum_op,prod_op], by=['key1','key2','key3'])
         """;
@@ -69,7 +66,7 @@ public class CumComboTest {
 
     @Test
     void cumCombo3Groups6OpsLarge() {
-        runner.setRowFactors(1, 0.1);
+        runner.setScaleFactors(1, 0.15);
         var q = """
         timed.update_by(ops=[ema_tick_op,ema_time_op,max_op,min_op,sum_op,prod_op], by=['key1','key2','key4'])
         """;

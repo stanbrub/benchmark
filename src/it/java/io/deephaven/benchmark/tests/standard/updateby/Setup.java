@@ -15,16 +15,6 @@ class Setup {
         this.runner = runner;
     }
 
-    void factors(double rowFactor, int staticFactor, int incFactor) {
-        factors(rowFactor, staticFactor, rowFactor, incFactor);
-    }
-
-    void factors(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
-        runner.setRowFactors(staticRowFactor, incRowFactor);
-        runner.setScaleFactors(staticFactor, incFactor);
-        runner.tables("timed");
-    }
-
     void rollTime0Groups(String op) {
         addSetupQuery(op, """
         contains_row = ${op}(ts_col="timestamp",cols=["Contains=num1"],rev_time="PT2S",fwd_time="PT3S")

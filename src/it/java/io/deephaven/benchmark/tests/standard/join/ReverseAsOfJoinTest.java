@@ -12,33 +12,28 @@ import io.deephaven.benchmark.tests.standard.StandardTestRunner;
 public class ReverseAsOfJoinTest {
     final StandardTestRunner runner = new StandardTestRunner(this);
 
-    void setup(double rowFactor) {
-        setup(rowFactor, 1, rowFactor, 1);
-    }
-
-    void setup(double staticRowFactor, int staticFactor, double incRowFactor, int incFactor) {
-        runner.setRowFactors(staticRowFactor, incRowFactor);
-        runner.setScaleFactors(staticFactor, incFactor);
+    @BeforeEach
+    void setup() {
         runner.tables("source", "right");
     }
 
     @Test
     void reverseAsOfJoinOn1Col() {
-        setup(1, 1, 0.6, 1);
+        runner.setScaleFactors(0.75, 0.65);
         var q = "source.raj(right, on=['key5 <= r_key5'])";
         runner.test("ReverseAsOfJoin- Join On 1 Col", q, "key5", "num1");
     }
 
     @Test
     void reverseAsOfJoinOn2Cols() {
-        setup(3);
+        runner.setScaleFactors(3.1, 2.3);
         var q = "source.raj(right, on=['key1 = r_wild', 'key2 <= r_key2'])";
         runner.test("ReverseAsOfJoin- Join On 2 Cols", q, "key1", "key2", "num1");
     }
 
     @Test
     void reverseAsOfJoinOn3Cols() {
-        setup(4, 1, 3, 1);
+        runner.setScaleFactors(3.3, 2.4);
         var q = "source.raj(right, on=['key1 = r_wild', 'key2 = r_key2', 'key1 <= r_key1'])";
         runner.test("ReverseAsOfJoin- Join On 3 Cols", q, "key1", "key2", "num1");
     }
