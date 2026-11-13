@@ -8,7 +8,7 @@
 # recordings can be compared side by side. Note that the two images also differ in engine revision.
 # TSV columns: run_type, run_label, docker_image, test_package, test_class_list,
 #              test_iterations, scale_row_count, distribution, config_options
-EXPECTED_COMBOS=5
+EXPECTED_COMBOS=7
 
 RTYP='adhoc'
 IMG25=ghcr.io/deephaven/server@sha256:0f0559e7fdcd4d6e73084bca8c0e81f58f896c488a386dd99e22fc5bdd1e23fe
