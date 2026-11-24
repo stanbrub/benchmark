@@ -59,16 +59,37 @@ echo "DEEPHAVEN_CORE_WHEEL: ${DEEPHAVEN_CORE_WHEEL}"
 echo "GIT_REVISION: ${GIT_REVISION}"
 
 # Pull once so bakes resolve locally instead of from Docker Hub, which intermittently 502s
-# Bases come from the checked out branch, since releases move the Ubuntu version and JDK image
-hcl_default () { awk -v v="variable \"$1\"" 'index($0, v) {f=1} f && $1 == "default" {gsub(/"/, "", $3); print $3; exit}' server.hcl; }
-UBUNTU_VER=$(hcl_default UBUNTU_VERSION)
-JDK_VER=$(hcl_default OPENJDK_VERSION)
-JDK_REPO=$(sed -nE 's|^FROM docker.io/(library/)?([^:]+):\$\{OPENJDK_VERSION\}.*|\2|p' contexts/server/Dockerfile)
-if [[ -z "${UBUNTU_VER}" || -z "${JDK_VER}" || -z "${JDK_REPO}" ]]; then
-  echo "$0: Cannot read base images from server.hcl and Dockerfile, so their layout has changed"
+# Bases are every FROM image in the Dockerfile, with ARGs filled in from the args bake resolves for this
+# branch and environment. The syntax frontend is left out: BuildKit checks the registry for it anyway.
+BAKE_TARGET=$(docker buildx bake -f server.hcl --print | jq -c '.target.server')
+DOCKERFILE=$(jq -r '"\(.context)/\(.dockerfile // "Dockerfile")"' <<< "${BAKE_TARGET}")
+STAGES=$(awk 'toupper($1) == "FROM" && toupper($(NF-1)) == "AS" {print $NF}' ${DOCKERFILE})
+declare -A BASE_IMAGES=()
+while read -r ref; do
+  while [[ ${ref} =~ \$\{([A-Za-z_][A-Za-z0-9_]*)\} ]]; do
+    name=${BASH_REMATCH[1]}
+    value=$(jq -r --arg n "${name}" '.args[$n] // empty' <<< "${BAKE_TARGET}")
+    if [[ -z "${value}" ]]; then
+      echo "$0: No bake arg for \${${name}} in ${DOCKERFILE}"
+      exit 1
+    fi
+    ref=${ref//\$\{${name}\}/${value}}
+  done
+  if [[ ${ref} == *'$'* ]]; then
+    echo "$0: Cannot resolve FROM ${ref} in ${DOCKERFILE}"
+    exit 1
+  fi
+  # Stage references like os-bits or deephaven-custom are built here, not pulled
+  if ! grep -qxF "${ref}" <<< "${STAGES}"; then
+    BASE_IMAGES[${ref}]=1
+  fi
+done < <(awk 'toupper($1) == "FROM" {for (i = 2; i <= NF; i++) if ($i !~ /^--/) {print $i; break}}' ${DOCKERFILE})
+if [[ ${#BASE_IMAGES[@]} -eq 0 ]]; then
+  echo "$0: No base images found in ${DOCKERFILE}"
   exit 1
 fi
-for image in docker/dockerfile:1.4 busybox:latest ubuntu:${UBUNTU_VER} ${JDK_REPO}:${JDK_VER}; do
+echo "BASE IMAGES: ${!BASE_IMAGES[*]}"
+for image in "${!BASE_IMAGES[@]}"; do
   if docker image inspect ${image} &>/dev/null; then
     continue
   fi

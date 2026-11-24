@@ -94,8 +94,8 @@ title "-- Installing JVMs --"
 sudo apt-get -y install temurin-17-jdk temurin-21-jdk
 sudo update-alternatives --set java /usr/lib/jvm/temurin-17-jdk-amd64/bin/java
 
-title "-- Installing Maven --"
-sudo apt-get -y install maven
+title "-- Installing Maven and jq --"
+sudo apt-get -y install maven jq
 
 title "-- Installing Docker --"
 command_exists() {

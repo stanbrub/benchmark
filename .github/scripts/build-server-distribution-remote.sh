@@ -63,8 +63,19 @@ git fetch --prune --prune-tags origin
 # Prefer this owner's branch over a local one of the same name; tags and hashes resolve directly
 if git rev-parse --verify --quiet "origin/${BRANCH_NAME}" >/dev/null; then
   git checkout --detach "origin/${BRANCH_NAME}"
-else
+elif git rev-parse --verify --quiet "${BRANCH_NAME}^{commit}" >/dev/null; then
   git checkout --detach "${BRANCH_NAME}"
+else
+  echo "$0: No branch, tag, or commit '${BRANCH_NAME}' in ${OWNER}/deephaven-core"
+  exit 1
+fi
+
+# A requested release tag builds as X.Y like deephaven-core's publishing does, not the default X.Y-SNAPSHOT.
+# Only the tag itself, so a branch that happens to sit on a tagged commit still reports a snapshot.
+GRADLE_VERSION_OPTS=()
+if [[ ${BRANCH_NAME} =~ ^v[0-9]+(\.[0-9]+)+$ ]] && git rev-parse --verify --quiet "refs/tags/${BRANCH_NAME}" >/dev/null; then
+  GRADLE_VERSION_OPTS=(-PdeephavenBaseQualifier=)
+  echo "Release tag ${BRANCH_NAME}: building without the SNAPSHOT qualifier"
 fi
 
 title "-- Cloning deephaven-server-docker --"
@@ -92,9 +103,9 @@ if [ -f "${WHEEL_GRADLE}" ]; then
   fi
 fi
 
-./gradlew outputVersion server-jetty-app:assemble py-server:assemble
+./gradlew "${GRADLE_VERSION_OPTS[@]}" outputVersion server-jetty-app:assemble py-server:assemble
 
-echo "Assembled ${OWNER}${BRANCH_DELIM}${BRANCH_NAME} -> $(git rev-parse HEAD) for tag ${DOCKER_TAG}"
+echo "Assembled ${OWNER}${BRANCH_DELIM}${BRANCH_NAME} -> $(git rev-parse HEAD) as $(cat build/version) for tag ${DOCKER_TAG}"
 
 
 

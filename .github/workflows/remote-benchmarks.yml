@@ -98,6 +98,8 @@ jobs:
     - name: Run Remote Server Distribution Build
       if: ${{ !startsWith(env.DOCKER_IMG, 'ghcr.io/') && contains(env.DOCKER_IMG, ':') }}
       run: |
+        # setup-java's javac matcher would turn the remote deephaven-core build's warnings into annotations
+        echo "::remove-matcher owner=javac::"
         ${SD}/run-ssh-local.sh ${HOST} ${USER} ${SD} build-server-distribution-remote "${DOCKER_IMG}"
         
     - name: Run Remote Docker Image Build

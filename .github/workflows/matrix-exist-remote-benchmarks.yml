@@ -19,6 +19,7 @@ on:
         - gc-train-heap-fail.sh
         - example-regression-matrix.sh
         - train-jfr.sh
+        - scale-standard.sh
         - release-42-43.sh
 
 jobs:
