@@ -59,7 +59,16 @@ echo "DEEPHAVEN_CORE_WHEEL: ${DEEPHAVEN_CORE_WHEEL}"
 echo "GIT_REVISION: ${GIT_REVISION}"
 
 # Pull once so bakes resolve locally instead of from Docker Hub, which intermittently 502s
-for image in docker/dockerfile:1.4 busybox:latest ubuntu:24.04 eclipse-temurin:21; do
+# Bases come from the checked out branch, since releases move the Ubuntu version and JDK image
+hcl_default () { awk -v v="variable \"$1\"" 'index($0, v) {f=1} f && $1 == "default" {gsub(/"/, "", $3); print $3; exit}' server.hcl; }
+UBUNTU_VER=$(hcl_default UBUNTU_VERSION)
+JDK_VER=$(hcl_default OPENJDK_VERSION)
+JDK_REPO=$(sed -nE 's|^FROM docker.io/(library/)?([^:]+):\$\{OPENJDK_VERSION\}.*|\2|p' contexts/server/Dockerfile)
+if [[ -z "${UBUNTU_VER}" || -z "${JDK_VER}" || -z "${JDK_REPO}" ]]; then
+  echo "$0: Cannot read base images from server.hcl and Dockerfile, so their layout has changed"
+  exit 1
+fi
+for image in docker/dockerfile:1.4 busybox:latest ubuntu:${UBUNTU_VER} ${JDK_REPO}:${JDK_VER}; do
   if docker image inspect ${image} &>/dev/null; then
     continue
   fi
