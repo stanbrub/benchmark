@@ -1,4 +1,7 @@
-# Release study: 42.0 vs 43.0, both built from their deephaven-core release branches
+# Release study: 42.0 vs 43.0, both built from their deephaven-core release tags
+#
+# Tags rather than release branches, since deephaven-core deletes old release branches. Each tag is the
+# commit its release branch was cut at.
 #
 # Both refs build on the same deephaven-server-docker main (currently Python 3.14, JVM 25, Ubuntu 26.04),
 # so the comparison is between engine versions rather than between the OS, Python and JVM each shipped on.
@@ -30,6 +33,6 @@ PASSES=7
 row() { echo -e "$RTYP\t$1\t$2\t$PKG\t$CLS\t$ITERS\t$ROWSM\t$DIST\t$OPTS"; }
 
 for i in $(seq ${PASSES}); do
-  row 42.000.01 deephaven:release/v42.0
-  row 43.000.00 deephaven:release/v43.0
+  row 42.000.01 deephaven:v42.0
+  row 43.000.00 deephaven:v43.0
 done
